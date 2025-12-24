@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "init-firebase": "node scripts/init-firebase.js",
+    "create-admin": "node scripts/create-admin.js",
+    "debug-user": "node scripts/debug-user.js"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.15",
@@ -14,6 +17,8 @@
     "@radix-ui/react-slot": "^1.2.4",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "dotenv": "^16.4.7",
+    "firebase": "^12.7.0",
     "lucide-react": "^0.562.0",
     "next": "16.1.0",
     "react": "19.2.3",

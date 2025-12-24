@@ -17,10 +17,12 @@ export const NAV_LINKS = {
 } as const;
 
 export const NAV_TEXT = {
-  shop: "Shop",
+  shop: "All Products",
   profile: "Profile",
   login: "Login",
   logout: "Logout",
+  home: "Home",
+  about_us: "About Us"
 } as const;
 
 // Hero Section

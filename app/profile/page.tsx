@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -16,16 +16,19 @@ import {
   X
 } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
+import { useAuth } from "@/lib/auth-context";
 import { PROFILE, CURRENCY } from "@/lib/constants";
 import { 
-  mockOrders, 
-  mockAddresses, 
-  mockPaymentMethods, 
-  mockUserProfile,
   Order,
   Address,
   PaymentMethod
 } from "@/lib/profile-data";
+import { 
+  OrderService,
+  AddressService,
+  PaymentMethodService,
+  UserService
+} from "@/lib/firebase-services";
 import AddressModal from "@/components/address-modal";
 import PaymentModal from "@/components/payment-modal";
 
@@ -33,11 +36,12 @@ type TabType = "orders" | "addresses" | "payments" | "settings";
 
 export default function ProfilePage() {
   const { addToast } = useToast();
+  const { state: authState } = useAuth();
   const [activeTab, setActiveTab] = useState<TabType>("orders");
-  const [orders, setOrders] = useState<Order[]>(mockOrders);
-  const [addresses, setAddresses] = useState<Address[]>(mockAddresses);
-  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>(mockPaymentMethods);
-  const [userProfile, setUserProfile] = useState(mockUserProfile);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [addresses, setAddresses] = useState<Address[]>([]);
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
+  const [loading, setLoading] = useState(true);
   
   // Modal states
   const [addressModal, setAddressModal] = useState<{
@@ -52,97 +56,211 @@ export default function ProfilePage() {
     card?: PaymentMethod;
   }>({ isOpen: false, mode: "add" });
 
-  const handleCancelOrder = (orderId: string) => {
-    setOrders(orders.map(order => 
-      order.id === orderId 
-        ? { ...order, status: "cancelled" as const }
-        : order
-    ));
-    addToast({
-      title: "Order cancelled",
-      description: "Your order has been cancelled successfully.",
-      variant: "success",
-    });
-  };
+  // Load data when user is authenticated
+  useEffect(() => {
+    if (authState.isAuthenticated && authState.user) {
+      loadUserData();
+    }
+  }, [authState.isAuthenticated, authState.user]);
 
-  const handleDeleteAddress = (addressId: string) => {
-    setAddresses(addresses.filter(addr => addr.id !== addressId));
-    addToast({
-      title: "Address deleted",
-      description: "The address has been removed from your account.",
-      variant: "success",
-    });
-  };
+  const loadUserData = async () => {
+    if (!authState.user) return;
+    
+    setLoading(true);
+    try {
+      const [userOrders, userAddresses, userPaymentMethods] = await Promise.all([
+        OrderService.getUserOrders(authState.user.id),
+        AddressService.getUserAddresses(authState.user.id),
+        PaymentMethodService.getUserPaymentMethods(authState.user.id),
+      ]);
 
-  const handleSetDefaultAddress = (addressId: string) => {
-    setAddresses(addresses.map(addr => ({
-      ...addr,
-      isDefault: addr.id === addressId
-    })));
-    addToast({
-      title: "Default address updated",
-      description: "Your default shipping address has been changed.",
-      variant: "success",
-    });
-  };
-
-  const handleDeleteCard = (cardId: string) => {
-    setPaymentMethods(paymentMethods.filter(card => card.id !== cardId));
-    addToast({
-      title: "Payment method removed",
-      description: "The card has been removed from your account.",
-      variant: "success",
-    });
-  };
-
-  const handleSaveAddress = (addressData: Omit<Address, "id">) => {
-    if (addressModal.mode === "add") {
-      const newAddress: Address = {
-        ...addressData,
-        id: `addr${Date.now()}`,
-      };
-      setAddresses([...addresses, newAddress]);
+      setOrders(userOrders);
+      setAddresses(userAddresses);
+      setPaymentMethods(userPaymentMethods);
+    } catch (error) {
+      console.error("Error loading user data:", error);
       addToast({
-        title: "Address added",
-        description: "New address has been saved to your account.",
-        variant: "success",
+        title: "Error loading data",
+        description: "Failed to load your profile data. Please try again.",
+        variant: "error",
       });
-    } else if (addressModal.address) {
-      setAddresses(addresses.map(addr => 
-        addr.id === addressModal.address!.id 
-          ? { ...addressData, id: addressModal.address!.id }
-          : addr
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCancelOrder = async (orderId: string) => {
+    try {
+      await OrderService.cancelOrder(orderId);
+      setOrders(orders.map(order => 
+        order.id === orderId 
+          ? { ...order, status: "cancelled" as const }
+          : order
       ));
       addToast({
-        title: "Address updated",
-        description: "Your address has been updated successfully.",
+        title: "Order cancelled",
+        description: "Your order has been cancelled successfully.",
         variant: "success",
+      });
+    } catch (error) {
+      addToast({
+        title: "Error",
+        description: "Failed to cancel order. Please try again.",
+        variant: "error",
       });
     }
   };
 
-  const handleSaveCard = (cardData: Omit<PaymentMethod, "id">) => {
-    if (paymentModal.mode === "add") {
-      const newCard: PaymentMethod = {
-        ...cardData,
-        id: `card${Date.now()}`,
-      };
-      setPaymentMethods([...paymentMethods, newCard]);
+  const handleDeleteAddress = async (addressId: string) => {
+    try {
+      await AddressService.deleteAddress(addressId);
+      setAddresses(addresses.filter(addr => addr.id !== addressId));
       addToast({
-        title: "Payment method added",
-        description: "New card has been saved to your account.",
+        title: "Address deleted",
+        description: "The address has been removed from your account.",
         variant: "success",
       });
-    } else if (paymentModal.card) {
-      setPaymentMethods(paymentMethods.map(card => 
-        card.id === paymentModal.card!.id 
-          ? { ...cardData, id: paymentModal.card!.id }
-          : card
-      ));
+    } catch (error) {
       addToast({
-        title: "Payment method updated",
-        description: "Your card details have been updated successfully.",
+        title: "Error",
+        description: "Failed to delete address. Please try again.",
+        variant: "error",
+      });
+    }
+  };
+
+  const handleSetDefaultAddress = async (addressId: string) => {
+    if (!authState.user) return;
+    
+    try {
+      await AddressService.setDefaultAddress(authState.user.id, addressId);
+      setAddresses(addresses.map(addr => ({
+        ...addr,
+        isDefault: addr.id === addressId
+      })));
+      addToast({
+        title: "Default address updated",
+        description: "Your default shipping address has been changed.",
         variant: "success",
+      });
+    } catch (error) {
+      addToast({
+        title: "Error",
+        description: "Failed to update default address. Please try again.",
+        variant: "error",
+      });
+    }
+  };
+
+  const handleDeleteCard = async (cardId: string) => {
+    try {
+      await PaymentMethodService.deletePaymentMethod(cardId);
+      setPaymentMethods(paymentMethods.filter(card => card.id !== cardId));
+      addToast({
+        title: "Payment method removed",
+        description: "The card has been removed from your account.",
+        variant: "success",
+      });
+    } catch (error) {
+      addToast({
+        title: "Error",
+        description: "Failed to delete payment method. Please try again.",
+        variant: "error",
+      });
+    }
+  };
+
+  const handleSaveAddress = async (addressData: Omit<Address, "id">) => {
+    if (!authState.user) return;
+    
+    try {
+      if (addressModal.mode === "add") {
+        const newAddressId = await AddressService.addAddress(authState.user.id, addressData);
+        const newAddress: Address = {
+          ...addressData,
+          id: newAddressId,
+        };
+        setAddresses([newAddress, ...addresses]);
+        addToast({
+          title: "Address added",
+          description: "New address has been saved to your account.",
+          variant: "success",
+        });
+      } else if (addressModal.address) {
+        await AddressService.updateAddress(addressModal.address.id, addressData);
+        setAddresses(addresses.map(addr => 
+          addr.id === addressModal.address!.id 
+            ? { ...addressData, id: addressModal.address!.id }
+            : addr
+        ));
+        addToast({
+          title: "Address updated",
+          description: "Your address has been updated successfully.",
+          variant: "success",
+        });
+      }
+    } catch (error) {
+      addToast({
+        title: "Error",
+        description: "Failed to save address. Please try again.",
+        variant: "error",
+      });
+    }
+  };
+
+  const handleSaveCard = async (cardData: Omit<PaymentMethod, "id">) => {
+    if (!authState.user) return;
+    
+    try {
+      if (paymentModal.mode === "add") {
+        const newCardId = await PaymentMethodService.addPaymentMethod(authState.user.id, cardData);
+        const newCard: PaymentMethod = {
+          ...cardData,
+          id: newCardId,
+        };
+        setPaymentMethods([newCard, ...paymentMethods]);
+        addToast({
+          title: "Payment method added",
+          description: "New card has been saved to your account.",
+          variant: "success",
+        });
+      } else if (paymentModal.card) {
+        await PaymentMethodService.updatePaymentMethod(paymentModal.card.id, cardData);
+        setPaymentMethods(paymentMethods.map(card => 
+          card.id === paymentModal.card!.id 
+            ? { ...cardData, id: paymentModal.card!.id }
+            : card
+        ));
+        addToast({
+          title: "Payment method updated",
+          description: "Your card details have been updated successfully.",
+          variant: "success",
+        });
+      }
+    } catch (error) {
+      addToast({
+        title: "Error",
+        description: "Failed to save payment method. Please try again.",
+        variant: "error",
+      });
+    }
+  };
+
+  const handleUpdateProfile = async (updates: { name?: string; email?: string; phone?: string }) => {
+    if (!authState.user) return;
+    
+    try {
+      await UserService.updateUserProfile(authState.user.id, updates);
+      addToast({
+        title: "Profile updated",
+        description: "Your profile information has been saved successfully.",
+        variant: "success",
+      });
+    } catch (error) {
+      addToast({
+        title: "Error",
+        description: "Failed to update profile. Please try again.",
+        variant: "error",
       });
     }
   };
@@ -176,15 +294,49 @@ export default function ProfilePage() {
     { id: "settings" as TabType, label: PROFILE.accountSettings, icon: Settings },
   ];
 
+  // Show loading state
+  if (!authState.isAuthenticated) {
+    return (
+      <div className="max-w-6xl mx-auto px-6 py-8">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <p>Please login to view your profile.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="max-w-6xl mx-auto px-6 py-8">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
+            <p>Loading your profile...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-6xl mx-auto px-6 py-8">
       <div className="flex items-center gap-4 mb-8">
         <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center">
-          <User className="w-8 h-8 text-gray-600" />
+          {authState.user?.avatar ? (
+            <img 
+              src={authState.user.avatar} 
+              alt={authState.user.name}
+              className="w-16 h-16 rounded-full"
+            />
+          ) : (
+            <User className="w-8 h-8 text-gray-600" />
+          )}
         </div>
         <div>
           <h1 className="text-3xl font-bold">{PROFILE.pageTitle}</h1>
-          <p className="text-gray-600">{userProfile.fullName}</p>
+          <p className="text-gray-600">{authState.user?.name}</p>
         </div>
       </div>
 
@@ -420,8 +572,8 @@ export default function ProfilePage() {
                       </label>
                       <input
                         type="text"
-                        value={userProfile.fullName}
-                        onChange={(e) => setUserProfile({...userProfile, fullName: e.target.value})}
+                        defaultValue={authState.user?.name}
+                        id="profileName"
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                       />
                     </div>
@@ -431,28 +583,21 @@ export default function ProfilePage() {
                       </label>
                       <input
                         type="email"
-                        value={userProfile.email}
-                        onChange={(e) => setUserProfile({...userProfile, email: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-2">
-                        {PROFILE.phoneNumber}
-                      </label>
-                      <input
-                        type="tel"
-                        value={userProfile.phone}
-                        onChange={(e) => setUserProfile({...userProfile, phone: e.target.value})}
+                        defaultValue={authState.user?.email}
+                        id="profileEmail"
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                       />
                     </div>
                   </div>
-                  <Button onClick={() => addToast({
-                    title: "Profile updated",
-                    description: "Your profile information has been saved successfully.",
-                    variant: "success",
-                  })}>
+                  <Button onClick={() => {
+                    const nameInput = document.getElementById('profileName') as HTMLInputElement;
+                    const emailInput = document.getElementById('profileEmail') as HTMLInputElement;
+                    
+                    handleUpdateProfile({
+                      name: nameInput.value,
+                      email: emailInput.value,
+                    });
+                  }}>
                     {PROFILE.update}
                   </Button>
                 </CardContent>

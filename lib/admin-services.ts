@@ -1,0 +1,224 @@
+import {
+  collection,
+  doc,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  getDoc,
+  getDocs,
+  query,
+  where,
+  orderBy,
+  Timestamp,
+  writeBatch,
+} from "firebase/firestore";
+import { db } from "./firebase";
+import { Product } from "./data";
+import { Order } from "./profile-data";
+
+// Collections
+const COLLECTIONS = {
+  USERS: "users",
+  PRODUCTS: "products",
+  ORDERS: "orders",
+  ADDRESSES: "addresses",
+  PAYMENT_METHODS: "paymentMethods",
+} as const;
+
+// ============================================================================
+// ADMIN PRODUCT SERVICES
+// ============================================================================
+
+export class AdminProductService {
+  static async getAllProducts(): Promise<Product[]> {
+    try {
+      const querySnapshot = await getDocs(collection(db, COLLECTIONS.PRODUCTS));
+      return querySnapshot.docs.map(doc => ({
+        id: parseInt(doc.id),
+        ...doc.data(),
+      })) as Product[];
+    } catch (error) {
+      console.error("Error fetching products:", error);
+      return [];
+    }
+  }
+
+  static async addProduct(product: Omit<Product, "id">): Promise<string> {
+    try {
+      const docRef = await addDoc(collection(db, COLLECTIONS.PRODUCTS), {
+        ...product,
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now(),
+      });
+      return docRef.id;
+    } catch (error: any) {
+      throw new Error(error.message);
+    }
+  }
+
+  static async updateProduct(id: string, updates: Partial<Product>): Promise<void> {
+    try {
+      const docRef = doc(db, COLLECTIONS.PRODUCTS, id);
+      await updateDoc(docRef, {
+        ...updates,
+        updatedAt: Timestamp.now(),
+      });
+    } catch (error: any) {
+      throw new Error(error.message);
+    }
+  }
+
+  static async deleteProduct(id: string): Promise<void> {
+    try {
+      const docRef = doc(db, COLLECTIONS.PRODUCTS, id);
+      await deleteDoc(docRef);
+    } catch (error: any) {
+      throw new Error(error.message);
+    }
+  }
+}
+
+// ============================================================================
+// ADMIN ORDER SERVICES
+// ============================================================================
+
+export class AdminOrderService {
+  static async getAllOrders(): Promise<(Order & { userId: string })[]> {
+    try {
+      const q = query(
+        collection(db, COLLECTIONS.ORDERS),
+        orderBy("createdAt", "desc")
+      );
+      const querySnapshot = await getDocs(q);
+      
+      return querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as (Order & { userId: string })[];
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+      return [];
+    }
+  }
+
+  static async createOrder(userId: string, orderData: Omit<Order, "id">): Promise<string> {
+    try {
+      const docRef = await addDoc(collection(db, COLLECTIONS.ORDERS), {
+        ...orderData,
+        userId,
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now(),
+      });
+      return docRef.id;
+    } catch (error: any) {
+      throw new Error(error.message);
+    }
+  }
+
+  static async updateOrderStatus(orderId: string, status: Order["status"]): Promise<void> {
+    try {
+      const docRef = doc(db, COLLECTIONS.ORDERS, orderId);
+      await updateDoc(docRef, {
+        status,
+        updatedAt: Timestamp.now(),
+      });
+    } catch (error: any) {
+      throw new Error(error.message);
+    }
+  }
+
+  static async getOrderById(orderId: string): Promise<(Order & { userId: string }) | null> {
+    try {
+      const docRef = doc(db, COLLECTIONS.ORDERS, orderId);
+      const docSnap = await getDoc(docRef);
+
+      if (docSnap.exists()) {
+        return {
+          id: docSnap.id,
+          ...docSnap.data(),
+        } as (Order & { userId: string });
+      }
+      return null;
+    } catch (error) {
+      console.error("Error fetching order:", error);
+      return null;
+    }
+  }
+
+  static async deleteOrder(orderId: string): Promise<void> {
+    try {
+      const docRef = doc(db, COLLECTIONS.ORDERS, orderId);
+      await deleteDoc(docRef);
+    } catch (error: any) {
+      throw new Error(error.message);
+    }
+  }
+}
+
+// ============================================================================
+// ADMIN USER SERVICES
+// ============================================================================
+
+export class AdminUserService {
+  static async getAllUsers(): Promise<any[]> {
+    try {
+      const querySnapshot = await getDocs(collection(db, COLLECTIONS.USERS));
+      return querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      return [];
+    }
+  }
+
+  static async updateUserRole(userId: string, isAdmin: boolean): Promise<void> {
+    try {
+      const docRef = doc(db, COLLECTIONS.USERS, userId);
+      await updateDoc(docRef, {
+        isAdmin,
+        updatedAt: Timestamp.now(),
+      });
+    } catch (error: any) {
+      throw new Error(error.message);
+    }
+  }
+}
+
+// ============================================================================
+// ADMIN ANALYTICS SERVICES
+// ============================================================================
+
+export class AdminAnalyticsService {
+  static async getDashboardStats() {
+    try {
+      const [productsSnapshot, ordersSnapshot, usersSnapshot] = await Promise.all([
+        getDocs(collection(db, COLLECTIONS.PRODUCTS)),
+        getDocs(collection(db, COLLECTIONS.ORDERS)),
+        getDocs(collection(db, COLLECTIONS.USERS)),
+      ]);
+
+      const orders = ordersSnapshot.docs.map(doc => doc.data());
+      const totalRevenue = orders.reduce((sum, order) => sum + (order.total || 0), 0);
+      const pendingOrders = orders.filter(order => order.status === 'pending').length;
+
+      return {
+        totalProducts: productsSnapshot.size,
+        totalOrders: ordersSnapshot.size,
+        totalUsers: usersSnapshot.size,
+        totalRevenue,
+        pendingOrders,
+      };
+    } catch (error) {
+      console.error("Error fetching dashboard stats:", error);
+      return {
+        totalProducts: 0,
+        totalOrders: 0,
+        totalUsers: 0,
+        totalRevenue: 0,
+        pendingOrders: 0,
+      };
+    }
+  }
+}

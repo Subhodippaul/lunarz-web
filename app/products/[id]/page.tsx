@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { products } from "@/lib/data";
+import { ProductService } from "@/lib/firebase-services";
 import ProductDetails from "@/components/product-details";
 
 interface ProductPageProps {
@@ -8,7 +8,7 @@ interface ProductPageProps {
 
 export default async function ProductPage({ params }: ProductPageProps) {
   const { id } = await params;
-  const product = products.find((p) => p.id === parseInt(id));
+  const product = await ProductService.getProductById(parseInt(id));
   
   if (!product) {
     notFound();

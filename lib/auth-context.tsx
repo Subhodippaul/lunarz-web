@@ -1,5 +1,8 @@
 "use client";
 import { createContext, useContext, useReducer, useEffect, ReactNode } from "react";
+import { onAuthStateChanged, User as FirebaseUser } from "firebase/auth";
+import { auth } from "./firebase";
+import { AuthService } from "./firebase-services";
 
 export interface User {
   id: string;
@@ -7,6 +10,7 @@ export interface User {
   name: string;
   avatar?: string;
   provider: "email" | "google";
+  isAdmin?: boolean;
 }
 
 interface AuthState {
@@ -52,24 +56,6 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
   }
 }
 
-// Mock users database (in real app, this would be in a backend)
-const mockUsers = [
-  {
-    id: "1",
-    email: "john@example.com",
-    password: "password123",
-    name: "John Doe",
-    provider: "email" as const,
-  },
-  {
-    id: "2",
-    email: "jane@example.com",
-    password: "password123",
-    name: "Jane Smith",
-    provider: "email" as const,
-  },
-];
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(authReducer, {
     user: null,
@@ -77,40 +63,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isAuthenticated: false,
   });
 
-  // Check for existing session on mount
+  // Listen to Firebase auth state changes
   useEffect(() => {
-    const savedUser = localStorage.getItem("lunarz_user");
-    if (savedUser) {
-      try {
-        const user = JSON.parse(savedUser);
-        dispatch({ type: "SET_USER", payload: user });
-      } catch (error) {
-        localStorage.removeItem("lunarz_user");
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
+      if (firebaseUser) {
+        try {
+          // Get user data from Firestore
+          const userData = await AuthService.getUserByUid(firebaseUser.uid);
+          dispatch({ type: "SET_USER", payload: userData });
+        } catch (error) {
+          console.error("Error fetching user data:", error);
+          dispatch({ type: "SET_USER", payload: null });
+        }
+      } else {
+        dispatch({ type: "SET_USER", payload: null });
       }
-    }
-    dispatch({ type: "SET_LOADING", payload: false });
+    });
+
+    return () => unsubscribe();
   }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
     dispatch({ type: "SET_LOADING", payload: true });
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    const user = mockUsers.find(u => u.email === email && u.password === password);
-    
-    if (user) {
-      const authUser: User = {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        provider: user.provider,
-      };
-      
-      localStorage.setItem("lunarz_user", JSON.stringify(authUser));
-      dispatch({ type: "SET_USER", payload: authUser });
+    try {
+      const user = await AuthService.loginWithEmail(email, password);
+      dispatch({ type: "SET_USER", payload: user });
       return true;
-    } else {
+    } catch (error) {
+      console.error("Login error:", error);
       dispatch({ type: "SET_LOADING", payload: false });
       return false;
     }
@@ -119,61 +100,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loginWithGoogle = async (): Promise<boolean> => {
     dispatch({ type: "SET_LOADING", payload: true });
     
-    // Simulate Google OAuth flow
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    // Mock Google user data
-    const googleUser: User = {
-      id: `google_${Date.now()}`,
-      email: "user@gmail.com",
-      name: "Google User",
-      avatar: "https://via.placeholder.com/40",
-      provider: "google",
-    };
-    
-    localStorage.setItem("lunarz_user", JSON.stringify(googleUser));
-    dispatch({ type: "SET_USER", payload: googleUser });
-    return true;
+    try {
+      const user = await AuthService.loginWithGoogle();
+      dispatch({ type: "SET_USER", payload: user });
+      return true;
+    } catch (error) {
+      console.error("Google login error:", error);
+      dispatch({ type: "SET_LOADING", payload: false });
+      return false;
+    }
   };
 
   const register = async (email: string, password: string, name: string): Promise<boolean> => {
     dispatch({ type: "SET_LOADING", payload: true });
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Check if user already exists
-    const existingUser = mockUsers.find(u => u.email === email);
-    if (existingUser) {
+    try {
+      const user = await AuthService.registerWithEmail(email, password, name);
+      dispatch({ type: "SET_USER", payload: user });
+      return true;
+    } catch (error) {
+      console.error("Registration error:", error);
       dispatch({ type: "SET_LOADING", payload: false });
       return false;
     }
-    
-    // Create new user
-    const newUser: User = {
-      id: `user_${Date.now()}`,
-      email,
-      name,
-      provider: "email",
-    };
-    
-    // Add to mock database
-    mockUsers.push({
-      id: newUser.id,
-      email,
-      password,
-      name,
-      provider: "email",
-    });
-    
-    localStorage.setItem("lunarz_user", JSON.stringify(newUser));
-    dispatch({ type: "SET_USER", payload: newUser });
-    return true;
   };
 
-  const logout = () => {
-    localStorage.removeItem("lunarz_user");
-    dispatch({ type: "LOGOUT" });
+  const logout = async () => {
+    try {
+      await AuthService.logout();
+      dispatch({ type: "LOGOUT" });
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
   };
 
   return (

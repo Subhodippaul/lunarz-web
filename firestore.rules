@@ -1,0 +1,65 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isResourceOwner() {
+      return isAuthenticated() && request.auth.uid == resource.data.userId;
+    }
+    
+    function isUserOwner() {
+      return isAuthenticated() && request.auth.uid == resource.data.uid;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && 
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+
+    // Users collection - users can only access their own data, admins can access all
+    match /users/{userId} {
+      allow read, write: if isUserOwner() || isAdmin();
+      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.uid;
+    }
+    
+    // Products collection - readable by all, writable by admin users only
+    match /products/{productId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    // Orders collection - only accessible by the order owner or admin
+    match /orders/{orderId} {
+      allow read, write: if isResourceOwner() || isAdmin();
+      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.userId;
+    }
+    
+    // Addresses collection - only accessible by the address owner
+    match /addresses/{addressId} {
+      allow read, write: if isResourceOwner();
+      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.userId;
+    }
+    
+    // Payment methods collection - only accessible by the payment method owner
+    match /paymentMethods/{paymentId} {
+      allow read, write: if isResourceOwner();
+      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.userId;
+    }
+    
+    // Cart items collection - only accessible by the cart owner
+    match /cartItems/{cartId} {
+      allow read, write: if isResourceOwner();
+      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.userId;
+    }
+  }
+}
