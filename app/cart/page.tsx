@@ -36,7 +36,7 @@ export default function CartPage() {
 
   <div className="flex justify-center my-6">
     <Image
-      src="/emptycart.png"
+      src="/empty-cart.png"
       alt="empty cart"
       width={250}
       height={100}
