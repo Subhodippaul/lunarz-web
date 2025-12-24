@@ -82,7 +82,7 @@ export default function ProfilePage() {
       addToast({
         title: "Error loading data",
         description: "Failed to load your profile data. Please try again.",
-        variant: "error",
+        type: "error",
       });
     } finally {
       setLoading(false);
@@ -100,13 +100,13 @@ export default function ProfilePage() {
       addToast({
         title: "Order cancelled",
         description: "Your order has been cancelled successfully.",
-        variant: "success",
+        type: "success",
       });
     } catch (error) {
       addToast({
         title: "Error",
         description: "Failed to cancel order. Please try again.",
-        variant: "error",
+        type: "error",
       });
     }
   };
@@ -118,13 +118,13 @@ export default function ProfilePage() {
       addToast({
         title: "Address deleted",
         description: "The address has been removed from your account.",
-        variant: "success",
+        type: "success",
       });
     } catch (error) {
       addToast({
         title: "Error",
         description: "Failed to delete address. Please try again.",
-        variant: "error",
+        type: "error",
       });
     }
   };
@@ -141,13 +141,13 @@ export default function ProfilePage() {
       addToast({
         title: "Default address updated",
         description: "Your default shipping address has been changed.",
-        variant: "success",
+        type: "success",
       });
     } catch (error) {
       addToast({
         title: "Error",
         description: "Failed to update default address. Please try again.",
-        variant: "error",
+        type: "error",
       });
     }
   };
@@ -159,13 +159,13 @@ export default function ProfilePage() {
       addToast({
         title: "Payment method removed",
         description: "The card has been removed from your account.",
-        variant: "success",
+        type: "success",
       });
     } catch (error) {
       addToast({
         title: "Error",
         description: "Failed to delete payment method. Please try again.",
-        variant: "error",
+        type: "error",
       });
     }
   };
@@ -184,7 +184,7 @@ export default function ProfilePage() {
         addToast({
           title: "Address added",
           description: "New address has been saved to your account.",
-          variant: "success",
+          type: "success",
         });
       } else if (addressModal.address) {
         await AddressService.updateAddress(addressModal.address.id, addressData);
@@ -196,14 +196,14 @@ export default function ProfilePage() {
         addToast({
           title: "Address updated",
           description: "Your address has been updated successfully.",
-          variant: "success",
+          type: "success",
         });
       }
     } catch (error) {
       addToast({
         title: "Error",
         description: "Failed to save address. Please try again.",
-        variant: "error",
+        type: "error",
       });
     }
   };
@@ -222,7 +222,7 @@ export default function ProfilePage() {
         addToast({
           title: "Payment method added",
           description: "New card has been saved to your account.",
-          variant: "success",
+          type: "success",
         });
       } else if (paymentModal.card) {
         await PaymentMethodService.updatePaymentMethod(paymentModal.card.id, cardData);
@@ -234,14 +234,14 @@ export default function ProfilePage() {
         addToast({
           title: "Payment method updated",
           description: "Your card details have been updated successfully.",
-          variant: "success",
+          type: "success",
         });
       }
     } catch (error) {
       addToast({
         title: "Error",
         description: "Failed to save payment method. Please try again.",
-        variant: "error",
+        type: "error",
       });
     }
   };
@@ -254,13 +254,13 @@ export default function ProfilePage() {
       addToast({
         title: "Profile updated",
         description: "Your profile information has been saved successfully.",
-        variant: "success",
+        type: "success",
       });
     } catch (error) {
       addToast({
         title: "Error",
         description: "Failed to update profile. Please try again.",
-        variant: "error",
+        type: "error",
       });
     }
   };

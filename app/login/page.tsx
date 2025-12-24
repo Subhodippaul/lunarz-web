@@ -26,7 +26,7 @@ export default function LoginPage() {
       addToast({
         title: "Missing information",
         description: "Please fill in all fields.",
-        variant: "error",
+        type: "error",
       });
       return;
     }
@@ -37,14 +37,14 @@ export default function LoginPage() {
       addToast({
         title: LOGIN.loginSuccess,
         description: "You have been logged in successfully.",
-        variant: "success",
+        type: "success",
       });
       router.push(NAV_LINKS.home);
     } else {
       addToast({
         title: "Login failed",
         description: LOGIN.invalidCredentials,
-        variant: "error",
+        type: "error",
       });
     }
   };
@@ -56,14 +56,14 @@ export default function LoginPage() {
       addToast({
         title: LOGIN.loginSuccess,
         description: "You have been logged in with Google.",
-        variant: "success",
+        type: "success",
       });
       router.push(NAV_LINKS.home);
     } else {
       addToast({
         title: "Login failed",
         description: "Google login failed. Please try again.",
-        variant: "error",
+        type: "error",
       });
     }
   };

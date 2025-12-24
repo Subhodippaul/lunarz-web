@@ -46,7 +46,7 @@ export default function AddressModal({
       addToast({
         title: "Missing information",
         description: "Please fill in all required fields.",
-        variant: "error",
+        type: "error",
       });
       return;
     }

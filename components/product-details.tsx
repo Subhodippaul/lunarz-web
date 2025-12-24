@@ -28,7 +28,7 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
       addToast({
         title: "Size required",
         description: "Please select a size before adding to cart.",
-        variant: "warning",
+        type: "warning",
       });
       return;
     }
@@ -46,7 +46,7 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
     addToast({
       title: "Added to cart!",
       description: `${product.name} has been added to your cart.`,
-      variant: "success",
+      type: "success",
     });
   };
 
@@ -55,7 +55,7 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
       addToast({
         title: "Size required",
         description: "Please select a size before proceeding to checkout.",
-        variant: "warning",
+        type: "warning",
       });
       return;
     }

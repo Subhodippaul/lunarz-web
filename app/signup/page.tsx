@@ -28,7 +28,7 @@ export default function SignupPage() {
       addToast({
         title: "Missing information",
         description: "Please fill in all fields.",
-        variant: "error",
+        type: "error",
       });
       return;
     }
@@ -37,7 +37,7 @@ export default function SignupPage() {
       addToast({
         title: "Password mismatch",
         description: SIGNUP.passwordMismatch,
-        variant: "error",
+        type: "error",
       });
       return;
     }
@@ -46,7 +46,7 @@ export default function SignupPage() {
       addToast({
         title: "Weak password",
         description: "Password must be at least 6 characters long.",
-        variant: "error",
+        type: "error",
       });
       return;
     }
@@ -57,14 +57,14 @@ export default function SignupPage() {
       addToast({
         title: SIGNUP.signupSuccess,
         description: "Welcome to Lunarz! You can now start shopping.",
-        variant: "success",
+        type: "success",
       });
       router.push(NAV_LINKS.home);
     } else {
       addToast({
         title: "Signup failed",
         description: SIGNUP.emailExists,
-        variant: "error",
+        type: "error",
       });
     }
   };
@@ -76,14 +76,14 @@ export default function SignupPage() {
       addToast({
         title: SIGNUP.signupSuccess,
         description: "Welcome to Lunarz! You can now start shopping.",
-        variant: "success",
+        type: "success",
       });
       router.push(NAV_LINKS.home);
     } else {
       addToast({
         title: "Signup failed",
         description: "Google signup failed. Please try again.",
-        variant: "error",
+        type: "error",
       });
     }
   };
