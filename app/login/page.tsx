@@ -77,8 +77,8 @@ export default function LoginPage() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="space-y-2">
               <Label htmlFor="email">{LOGIN.emailLabel}</Label>
               <Input
                 id="email"
@@ -89,7 +89,7 @@ export default function LoginPage() {
               />
             </div>
 
-            <div>
+            <div className="space-y-2">
               <Label htmlFor="password">{LOGIN.passwordLabel}</Label>
               <Input
                 id="password"

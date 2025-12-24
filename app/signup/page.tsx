@@ -98,7 +98,7 @@ export default function SignupPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
+            <div className="space-y-2">
               <Label htmlFor="name">{SIGNUP.nameLabel}</Label>
               <Input
                 id="name"
@@ -109,7 +109,7 @@ export default function SignupPage() {
               />
             </div>
 
-            <div>
+            <div className="space-y-2">
               <Label htmlFor="email">{SIGNUP.emailLabel}</Label>
               <Input
                 id="email"
@@ -120,7 +120,7 @@ export default function SignupPage() {
               />
             </div>
 
-            <div>
+            <div className="space-y-2">
               <Label htmlFor="password">{SIGNUP.passwordLabel}</Label>
               <Input
                 id="password"
@@ -131,7 +131,7 @@ export default function SignupPage() {
               />
             </div>
 
-            <div>
+            <div className="space-y-2">
               <Label htmlFor="confirmPassword">{SIGNUP.confirmPasswordLabel}</Label>
               <Input
                 id="confirmPassword"

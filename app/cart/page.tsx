@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Alert, AlertDescription, AlertIcon } from "@/components/ui/alert";
 import { CART, NAV_LINKS, CURRENCY } from "@/lib/constants";
+import Image from "next/image";
 
 export default function CartPage() {
   const { state, dispatch } = useCart();
@@ -31,17 +32,32 @@ export default function CartPage() {
   if (state.items.length === 0) {
     return (
       <div className="max-w-4xl mx-auto px-6 py-12 text-center">
-        <h1 className="text-3xl font-bold mb-4">{CART.pageTitle}</h1>
-        <Alert variant="info" className="mb-6">
-          <AlertIcon variant="info" />
-          <AlertDescription>
-            {CART.emptyCart}. Start shopping to add items to your cart.
-          </AlertDescription>
-        </Alert>
-        <Link href={NAV_LINKS.shop}>
-          <Button>{CART.continueShopping}</Button>
-        </Link>
-      </div>
+  <h1 className="text-3xl font-bold mb-4">{CART.pageTitle}</h1>
+
+  <div className="flex justify-center my-6">
+    <Image
+      src="/emptycart.png"
+      alt="empty cart"
+      width={250}
+      height={100}
+    />
+  </div>
+
+  <Alert
+    variant="info"
+    className="mb-6 flex gap-2 justify-center"
+  >
+    <AlertIcon variant="info" />
+    <AlertDescription className="m-0">
+      {CART.emptyCart}. Start shopping to add items to your cart.
+    </AlertDescription>
+  </Alert>
+
+  <Link href={NAV_LINKS.shop}>
+    <Button>{CART.continueShopping}</Button>
+  </Link>
+</div>
+
     );
   }
 
