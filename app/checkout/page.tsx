@@ -26,7 +26,6 @@ export default function CheckoutPage() {
       addToast({
         title: "Login required",
         description: AUTH.loginRequiredCheckout,
-        variant: "warning",
         duration: 5000,
       });
       router.push(NAV_LINKS.login);
@@ -67,7 +66,6 @@ export default function CheckoutPage() {
     addToast({
       title: "Order placed successfully!",
       description: "Your order has been confirmed and will be processed soon.",
-      variant: "success",
       duration: 5000,
     });
     
