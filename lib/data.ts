@@ -11,6 +11,24 @@ export interface Product {
   care: string;
   origin: string;
   manufacturer: string;
+  // Inventory management fields
+  stock?: number; // Total stock quantity
+  lowStockThreshold?: number; // Alert when stock falls below this
+  sku?: string; // Stock Keeping Unit
+  barcode?: string; // Product barcode
+  stockHistory?: StockEntry[]; // Stock movement history
+}
+
+export interface StockEntry {
+  id: string;
+  productId: string;
+  type: 'in' | 'out' | 'adjustment'; // Stock movement type
+  quantity: number; // Positive for in/adjustment up, negative for out/adjustment down
+  reason: string; // Reason for stock change
+  reference?: string; // Order ID, supplier invoice, etc.
+  date: string; // ISO date string
+  userId: string; // Admin user who made the change
+  notes?: string; // Additional notes
 }
 
 export const products: Product[] = [
@@ -26,7 +44,11 @@ export const products: Product[] = [
     material: "100% Cotton, Machine Wash",
     care: "Machine wash cold, tumble dry low",
     origin: "India (and proud)",
-    manufacturer: "The Souled Store Pvt. Ltd."
+    manufacturer: "The Souled Store Pvt. Ltd.",
+    stock: 45,
+    lowStockThreshold: 10,
+    sku: "TSH-001-ANI",
+    barcode: "1234567890123"
   },
   { 
     id: "2", 
@@ -40,7 +62,11 @@ export const products: Product[] = [
     material: "100% Cotton, Machine Wash",
     care: "Machine wash cold, tumble dry low",
     origin: "India (and proud)",
-    manufacturer: "The Souled Store Pvt. Ltd."
+    manufacturer: "The Souled Store Pvt. Ltd.",
+    stock: 8,
+    lowStockThreshold: 10,
+    sku: "TSH-002-FB",
+    barcode: "1234567890124"
   },
   { 
     id: "3", 
@@ -54,7 +80,11 @@ export const products: Product[] = [
     material: "100% Cotton, Machine Wash",
     care: "Machine wash cold, tumble dry low",
     origin: "India (and proud)",
-    manufacturer: "The Souled Store Pvt. Ltd."
+    manufacturer: "The Souled Store Pvt. Ltd.",
+    stock: 0,
+    lowStockThreshold: 5,
+    sku: "TSH-003-PF",
+    barcode: "1234567890125"
   },
   { 
     id: "4", 
@@ -67,7 +97,11 @@ export const products: Product[] = [
     material: "100% Cotton, Machine Wash",
     care: "Machine wash cold, tumble dry low",
     origin: "India (and proud)",
-    manufacturer: "The Souled Store Pvt. Ltd."
+    manufacturer: "The Souled Store Pvt. Ltd.",
+    stock: 25,
+    lowStockThreshold: 15,
+    sku: "TSH-004-SW",
+    barcode: "1234567890126"
   },
   { 
     id: "5", 
@@ -80,6 +114,10 @@ export const products: Product[] = [
     material: "100% Cotton, Machine Wash",
     care: "Machine wash cold, tumble dry low",
     origin: "India (and proud)",
-    manufacturer: "The Souled Store Pvt. Ltd."
+    manufacturer: "The Souled Store Pvt. Ltd.",
+    stock: 3,
+    lowStockThreshold: 10,
+    sku: "TSH-005-MIN",
+    barcode: "1234567890127"
   },
 ];

@@ -1,7 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
 import { AdminAnalyticsService } from "@/lib/admin-services";
-import { Package, ShoppingCart, Users, DollarSign, Clock } from "lucide-react";
+import { ChatService } from "@/lib/chat-services";
+import { Package, ShoppingCart, Users, DollarSign, Clock, MessageCircle } from "lucide-react";
 
 interface DashboardStats {
   totalProducts: number;
@@ -9,6 +10,8 @@ interface DashboardStats {
   totalUsers: number;
   totalRevenue: number;
   pendingOrders: number;
+  activeChatSessions: number;
+  totalChatSessions: number;
 }
 
 import { DashboardSkeleton } from "@/components/admin/skeleton-loaders";
@@ -20,14 +23,28 @@ export default function AdminDashboard() {
     totalUsers: 0,
     totalRevenue: 0,
     pendingOrders: 0,
+    activeChatSessions: 0,
+    totalChatSessions: 0,
   });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const dashboardStats = await AdminAnalyticsService.getDashboardStats();
-        setStats(dashboardStats);
+        const [dashboardStats, chatSessions] = await Promise.all([
+          AdminAnalyticsService.getDashboardStats(),
+          ChatService.getAdminChatSessions(),
+        ]);
+        
+        const activeChatSessions = chatSessions.filter(session => 
+          session.status === 'active' || session.status === 'waiting'
+        ).length;
+        
+        setStats({
+          ...dashboardStats,
+          activeChatSessions,
+          totalChatSessions: chatSessions.length,
+        });
       } catch (error) {
         console.error("Error fetching dashboard stats:", error);
       } finally {
@@ -58,6 +75,12 @@ export default function AdminDashboard() {
       color: "bg-purple-500",
     },
     {
+      title: "Active Chats",
+      value: stats.activeChatSessions,
+      icon: MessageCircle,
+      color: "bg-orange-500",
+    },
+    {
       title: "Total Revenue",
       value: `₹${stats.totalRevenue.toLocaleString()}`,
       icon: DollarSign,
@@ -83,7 +106,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 sm:gap-6 mb-6 sm:mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 sm:gap-6 mb-6 sm:mb-8">
         {statCards.map((card, index) => (
           <div key={index} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
             <div className="flex items-center">

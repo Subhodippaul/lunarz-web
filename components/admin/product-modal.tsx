@@ -23,6 +23,10 @@ export default function ProductModal({ isOpen, onClose, product }: ProductModalP
     images: [""],
     variants: [""],
     sizes: [""],
+    stock: 0,
+    lowStockThreshold: 10,
+    sku: "",
+    barcode: "",
   });
   const [loading, setLoading] = useState(false);
 
@@ -40,6 +44,10 @@ export default function ProductModal({ isOpen, onClose, product }: ProductModalP
         images: product.images.length > 0 ? product.images : [""],
         variants: product.variants && product.variants.length > 0 ? product.variants : [""],
         sizes: product.sizes.length > 0 ? product.sizes : [""],
+        stock: product.stock || 0,
+        lowStockThreshold: product.lowStockThreshold || 10,
+        sku: product.sku || "",
+        barcode: product.barcode || "",
       });
     } else {
       setFormData({
@@ -54,6 +62,10 @@ export default function ProductModal({ isOpen, onClose, product }: ProductModalP
         images: [""],
         variants: [""],
         sizes: [""],
+        stock: 0,
+        lowStockThreshold: 10,
+        sku: "",
+        barcode: "",
       });
     }
   }, [product]);
@@ -109,7 +121,7 @@ export default function ProductModal({ isOpen, onClose, product }: ProductModalP
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[9999] overflow-y-auto">
+    <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
         <div className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" onClick={onClose} />
 
@@ -235,6 +247,81 @@ export default function ProductModal({ isOpen, onClose, product }: ProductModalP
                   onChange={(e) => setFormData(prev => ({ ...prev, manufacturer: e.target.value }))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
+              </div>
+            </div>
+
+            {/* Inventory Management Fields */}
+            <div className="border-t border-gray-200 pt-6">
+              <h4 className="text-lg font-medium text-gray-900 mb-4">Inventory Management</h4>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Initial Stock Quantity
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={formData.stock}
+                    onChange={(e) => setFormData(prev => ({ ...prev, stock: parseInt(e.target.value) || 0 }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="0"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Set initial stock quantity. Use Stock Management for future updates.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Low Stock Threshold
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={formData.lowStockThreshold}
+                    onChange={(e) => setFormData(prev => ({ ...prev, lowStockThreshold: parseInt(e.target.value) || 10 }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="10"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Alert when stock falls below this number.
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    SKU (Stock Keeping Unit)
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.sku}
+                    onChange={(e) => setFormData(prev => ({ ...prev, sku: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="e.g., TSH-001-BLK-L"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Unique identifier for inventory tracking.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Barcode
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.barcode}
+                    onChange={(e) => setFormData(prev => ({ ...prev, barcode: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="e.g., 1234567890123"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Product barcode for scanning.
+                  </p>
+                </div>
               </div>
             </div>
 

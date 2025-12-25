@@ -1,11 +1,10 @@
 import "./globals.css";
 import { ReactNode } from "react";
 import { Poppins } from "next/font/google";
-import Navbar from "@/components/navbar";
-import Footer from "@/components/footer";
 import { CartProvider } from "@/lib/cart-context";
 import { AuthProvider } from "@/lib/auth-context";
 import { CouponProvider } from "@/lib/coupon-context";
+import { ChatProvider } from "@/lib/chat-context";
 import { ToastProvider } from "@/components/ui/toast";
 import ConditionalLayout from "@/components/conditional-layout";
 
@@ -23,9 +22,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <AuthProvider>
             <CartProvider>
               <CouponProvider>
-                <ConditionalLayout>
-                  {children}
-                </ConditionalLayout>
+                <ChatProvider>
+                  <ConditionalLayout>
+                    {children}
+                  </ConditionalLayout>
+                </ChatProvider>
               </CouponProvider>
             </CartProvider>
           </AuthProvider>
