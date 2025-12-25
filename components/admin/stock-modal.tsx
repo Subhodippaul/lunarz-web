@@ -65,7 +65,7 @@ export default function StockModal({ isOpen, onClose, product, onStockUpdate }: 
         formData.type,
         formData.quantity,
         formData.reason,
-        state.user.uid,
+        state.user.id,
         formData.reference || undefined,
         formData.notes || undefined
       );
