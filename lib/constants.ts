@@ -284,3 +284,65 @@ export const PROFILE = {
   cardDeleted: "Card deleted successfully",
   profileUpdated: "Profile updated successfully",
 } as const;
+// Coupon & Discount System
+export const COUPONS = {
+  pageTitle: "Coupons & Discounts",
+  applyCoupon: "Apply Coupon",
+  removeCoupon: "Remove Coupon",
+  couponCode: "Coupon Code",
+  enterCouponCode: "Enter coupon code",
+  couponApplied: "Coupon Applied!",
+  couponRemoved: "Coupon Removed",
+  invalidCoupon: "Invalid or expired coupon code",
+  couponNotApplicable: "This coupon cannot be applied to your current cart",
+  discount: "Discount",
+  freeItems: "Free Items:",
+  
+  // Admin
+  createCoupon: "Create Coupon",
+  editCoupon: "Edit Coupon",
+  deleteCoupon: "Delete Coupon",
+  couponStats: "Coupon Statistics",
+  couponDetails: "Coupon Details",
+  totalUsage: "Total Usage",
+  totalDiscount: "Total Discount Given",
+  recentUsage: "Recent Usage",
+  
+  // Coupon Types
+  percentageOff: "Percentage Off",
+  fixedAmountOff: "Fixed Amount Off",
+  buyXGetY: "Buy X Get Y",
+  
+  // Status
+  active: "Active",
+  inactive: "Inactive",
+  expired: "Expired",
+  scheduled: "Scheduled",
+  usedUp: "Used Up",
+  
+  // Form Fields
+  couponCodeLabel: "Coupon Code",
+  displayName: "Display Name",
+  description: "Description",
+  discountType: "Discount Type",
+  percentage: "Percentage (%)",
+  amount: "Amount (₹)",
+  buyQuantity: "Buy Quantity",
+  getQuantity: "Get Quantity (Free)",
+  validFrom: "Valid From",
+  validTo: "Valid To",
+  minOrderAmount: "Minimum Order Amount",
+  maxDiscount: "Maximum Discount",
+  usageLimit: "Usage Limit",
+  unlimitedUsage: "0 = unlimited",
+  
+  // Messages
+  couponCreated: "Coupon created successfully",
+  couponUpdated: "Coupon updated successfully",
+  couponDeleted: "Coupon deleted successfully",
+  failedToCreateCoupon: "Failed to create coupon",
+  failedToUpdateCoupon: "Failed to update coupon",
+  failedToDeleteCoupon: "Failed to delete coupon",
+  failedToApplyCoupon: "Failed to apply coupon. Please try again.",
+  loginToApplyCoupon: "Please login to apply coupons",
+} as const;

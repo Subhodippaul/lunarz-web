@@ -5,6 +5,7 @@ import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
 import { CartProvider } from "@/lib/cart-context";
 import { AuthProvider } from "@/lib/auth-context";
+import { CouponProvider } from "@/lib/coupon-context";
 import { ToastProvider } from "@/components/ui/toast";
 
 const poppins = Poppins({
@@ -20,9 +21,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <ToastProvider>
           <AuthProvider>
             <CartProvider>
-              <Navbar />
-              <main className="flex-1">{children}</main>
-              <Footer />
+              <CouponProvider>
+                <Navbar />
+                <main className="flex-1">{children}</main>
+                <Footer />
+              </CouponProvider>
             </CartProvider>
           </AuthProvider>
         </ToastProvider>

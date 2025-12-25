@@ -1,16 +1,19 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Minus, Plus, Trash2 } from "lucide-react";
+import { Minus, Plus, X } from "lucide-react";
 import { useCart } from "@/lib/cart-context";
+import { useCoupon } from "@/lib/coupon-context";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Alert, AlertDescription, AlertIcon } from "@/components/ui/alert";
 import { CART, NAV_LINKS, CURRENCY } from "@/lib/constants";
 import Image from "next/image";
+import CouponSection from "@/components/coupon-section";
 
 export default function CartPage() {
   const { state, dispatch } = useCart();
+  const { state: couponState } = useCoupon();
   const router = useRouter();
 
   const updateQuantity = (id: number, newQuantity: number) => {
@@ -28,6 +31,11 @@ export default function CartPage() {
   const clearCart = () => {
     dispatch({ type: "CLEAR_CART" });
   };
+
+  // Calculate totals with coupon discount
+  const subtotal = state.total;
+  const discountAmount = couponState.discountCalculation?.discountAmount || 0;
+  const finalTotal = subtotal - discountAmount;
 
   if (state.items.length === 0) {
     return (
@@ -74,8 +82,18 @@ export default function CartPage() {
         {/* Cart Items */}
         <div className="lg:col-span-2 space-y-4">
           {state.items.map((item) => (
-            <Card key={item.id}>
+            <Card key={item.id} className="relative">
               <CardContent className="p-6">
+                {/* Close Button - Top Right */}
+                <Button
+                  size="icon"
+                  onClick={() => removeItem(item.id)}
+                  className="absolute top-2 right-2 w-6 h-6 rounded-full bg-gray-200 hover:bg-red-100 text-gray-600 hover:text-red-600 z-10"
+                  variant="ghost"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+
                 <div className="flex gap-4">
                   {/* Product Image */}
                   <div className="w-24 h-24 bg-gray-100 rounded-lg shrink-0">
@@ -85,50 +103,38 @@ export default function CartPage() {
                   </div>
 
                   {/* Product Details */}
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-0">
                     <h3 className="font-semibold text-lg mb-1">{item.product.name}</h3>
+                    <p className="text-gray-600 text-xs mb-2">Sold by: Lunarz India</p>
                     <p className="text-gray-600 text-sm mb-2">{CURRENCY.symbol}{item.product.price}</p>
-                    
                     <div className="flex gap-4 text-sm text-gray-600 mb-3">
                       <span>{CART.size} {item.selectedSize}</span>
                       {item.selectedVariant && <span>{CART.color} {item.selectedVariant}</span>}
                     </div>
 
-                    <div className="flex items-center justify-between">
-                      {/* Quantity Controls */}
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                        >
-                          <Minus className="w-4 h-4" />
-                        </Button>
-                        <span className="w-8 text-center">{item.quantity}</span>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                        >
-                          <Plus className="w-4 h-4" />
-                        </Button>
-                      </div>
-
-                      {/* Remove Button */}
+                    {/* Quantity Controls */}
+                    <div className="flex items-center gap-2">
                       <Button
-                        variant="ghost"
+                        variant="outline"
                         size="sm"
-                        onClick={() => removeItem(item.id)}
-                        className="text-red-500 hover:text-red-700"
+                        onClick={() => updateQuantity(item.id, item.quantity - 1)}
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Minus className="w-4 h-4" />
+                      </Button>
+                      <span className="w-8 text-center">{item.quantity}</span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                      >
+                        <Plus className="w-4 h-4" />
                       </Button>
                     </div>
                   </div>
 
-                  {/* Item Total */}
-                  <div className="text-right">
-                    <p className="font-semibold text-lg">
+                  {/* Item Total - Fixed overflow */}
+                  <div className="text-right shrink-0 min-w-0">
+                    <p className="font-semibold text-lg whitespace-nowrap">
                       {CURRENCY.symbol}{(item.product.price * item.quantity).toLocaleString()}
                     </p>
                   </div>
@@ -140,6 +146,20 @@ export default function CartPage() {
 
         {/* Order Summary */}
         <div className="lg:col-span-1">
+          {/* Coupon Section */}
+          <CouponSection 
+            cartItems={state.items.map(item => ({
+              id: item.id,
+              product: { 
+                id: item.product.id?.toString() || item.id.toString(), 
+                price: item.product.price,
+                name: item.product.name 
+              },
+              quantity: item.quantity
+            }))}
+            subtotal={subtotal}
+          />
+
           <Card className="sticky top-24">
             <CardContent className="p-6">
               <h2 className="text-xl font-semibold mb-4">{CART.orderSummary}</h2>
@@ -147,8 +167,16 @@ export default function CartPage() {
               <div className="space-y-3 mb-4">
                 <div className="flex justify-between">
                   <span>{CART.subtotal} ({state.items.reduce((sum, item) => sum + item.quantity, 0)} {CART.items})</span>
-                  <span>{CURRENCY.symbol}{state.total.toLocaleString()}</span>
+                  <span>{CURRENCY.symbol}{subtotal.toLocaleString()}</span>
                 </div>
+                
+                {discountAmount > 0 && (
+                  <div className="flex justify-between text-green-600">
+                    <span>Discount ({couponState.appliedCoupon?.code})</span>
+                    <span>-{CURRENCY.symbol}{discountAmount.toLocaleString()}</span>
+                  </div>
+                )}
+                
                 <div className="flex justify-between">
                   <span>{CART.shipping}</span>
                   <span className="text-green-600">{CART.freeShipping}</span>
@@ -156,7 +184,7 @@ export default function CartPage() {
                 <div className="border-t pt-3">
                   <div className="flex justify-between font-semibold text-lg">
                     <span>{CART.total}</span>
-                    <span>{CURRENCY.symbol}{state.total.toLocaleString()}</span>
+                    <span>{CURRENCY.symbol}{finalTotal.toLocaleString()}</span>
                   </div>
                 </div>
               </div>
