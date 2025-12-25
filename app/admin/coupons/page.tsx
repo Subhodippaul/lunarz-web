@@ -132,9 +132,9 @@ export default function CouponsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Coupons & Discounts</h1>
-        <Button onClick={() => setIsModalOpen(true)}>
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
+        <h1 className="text-2xl sm:text-3xl font-bold">Coupons & Discounts</h1>
+        <Button onClick={() => setIsModalOpen(true)} className="w-full sm:w-auto">
           <Plus className="w-4 h-4 mr-2" />
           Add Coupon
         </Button>
@@ -151,7 +151,7 @@ export default function CouponsPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {coupons.map((coupon) => {
             const status = getCouponStatus(coupon);
             return (

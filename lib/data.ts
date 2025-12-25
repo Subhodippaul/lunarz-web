@@ -1,5 +1,5 @@
 export interface Product {
-  id: number;
+  id: string; // Changed from number to string for Firestore compatibility
   name: string;
   price: number;
   category: string;
@@ -15,7 +15,7 @@ export interface Product {
 
 export const products: Product[] = [
   { 
-    id: 1, 
+    id: "1", 
     name: "Anime Oversized Tee", 
     price: 999,
     category: "T-Shirts",
@@ -29,7 +29,7 @@ export const products: Product[] = [
     manufacturer: "The Souled Store Pvt. Ltd."
   },
   { 
-    id: 2, 
+    id: "2", 
     name: "Football Fan Tee", 
     price: 899,
     category: "T-Shirts",
@@ -43,7 +43,7 @@ export const products: Product[] = [
     manufacturer: "The Souled Store Pvt. Ltd."
   },
   { 
-    id: 3, 
+    id: "3", 
     name: "Pink Floyd Tee", 
     price: 1099,
     category: "T-Shirts",
@@ -57,7 +57,7 @@ export const products: Product[] = [
     manufacturer: "The Souled Store Pvt. Ltd."
   },
   { 
-    id: 4, 
+    id: "4", 
     name: "Streetwear Black Tee", 
     price: 949,
     category: "T-Shirts",
@@ -70,7 +70,7 @@ export const products: Product[] = [
     manufacturer: "The Souled Store Pvt. Ltd."
   },
   { 
-    id: 5, 
+    id: "5", 
     name: "Minimal White Tee", 
     price: 799,
     category: "T-Shirts",

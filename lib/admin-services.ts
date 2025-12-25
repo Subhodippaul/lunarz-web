@@ -34,7 +34,7 @@ export class AdminProductService {
     try {
       const querySnapshot = await getDocs(collection(db, COLLECTIONS.PRODUCTS));
       return querySnapshot.docs.map(doc => ({
-        id: parseInt(doc.id),
+        id: doc.id, // Use string ID from Firestore
         ...doc.data(),
       })) as Product[];
     } catch (error) {

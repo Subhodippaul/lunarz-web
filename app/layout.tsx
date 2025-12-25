@@ -7,6 +7,7 @@ import { CartProvider } from "@/lib/cart-context";
 import { AuthProvider } from "@/lib/auth-context";
 import { CouponProvider } from "@/lib/coupon-context";
 import { ToastProvider } from "@/components/ui/toast";
+import ConditionalLayout from "@/components/conditional-layout";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -22,9 +23,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <AuthProvider>
             <CartProvider>
               <CouponProvider>
-                <Navbar />
-                <main className="flex-1">{children}</main>
-                <Footer />
+                <ConditionalLayout>
+                  {children}
+                </ConditionalLayout>
               </CouponProvider>
             </CartProvider>
           </AuthProvider>

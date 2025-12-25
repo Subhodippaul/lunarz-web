@@ -5,20 +5,37 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useCart } from "@/lib/cart-context";
+import { useCoupon } from "@/lib/coupon-context";
 import { useAuth } from "@/lib/auth-context";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/ui/toast";
 import { Alert, AlertDescription, AlertIcon } from "@/components/ui/alert";
+import { getShippingSettings, calculateShippingCost, type ShippingSettings } from "@/lib/shipping-services";
 import { CHECKOUT, CURRENCY, NAV_LINKS, AUTH } from "@/lib/constants";
 
 export default function CheckoutPage() {
   const { state } = useCart();
+  const { state: couponState } = useCoupon();
   const { state: authState } = useAuth();
   const router = useRouter();
   const { addToast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
   const [sameAsBilling, setSameAsBilling] = useState(true);
   const [paymentMethod, setPaymentMethod] = useState("creditCard");
+  const [shippingSettings, setShippingSettings] = useState<ShippingSettings | null>(null);
+
+  // Load shipping settings
+  useEffect(() => {
+    const loadShippingSettings = async () => {
+      try {
+        const settings = await getShippingSettings();
+        setShippingSettings(settings);
+      } catch (error) {
+        console.error("Error loading shipping settings:", error);
+      }
+    };
+    loadShippingSettings();
+  }, []);
 
   // Check authentication
   useEffect(() => {
@@ -64,17 +81,27 @@ export default function CheckoutPage() {
     await new Promise(resolve => setTimeout(resolve, 2000));
     
     addToast({
+      type: "success",
       title: "Order placed successfully!",
-      description: "Your order has been confirmed and will be processed soon.",
-      duration: 5000,
+      description: "Your order has been confirmed and will be processed soon."
     });
     
     setIsProcessing(false);
     router.push("/");
   };
 
-  const tax = Math.round(state.total * 0.18); // 18% GST
-  const finalTotal = state.total + tax;
+  // Calculate totals with coupon and shipping
+  const subtotal = state.total;
+  const discountAmount = couponState.discountCalculation?.discountAmount || 0;
+  const subtotalAfterDiscount = subtotal - discountAmount;
+  
+  // Calculate shipping cost based on payment method and settings
+  const shippingCost = shippingSettings 
+    ? calculateShippingCost(subtotalAfterDiscount, paymentMethod, shippingSettings)
+    : 0;
+  
+  const tax = Math.round(subtotalAfterDiscount * 0.18); // 18% GST
+  const finalTotal = subtotalAfterDiscount + shippingCost + tax;
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-8">
@@ -275,12 +302,31 @@ export default function CheckoutPage() {
               <div className="border-t pt-4 space-y-2">
                 <div className="flex justify-between">
                   <span>{CHECKOUT.subtotal}</span>
-                  <span>{CURRENCY.symbol}{state.total.toLocaleString()}</span>
+                  <span>{CURRENCY.symbol}{subtotal.toLocaleString()}</span>
                 </div>
+                
+                {discountAmount > 0 && (
+                  <div className="flex justify-between text-green-600">
+                    <span>Discount ({couponState.appliedCoupon?.code})</span>
+                    <span>-{CURRENCY.symbol}{discountAmount.toLocaleString()}</span>
+                  </div>
+                )}
+                
                 <div className="flex justify-between">
                   <span>{CHECKOUT.shipping}</span>
-                  <span className="text-green-600">{CHECKOUT.free}</span>
+                  {shippingCost === 0 ? (
+                    <span className="text-green-600">{CHECKOUT.free}</span>
+                  ) : (
+                    <span>{CURRENCY.symbol}{shippingCost.toLocaleString()}</span>
+                  )}
                 </div>
+                
+                {paymentMethod === 'cod' && shippingCost > 0 && (
+                  <div className="text-xs text-orange-600 bg-orange-50 p-2 rounded">
+                    COD orders below ₹{shippingSettings?.freeShippingThreshold} have ₹{shippingSettings?.codShippingCharge} shipping charge
+                  </div>
+                )}
+                
                 <div className="flex justify-between">
                   <span>{CHECKOUT.tax} (18%)</span>
                   <span>{CURRENCY.symbol}{tax.toLocaleString()}</span>

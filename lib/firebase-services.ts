@@ -163,7 +163,7 @@ export class ProductService {
     try {
       const querySnapshot = await getDocs(collection(db, COLLECTIONS.PRODUCTS));
       return querySnapshot.docs.map(doc => ({
-        id: parseInt(doc.id),
+        id: doc.id, // Use string ID from Firestore
         ...doc.data(),
       })) as Product[];
     } catch (error) {
@@ -172,14 +172,14 @@ export class ProductService {
     }
   }
 
-  static async getProductById(id: number): Promise<Product | null> {
+  static async getProductById(id: string): Promise<Product | null> {
     try {
-      const docRef = doc(db, COLLECTIONS.PRODUCTS, id.toString());
+      const docRef = doc(db, COLLECTIONS.PRODUCTS, id);
       const docSnap = await getDoc(docRef);
 
       if (docSnap.exists()) {
         return {
-          id: parseInt(docSnap.id),
+          id: docSnap.id,
           ...docSnap.data(),
         } as Product;
       }
@@ -203,9 +203,9 @@ export class ProductService {
     }
   }
 
-  static async updateProduct(id: number, updates: Partial<Product>): Promise<void> {
+  static async updateProduct(id: string, updates: Partial<Product>): Promise<void> {
     try {
-      const docRef = doc(db, COLLECTIONS.PRODUCTS, id.toString());
+      const docRef = doc(db, COLLECTIONS.PRODUCTS, id);
       await updateDoc(docRef, {
         ...updates,
         updatedAt: Timestamp.now(),
@@ -215,9 +215,9 @@ export class ProductService {
     }
   }
 
-  static async deleteProduct(id: number): Promise<void> {
+  static async deleteProduct(id: string): Promise<void> {
     try {
-      const docRef = doc(db, COLLECTIONS.PRODUCTS, id.toString());
+      const docRef = doc(db, COLLECTIONS.PRODUCTS, id);
       await deleteDoc(docRef);
     } catch (error: any) {
       throw new Error(error.message);

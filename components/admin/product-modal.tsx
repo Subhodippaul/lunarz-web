@@ -71,7 +71,7 @@ export default function ProductModal({ isOpen, onClose, product }: ProductModalP
       };
 
       if (product) {
-        await AdminProductService.updateProduct(product.id.toString(), productData);
+        await AdminProductService.updateProduct(product.id, productData);
       } else {
         await AdminProductService.addProduct(productData);
       }

@@ -69,14 +69,14 @@ export default function AdminProducts() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Products</h1>
-          <p className="text-gray-600 mt-2">Manage your product catalog</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Products</h1>
+          <p className="text-gray-600 mt-1">Manage your product catalog</p>
         </div>
         <button
           onClick={handleAddProduct}
-          className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          className="flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors w-full sm:w-auto"
         >
           <Plus className="h-5 w-5 mr-2" />
           Add Product
@@ -97,8 +97,8 @@ export default function AdminProducts() {
         </div>
       </div>
 
-      {/* Products Table */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+      {/* Products Table - Desktop */}
+      <div className="hidden md:block bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
@@ -125,7 +125,7 @@ export default function AdminProducts() {
                 <tr key={product.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
-                      <div className="flex-shrink-0 h-12 w-12">
+                      <div className="shrink-0 h-12 w-12">
                         <img
                           className="h-12 w-12 rounded-lg object-cover"
                           src={product.images[0] || "/placeholder.jpg"}
@@ -148,7 +148,7 @@ export default function AdminProducts() {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    ₹{product.price}
+                    ₹{product.price.toLocaleString()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {product.sizes.join(", ")}
@@ -174,6 +174,52 @@ export default function AdminProducts() {
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* Products Cards - Mobile */}
+      <div className="md:hidden space-y-4">
+        {filteredProducts.map((product) => (
+          <div key={product.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+            <div className="flex items-start space-x-4">
+              <img
+                className="h-16 w-16 rounded-lg object-cover shrink-0"
+                src={product.images[0] || "/placeholder.jpg"}
+                alt={product.name}
+              />
+              <div className="flex-1 min-w-0">
+                <h3 className="text-sm font-medium text-gray-900 truncate">
+                  {product.name}
+                </h3>
+                <p className="text-xs text-gray-500 mt-1">ID: {product.id}</p>
+                <div className="flex items-center mt-2 space-x-2">
+                  <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                    {product.category}
+                  </span>
+                  <span className="text-sm font-medium text-gray-900">
+                    ₹{product.price.toLocaleString()}
+                  </span>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Sizes: {product.sizes.join(", ")}
+                </p>
+              </div>
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => handleEditProduct(product)}
+                  className="text-blue-600 hover:text-blue-900 p-2 rounded"
+                >
+                  <Edit className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => handleDeleteProduct(product.id.toString())}
+                  className="text-red-600 hover:text-red-900 p-2 rounded"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
 
       {filteredProducts.length === 0 && !loading && (
