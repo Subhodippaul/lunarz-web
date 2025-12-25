@@ -508,7 +508,7 @@ export class PaymentMethodService {
 export interface CartItem {
   id: string;
   userId: string;
-  productId: number;
+  productId: string; // Changed from number to string to match Product.id
   quantity: number;
   selectedSize: string;
   selectedVariant?: string;
@@ -538,7 +538,7 @@ export class CartService {
 
   static async addToCart(
     userId: string,
-    productId: number,
+    productId: string, // Changed from number to string
     quantity: number,
     selectedSize: string,
     selectedVariant?: string
@@ -612,7 +612,7 @@ export class CartService {
 
   private static async findCartItem(
     userId: string,
-    productId: number,
+    productId: string, // Changed from number to string
     selectedSize: string,
     selectedVariant?: string
   ): Promise<CartItem | null> {

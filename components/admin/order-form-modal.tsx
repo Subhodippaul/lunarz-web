@@ -13,7 +13,7 @@ interface OrderFormModalProps {
 }
 
 interface OrderItem {
-  productId: number;
+  productId: string; // Changed from number to string
   name: string;
   size: string;
   variant?: string;

@@ -6,7 +6,7 @@ export interface Order {
   date: string;
   status: "pending" | "confirmed" | "shipped" | "delivered" | "cancelled";
   items: {
-    productId: number;
+    productId: string; // Changed from number to string to match Product.id
     name: string;
     size: string;
     variant?: string;
@@ -58,7 +58,7 @@ export const mockOrders: Order[] = [
     status: "delivered",
     items: [
       {
-        productId: 1,
+        productId: "1", // Changed from number to string
         name: "Anime Oversized Tee",
         size: "L",
         variant: "Black",
@@ -66,7 +66,7 @@ export const mockOrders: Order[] = [
         price: 999,
       },
       {
-        productId: 3,
+        productId: "3", // Changed from number to string
         name: "Pink Floyd Tee",
         size: "M",
         quantity: 1,
@@ -94,7 +94,7 @@ export const mockOrders: Order[] = [
     status: "shipped",
     items: [
       {
-        productId: 2,
+        productId: "2", // Changed from number to string
         name: "Football Fan Tee",
         size: "XL",
         variant: "Blue",
@@ -123,7 +123,7 @@ export const mockOrders: Order[] = [
     status: "pending",
     items: [
       {
-        productId: 4,
+        productId: "4", // Changed from number to string
         name: "Streetwear Black Tee",
         size: "L",
         quantity: 1,
