@@ -132,6 +132,30 @@
   .slide-in-from-top-5 {
     animation: slide-in-from-top-5 0.2s ease-out;
   }
+  
+  /* Line clamp utilities */
+  .line-clamp-4 {
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  
+  /* Ensure slider container doesn't overflow */
+  .slider-container {
+    overflow: hidden;
+    position: relative;
+  }
+  
+  .slider-track {
+    display: flex;
+    transition: transform 0.5s ease-in-out;
+  }
+  
+  .slider-slide {
+    flex: 0 0 100%;
+    width: 100%;
+  }
 }
 
 @keyframes animate-in {

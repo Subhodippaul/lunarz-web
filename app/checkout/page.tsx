@@ -11,7 +11,8 @@ import { useRouter } from "next/navigation";
 import { useToast } from "@/components/ui/toast";
 import { Alert, AlertDescription, AlertIcon } from "@/components/ui/alert";
 import { getShippingSettings, calculateShippingCost, type ShippingSettings } from "@/lib/shipping-services";
-import { CHECKOUT, CURRENCY, NAV_LINKS, AUTH } from "@/lib/constants";
+import { RazorpayService, PaymentResult, RazorpayResponse } from "@/lib/razorpay-service";
+import { AUTH, NAV_LINKS, CHECKOUT, CURRENCY } from "@/lib/constants";
 
 export default function CheckoutPage() {
   const { state, dispatch } = useCart();
@@ -22,7 +23,7 @@ export default function CheckoutPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [orderCompleted, setOrderCompleted] = useState(false);
   const [sameAsBilling, setSameAsBilling] = useState(true);
-  const [paymentMethod, setPaymentMethod] = useState("creditCard");
+  const [paymentMethod, setPaymentMethod] = useState("online");
   const [shippingSettings, setShippingSettings] = useState<ShippingSettings | null>(null);
 
   // Load shipping settings
@@ -134,24 +135,123 @@ export default function CheckoutPage() {
 
       // Import OrderService dynamically to avoid circular dependencies
       const { OrderService } = await import('@/lib/order-services');
-      
-      // Create the order
-      const orderId = await OrderService.createOrder(orderData);
-      
-      addToast({
-        type: "success",
-        title: "Order placed successfully!",
-        description: "Your order has been confirmed and will be processed soon."
-      });
-      
-      // Mark order as completed to prevent cart redirect
-      setOrderCompleted(true);
-      
-      // Clear cart after successful order
-      dispatch({ type: "CLEAR_CART" });
-      
-      // Redirect to thank you page with order ID
-      router.replace(`/thank-you?orderId=${orderId}`);
+
+      if (paymentMethod === 'cod') {
+        // Handle COD order
+        const orderId = await OrderService.createOrder(orderData);
+        
+        addToast({
+          type: "success",
+          title: "Order placed successfully!",
+          description: "Your order has been confirmed and will be processed soon."
+        });
+        
+        // Mark order as completed to prevent cart redirect
+        setOrderCompleted(true);
+        
+        // Clear cart after successful order
+        dispatch({ type: "CLEAR_CART" });
+        
+        // Redirect to thank you page with order ID
+        router.replace(`/thank-you?orderId=${orderId}`);
+      } else {
+        // Handle online payment with Razorpay
+        try {
+          // Create Razorpay order
+          const razorpayOrder = await RazorpayService.createOrder(finalTotal, 'INR', orderData.orderNumber);
+          
+          // Prepare payment options
+          const paymentOptions = {
+            amount: finalTotal * 100, // Amount in paise
+            currency: 'INR',
+            name: 'Lunarz',
+            description: `Payment for Order #${orderData.orderNumber}`,
+            order_id: razorpayOrder.id,
+            handler: async (response: RazorpayResponse) => {
+              try {
+                // Verify payment
+                const isVerified = await RazorpayService.verifyPayment(
+                  response.razorpay_order_id,
+                  response.razorpay_payment_id,
+                  response.razorpay_signature
+                );
+
+                if (isVerified) {
+                  // Update order data with payment info
+                  const updatedOrderData = {
+                    ...orderData,
+                    paymentId: response.razorpay_payment_id,
+                    razorpayOrderId: response.razorpay_order_id,
+                    status: 'confirmed' as const,
+                  };
+
+                  // Create order in database
+                  const orderId = await OrderService.createOrder(updatedOrderData);
+                  
+                  addToast({
+                    type: "success",
+                    title: "Payment successful!",
+                    description: "Your order has been confirmed and will be processed soon."
+                  });
+                  
+                  // Mark order as completed to prevent cart redirect
+                  setOrderCompleted(true);
+                  
+                  // Clear cart after successful order
+                  dispatch({ type: "CLEAR_CART" });
+                  
+                  // Redirect to thank you page with order ID
+                  router.replace(`/thank-you?orderId=${orderId}`);
+                } else {
+                  throw new Error('Payment verification failed');
+                }
+              } catch (error: any) {
+                console.error('Payment verification error:', error);
+                addToast({
+                  type: "error",
+                  title: "Payment verification failed",
+                  description: "Please contact support if amount was deducted."
+                });
+              } finally {
+                setIsProcessing(false);
+              }
+            },
+            prefill: {
+              name: billingAddress.fullName,
+              email: orderData.customerEmail,
+              contact: billingAddress.phone,
+            },
+            notes: {
+              address: billingAddress.addressLine1,
+            },
+            theme: {
+              color: '#ef4444', // Red theme to match site
+            },
+            modal: {
+              ondismiss: () => {
+                setIsProcessing(false);
+                addToast({
+                  type: "error",
+                  title: "Payment cancelled",
+                  description: "You cancelled the payment process."
+                });
+              },
+            },
+          };
+
+          // Initiate Razorpay payment
+          await RazorpayService.initiatePayment(paymentOptions);
+          
+        } catch (error: any) {
+          console.error('Razorpay error:', error);
+          addToast({
+            type: "error",
+            title: "Payment Failed",
+            description: error.message || "Failed to initiate payment. Please try again."
+          });
+          setIsProcessing(false);
+        }
+      }
       
     } catch (error: any) {
       console.error('Error placing order:', error);
@@ -160,7 +260,6 @@ export default function CheckoutPage() {
         title: "Order Failed",
         description: error.message || "Failed to place order. Please try again."
       });
-    } finally {
       setIsProcessing(false);
     }
   };
@@ -295,55 +394,83 @@ export default function CheckoutPage() {
               <CardTitle>{CHECKOUT.paymentMethod}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                {[
-                  { id: "creditCard", label: CHECKOUT.creditCard },
-                  { id: "debitCard", label: CHECKOUT.debitCard },
-                  { id: "upi", label: CHECKOUT.upi },
-                  { id: "cod", label: CHECKOUT.cod },
-                ].map((method) => (
-                  <div key={method.id} className="flex items-center space-x-2">
+              <div className="space-y-3">
+                {/* Online Payment */}
+                <div className="border rounded-lg p-4">
+                  <div className="flex items-center space-x-3">
                     <input
                       type="radio"
-                      id={method.id}
+                      id="online"
                       name="paymentMethod"
-                      value={method.id}
-                      checked={paymentMethod === method.id}
+                      value="online"
+                      checked={paymentMethod === "online"}
                       onChange={(e) => setPaymentMethod(e.target.value)}
                       className="rounded"
                     />
-                    <Label htmlFor={method.id}>{method.label}</Label>
-                  </div>
-                ))}
-              </div>
-
-              {(paymentMethod === "creditCard" || paymentMethod === "debitCard") && (
-                <div className="space-y-4 mt-4 p-4 border rounded-lg">
-                  <div>
-                    <Label htmlFor="cardNumber">{CHECKOUT.cardNumber}</Label>
-                    <Input id="cardNumber" placeholder="1234 5678 9012 3456" />
-                  </div>
-                  <div className="grid grid-cols-3 gap-4">
-                    <div>
-                      <Label htmlFor="expiryDate">{CHECKOUT.expiryDate}</Label>
-                      <Input id="expiryDate" placeholder="12/25" />
-                    </div>
-                    <div>
-                      <Label htmlFor="cvv">{CHECKOUT.cvv}</Label>
-                      <Input id="cvv" placeholder="123" />
-                    </div>
-                    <div>
-                      <Label htmlFor="cardholderName">{CHECKOUT.cardholderName}</Label>
-                      <Input id="cardholderName" placeholder="John Doe" />
+                    <div className="flex-1">
+                      <Label htmlFor="online" className="text-base font-medium">
+                        💳 Online Payment
+                      </Label>
+                      <p className="text-sm text-gray-600 mt-1">
+                        Pay using Credit Card, Debit Card, UPI, Net Banking, Wallets
+                      </p>
+                      <div className="flex items-center space-x-2 mt-2">
+                        <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Secure</span>
+                        <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">Instant</span>
+                      </div>
                     </div>
                   </div>
                 </div>
-              )}
 
-              {paymentMethod === "upi" && (
-                <div className="mt-4 p-4 border rounded-lg">
-                  <Label htmlFor="upiId">UPI ID</Label>
-                  <Input id="upiId" placeholder="john@paytm" />
+                {/* Cash on Delivery */}
+                <div className="border rounded-lg p-4">
+                  <div className="flex items-center space-x-3">
+                    <input
+                      type="radio"
+                      id="cod"
+                      name="paymentMethod"
+                      value="cod"
+                      checked={paymentMethod === "cod"}
+                      onChange={(e) => setPaymentMethod(e.target.value)}
+                      className="rounded"
+                    />
+                    <div className="flex-1">
+                      <Label htmlFor="cod" className="text-base font-medium">
+                        💵 Cash on Delivery
+                      </Label>
+                      <p className="text-sm text-gray-600 mt-1">
+                        Pay when your order is delivered to your doorstep
+                      </p>
+                      {paymentMethod === "cod" && shippingSettings && (
+                        <div className="mt-2">
+                          {finalTotal < shippingSettings.freeShippingThreshold ? (
+                            <span className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded">
+                              ₹{shippingSettings.codShippingCharge} shipping charge applies
+                            </span>
+                          ) : (
+                            <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+                              Free shipping
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Payment Security Info */}
+              {paymentMethod === "online" && (
+                <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-start space-x-2">
+                    <div className="text-blue-600 mt-0.5">🔒</div>
+                    <div>
+                      <p className="text-sm font-medium text-blue-900">Secure Payment</p>
+                      <p className="text-xs text-blue-700 mt-1">
+                        Your payment information is encrypted and secure. We use Razorpay's secure payment gateway.
+                      </p>
+                    </div>
+                  </div>
                 </div>
               )}
             </CardContent>
@@ -419,7 +546,12 @@ export default function CheckoutPage() {
                 onClick={handlePlaceOrder}
                 disabled={isProcessing}
               >
-                {isProcessing ? CHECKOUT.processingOrder : CHECKOUT.placeOrder}
+                {isProcessing 
+                  ? CHECKOUT.processingOrder 
+                  : paymentMethod === 'cod' 
+                    ? 'Place Order (COD)' 
+                    : 'Pay Now'
+                }
               </Button>
             </CardContent>
           </Card>

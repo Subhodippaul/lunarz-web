@@ -32,6 +32,9 @@ export interface OrderData {
   paymentMethod: 'cod' | 'online';
   couponCode?: string;
   status: 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
+  // Razorpay payment fields
+  paymentId?: string;
+  razorpayOrderId?: string;
 }
 
 export interface OrderReceipt {
@@ -90,6 +93,12 @@ export class OrderService {
       }
       if (orderData.couponCode) {
         orderDoc.couponCode = orderData.couponCode;
+      }
+      if (orderData.paymentId) {
+        orderDoc.paymentId = orderData.paymentId;
+      }
+      if (orderData.razorpayOrderId) {
+        orderDoc.razorpayOrderId = orderData.razorpayOrderId;
       }
 
       const docRef = await addDoc(collection(db, COLLECTIONS.ORDERS), orderDoc);

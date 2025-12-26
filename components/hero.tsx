@@ -10,29 +10,19 @@ const heroSlides = [
     id: 1,
     title: "Premium Oversized T-Shirts",
     subtitle: "Anime • Football • Music • Streetwear",
-    image: "/hero-1.jpg",
-    bgColor: "bg-black",
+    image: "/hero1.png",
   },
   {
     id: 2,
     title: "Anime Collection",
     subtitle: "Express Your Passion • Premium Quality",
-    image: "/hero-2.jpg",
-    bgColor: "bg-linear-to-r from-purple-900 to-blue-900",
+    image: "/hero2.png", // Add this image to public folder
   },
   {
     id: 3,
     title: "Sports & Music Tees",
     subtitle: "Show Your Style • Comfort Guaranteed",
-    image: "/hero-3.jpg",
-    bgColor: "bg-linear-to-r from-green-900 to-teal-900",
-  },
-  {
-    id: 4,
-    title: "Streetwear Essentials",
-    subtitle: "Urban Style • Modern Comfort",
-    image: "/hero-4.jpg",
-    bgColor: "bg-linear-to-r from-gray-900 to-slate-900",
+    image: "/hero1.png", // Add this image to public folder
   },
 ];
 
@@ -73,23 +63,29 @@ export default function Hero() {
               index < currentSlide ? "-translate-x-full" : "translate-x-full"
             }`}
           >
-            <div className={`w-full h-full ${slide.bgColor} text-white relative`}>
-              {/* Background Image Placeholder */}
-              <div className="absolute inset-0 bg-black bg-opacity-40" />
-              <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-transparent" />
+            {/* CSS Background approach that works - simplified */}
+            <div 
+              className="w-full h-full text-white relative bg-cover bg-center bg-no-repeat"
+              style={{ 
+                backgroundImage: `url(${slide.image})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                backgroundRepeat: 'no-repeat'
+              }}
+            >
               
-              {/* Content */}
-              <div className="relative z-10 max-w-7xl mx-auto px-6 h-full flex items-center">
+              {/* Content with drop shadows for readability */}
+              <div className="relative z-20 max-w-7xl mx-auto px-6 h-full flex items-center">
                 <div className="max-w-2xl">
-                  <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
+                  <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight text-white drop-shadow-2xl">
                     {slide.title}
                   </h1>
-                  <p className="text-xl md:text-2xl text-gray-300 mb-8">
+                  <p className="text-xl md:text-2xl text-gray-100 mb-8 drop-shadow-xl">
                     {slide.subtitle}
                   </p>
                   <Button 
                     size="lg" 
-                    className="bg-white text-black hover:bg-gray-100 text-lg px-8 py-3"
+                    className="bg-white text-black hover:bg-gray-100 text-lg px-8 py-3 shadow-xl"
                     onClick={() => router.push(NAV_LINKS.shop)}
                   >
                     {HERO.cta}
@@ -104,19 +100,19 @@ export default function Hero() {
       {/* Navigation Arrows */}
       <button
         onClick={prevSlide}
-        className="absolute left-4 top-1/2 -translate-y-1/2 z-20 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full p-2 transition-colors"
+        className="absolute left-4 top-1/2 -translate-y-1/2 z-30 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full p-2 transition-colors"
       >
         <ChevronLeft className="w-6 h-6 text-white" />
       </button>
       <button
         onClick={nextSlide}
-        className="absolute right-4 top-1/2 -translate-y-1/2 z-20 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full p-2 transition-colors"
+        className="absolute right-4 top-1/2 -translate-y-1/2 z-30 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full p-2 transition-colors"
       >
         <ChevronRight className="w-6 h-6 text-white" />
       </button>
 
       {/* Dots Indicator */}
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex gap-2">
+      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 flex gap-2">
         {heroSlides.map((_, index) => (
           <button
             key={index}

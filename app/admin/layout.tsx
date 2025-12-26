@@ -15,7 +15,8 @@ import {
   Menu,
   X,
   BarChart3,
-  MessageCircle
+  MessageCircle,
+  Star
 } from "lucide-react";
 import AdminGuard from "@/components/admin/admin-guard";
 import { ToastProvider } from "@/components/ui/toast";
@@ -50,6 +51,7 @@ export default function AdminLayout({
     { name: "Inventory", href: "/admin/inventory", icon: BarChart3 },
     { name: "Orders", href: "/admin/orders", icon: ShoppingCart },
     { name: "Users", href: "/admin/users", icon: Users },
+    { name: "Reviews", href: "/admin/reviews", icon: Star },
     { name: "Support", href: "/admin/support", icon: MessageCircle },
     { name: "Coupons", href: "/admin/coupons", icon: Ticket },
     { name: "Settings", href: "/admin/settings", icon: Settings },

@@ -1,4 +1,4 @@
-import Hero from "@/components/hero";
+import HeroWorking from "@/components/hero-working";
 import CategoryBar from "@/components/category-bar";
 import TrendingProductsSlider from "@/components/trending-products-slider";
 import CustomerReviewSection from "@/components/customer-review-section";
@@ -6,7 +6,7 @@ import CustomerReviewSection from "@/components/customer-review-section";
 export default function HomePage() {
   return (
     <>
-      <Hero />
+      <HeroWorking />
       <CategoryBar />
       <TrendingProductsSlider />
       <CustomerReviewSection />

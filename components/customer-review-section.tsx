@@ -1,15 +1,26 @@
 "use client";
 import { useState, useEffect } from "react";
 import { ReviewService, CustomerReview } from "@/lib/review-services";
-import { Star, Quote, MapPin, Shield, ChevronLeft, ChevronRight } from "lucide-react";
+import { Star, Quote, MapPin, Shield, ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
 
 export default function CustomerReviewSection() {
   const [reviews, setReviews] = useState<CustomerReview[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     fetchReviews();
+    
+    // Check if mobile
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
   const fetchReviews = async () => {
@@ -26,12 +37,30 @@ export default function CustomerReviewSection() {
   const averageRating = ReviewService.calculateAverageRating(reviews);
   const totalReviews = reviews.length;
 
+  // Calculate items per view and max index
+  const itemsPerView = isMobile ? 1 : 4;
+  const maxIndex = Math.max(0, reviews.length - itemsPerView);
+
   const nextSlide = () => {
-    setCurrentIndex((prev) => (prev + 1) % Math.max(1, reviews.length - 2));
+    setCurrentIndex((prev) => Math.min(prev + 1, maxIndex));
   };
 
   const prevSlide = () => {
-    setCurrentIndex((prev) => (prev - 1 + Math.max(1, reviews.length - 2)) % Math.max(1, reviews.length - 2));
+    setCurrentIndex((prev) => Math.max(prev - 1, 0));
+  };
+
+  const goToSlide = (index: number) => {
+    setCurrentIndex(Math.min(Math.max(index, 0), maxIndex));
+  };
+
+  // Generate random avatar color
+  const getAvatarColor = (name: string) => {
+    const colors = [
+      'bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-pink-500', 
+      'bg-indigo-500', 'bg-red-500', 'bg-yellow-500', 'bg-teal-500'
+    ];
+    const index = name.charCodeAt(0) % colors.length;
+    return colors[index];
   };
 
   const renderStars = (rating: number, size: "sm" | "md" | "lg" = "md") => {
@@ -57,15 +86,23 @@ export default function CustomerReviewSection() {
     );
   };
 
+  // Get visible reviews based on current index
+  const getVisibleReviews = () => {
+    return reviews.slice(currentIndex, currentIndex + itemsPerView);
+  };
+
+  // Calculate dot indicators (show dots for every possible starting position)
+  const totalDots = maxIndex + 1;
+
   if (loading) {
     return (
       <section className="py-16 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="animate-pulse">
             <div className="h-8 bg-gray-200 rounded w-1/3 mx-auto mb-4"></div>
             <div className="h-4 bg-gray-200 rounded w-1/2 mx-auto mb-12"></div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {[...Array(3)].map((_, i) => (
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              {[...Array(4)].map((_, i) => (
                 <div key={i} className="bg-white p-6 rounded-lg shadow-sm">
                   <div className="h-4 bg-gray-200 rounded w-3/4 mb-4"></div>
                   <div className="h-16 bg-gray-200 rounded mb-4"></div>
@@ -79,9 +116,28 @@ export default function CustomerReviewSection() {
     );
   }
 
+  if (reviews.length === 0) {
+    return (
+      <section className="py-16 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+          <div className="text-center">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+              What Our Customers Say
+            </h2>
+            <p className="text-lg text-gray-600">
+              No reviews available at the moment.
+            </p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  const visibleReviews = getVisibleReviews();
+
   return (
     <section className="py-16 bg-gray-50">
-      <div className="max-w-7xl mx-auto px-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
         {/* Header */}
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
@@ -114,12 +170,18 @@ export default function CustomerReviewSection() {
         <div className="relative">
           <div className="overflow-hidden">
             <div 
-              className="flex transition-transform duration-300 ease-in-out"
-              style={{ transform: `translateX(-${currentIndex * (100 / 3)}%)` }}
+              className="flex transition-transform duration-500 ease-in-out"
+              style={{ 
+                transform: `translateX(-${currentIndex * (100 / itemsPerView)}%)`,
+                width: `${(reviews.length / itemsPerView) * 100}%`
+              }}
             >
-              {reviews.map((review) => (
-                <div key={review.id} className="w-full md:w-1/3 flex-shrink-0 px-3">
-                  <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 h-full">
+              {reviews.map((review, index) => (
+                <div 
+                  key={review.id} 
+                  className={`${isMobile ? 'w-full' : 'w-1/4'} shrink-0 ${isMobile ? 'px-0' : 'px-3'}`}
+                >
+                  <div className={`bg-white rounded-xl shadow-sm border border-gray-200 p-6 h-full hover:shadow-md transition-shadow ${isMobile ? 'mx-2' : ''}`}>
                     {/* Quote Icon */}
                     <div className="flex items-center justify-between mb-4">
                       <Quote className="h-8 w-8 text-blue-600 opacity-20" />
@@ -142,19 +204,27 @@ export default function CustomerReviewSection() {
                     </div>
 
                     {/* Review Text */}
-                    <p className="text-gray-700 mb-6 line-clamp-4">
+                    <p className="text-gray-700 mb-6 line-clamp-4 text-sm leading-relaxed">
                       "{review.reviewText}"
                     </p>
 
                     {/* Customer Info */}
                     <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                        <span className="text-blue-600 font-semibold text-sm">
-                          {review.customerName.charAt(0)}
-                        </span>
+                      <div className={`w-12 h-12 ${getAvatarColor(review.customerName)} rounded-full flex items-center justify-center`}>
+                        {review.customerImage ? (
+                          <img 
+                            src={review.customerImage} 
+                            alt={review.customerName}
+                            className="w-12 h-12 rounded-full object-cover"
+                          />
+                        ) : (
+                          <span className="text-white font-semibold text-lg">
+                            {review.customerName.charAt(0)}
+                          </span>
+                        )}
                       </div>
-                      <div>
-                        <p className="font-medium text-gray-900">
+                      <div className="flex-1">
+                        <p className="font-medium text-gray-900 text-sm">
                           {review.customerName}
                         </p>
                         {review.location && (
@@ -165,24 +235,11 @@ export default function CustomerReviewSection() {
                         )}
                       </div>
                       {review.verified && (
-                        <div className="ml-auto">
-                          <div className="flex items-center space-x-1 text-green-600">
-                            <Shield className="h-3 w-3" />
-                            <span className="text-xs">Verified</span>
-                          </div>
+                        <div className="flex items-center space-x-1 text-green-600">
+                          <Shield className="h-3 w-3" />
+                          <span className="text-xs">Verified</span>
                         </div>
                       )}
-                    </div>
-
-                    {/* Date */}
-                    <div className="mt-4 pt-4 border-t border-gray-100">
-                      <p className="text-xs text-gray-500">
-                        {new Date(review.date).toLocaleDateString('en-IN', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric'
-                        })}
-                      </p>
                     </div>
                   </div>
                 </div>
@@ -191,17 +248,29 @@ export default function CustomerReviewSection() {
           </div>
 
           {/* Navigation Buttons */}
-          {reviews.length > 3 && (
+          {reviews.length > itemsPerView && (
             <>
               <button
                 onClick={prevSlide}
-                className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 bg-white rounded-full p-2 shadow-lg border border-gray-200 hover:bg-gray-50 transition-colors"
+                disabled={currentIndex === 0}
+                className={`absolute left-0 top-1/2 -translate-y-1/2 ${isMobile ? '-translate-x-2' : '-translate-x-4'} bg-white rounded-full p-3 shadow-lg border border-gray-200 transition-colors z-10 ${
+                  currentIndex === 0 
+                    ? 'opacity-50 cursor-not-allowed' 
+                    : 'hover:bg-gray-50'
+                }`}
+                aria-label="Previous reviews"
               >
                 <ChevronLeft className="h-5 w-5 text-gray-600" />
               </button>
               <button
                 onClick={nextSlide}
-                className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 bg-white rounded-full p-2 shadow-lg border border-gray-200 hover:bg-gray-50 transition-colors"
+                disabled={currentIndex === maxIndex}
+                className={`absolute right-0 top-1/2 -translate-y-1/2 ${isMobile ? 'translate-x-2' : 'translate-x-4'} bg-white rounded-full p-3 shadow-lg border border-gray-200 transition-colors z-10 ${
+                  currentIndex === maxIndex 
+                    ? 'opacity-50 cursor-not-allowed' 
+                    : 'hover:bg-gray-50'
+                }`}
+                aria-label="Next reviews"
               >
                 <ChevronRight className="h-5 w-5 text-gray-600" />
               </button>
@@ -210,33 +279,61 @@ export default function CustomerReviewSection() {
         </div>
 
         {/* Dots Indicator */}
-        {reviews.length > 3 && (
+        {reviews.length > itemsPerView && totalDots > 1 && (
           <div className="flex justify-center space-x-2 mt-8">
-            {Array.from({ length: Math.max(1, reviews.length - 2) }).map((_, index) => (
+            {Array.from({ length: totalDots }).map((_, index) => (
               <button
                 key={index}
-                onClick={() => setCurrentIndex(index)}
-                className={`w-2 h-2 rounded-full transition-colors ${
+                onClick={() => goToSlide(index)}
+                className={`w-3 h-3 rounded-full transition-colors ${
                   index === currentIndex ? 'bg-blue-600' : 'bg-gray-300'
                 }`}
+                aria-label={`Go to position ${index + 1}`}
               />
             ))}
           </div>
         )}
 
-        {/* Google Reviews Link */}
-        <div className="text-center mt-8">
-          <a
-            href="https://www.google.com/search?q=lunarz+india+reviews"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center space-x-2 text-blue-600 hover:text-blue-800 font-medium"
-          >
-            <div className="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
-              <span className="text-white text-xs font-bold">G</span>
-            </div>
-            <span>View all reviews on Google</span>
-          </a>
+        {/* Review Counter */}
+        {reviews.length > itemsPerView && (
+          <div className="text-center mt-4">
+            <p className="text-sm text-gray-600">
+              Showing {currentIndex + 1}-{Math.min(currentIndex + itemsPerView, reviews.length)} of {reviews.length} reviews
+            </p>
+          </div>
+        )}
+
+        {/* Action Buttons */}
+        <div className="text-center mt-12 space-y-4">
+          {/* Add Review Button */}
+          <div>
+            <a
+              href="https://search.google.com/local/writereview?placeid=ChIJP6ONgAZ7AjoR0D4RvoCov1w"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center space-x-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+            >
+              <Star className="h-5 w-5" />
+              <span>Write a Review</span>
+              <ExternalLink className="h-4 w-4" />
+            </a>
+          </div>
+          
+          {/* View All Reviews Link */}
+          <div>
+            <a
+              href="https://search.google.com/local/writereview?placeid=ChIJP6ONgAZ7AjoR0D4RvoCov1w"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center space-x-2 text-blue-600 hover:text-blue-800 font-medium"
+            >
+              <div className="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
+                <span className="text-white text-xs font-bold">G</span>
+              </div>
+              <span>View all reviews on Google</span>
+              <ExternalLink className="h-4 w-4" />
+            </a>
+          </div>
         </div>
       </div>
     </section>
