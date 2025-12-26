@@ -14,12 +14,13 @@ import { getShippingSettings, calculateShippingCost, type ShippingSettings } fro
 import { CHECKOUT, CURRENCY, NAV_LINKS, AUTH } from "@/lib/constants";
 
 export default function CheckoutPage() {
-  const { state } = useCart();
+  const { state, dispatch } = useCart();
   const { state: couponState } = useCoupon();
   const { state: authState } = useAuth();
   const router = useRouter();
   const { addToast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
+  const [orderCompleted, setOrderCompleted] = useState(false);
   const [sameAsBilling, setSameAsBilling] = useState(true);
   const [paymentMethod, setPaymentMethod] = useState("creditCard");
   const [shippingSettings, setShippingSettings] = useState<ShippingSettings | null>(null);
@@ -50,20 +51,20 @@ export default function CheckoutPage() {
     }
   }, [authState.isLoading, authState.isAuthenticated, router, addToast]);
 
-  // Redirect to cart if empty
-  if (state.items.length === 0) {
+  // Redirect to cart if empty (but not if order was just completed)
+  if (state.items.length === 0 && !orderCompleted) {
     router.push(NAV_LINKS.cart);
     return null;
   }
 
-  // Show loading while checking auth
-  if (authState.isLoading) {
+  // Show loading while checking auth or processing order completion
+  if (authState.isLoading || orderCompleted) {
     return (
       <div className="max-w-6xl mx-auto px-6 py-8">
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
-            <p>Loading...</p>
+            <p>{orderCompleted ? "Redirecting to order confirmation..." : "Loading..."}</p>
           </div>
         </div>
       </div>
@@ -77,17 +78,91 @@ export default function CheckoutPage() {
 
   const handlePlaceOrder = async () => {
     setIsProcessing(true);
-    // Simulate order processing
-    await new Promise(resolve => setTimeout(resolve, 2000));
     
-    addToast({
-      type: "success",
-      title: "Order placed successfully!",
-      description: "Your order has been confirmed and will be processed soon."
-    });
-    
-    setIsProcessing(false);
-    router.push("/");
+    try {
+      // Validate form data (you might want to add proper form validation)
+      const billingAddress = {
+        type: 'billing' as const,
+        fullName: `${(document.getElementById('firstName') as HTMLInputElement)?.value || ''} ${(document.getElementById('lastName') as HTMLInputElement)?.value || ''}`.trim(),
+        phone: (document.getElementById('phone') as HTMLInputElement)?.value || '',
+        addressLine1: (document.getElementById('address') as HTMLInputElement)?.value || '',
+        city: (document.getElementById('city') as HTMLInputElement)?.value || '',
+        state: (document.getElementById('state') as HTMLInputElement)?.value || '',
+        pincode: (document.getElementById('pincode') as HTMLInputElement)?.value || '',
+        country: 'India',
+      };
+
+      // Use billing address for shipping if same as billing is checked
+      const shippingAddress = sameAsBilling ? billingAddress : {
+        type: 'shipping' as const,
+        fullName: `${(document.getElementById('shippingFirstName') as HTMLInputElement)?.value || ''} ${(document.getElementById('shippingLastName') as HTMLInputElement)?.value || ''}`.trim(),
+        phone: billingAddress.phone, // Use billing phone for shipping
+        addressLine1: (document.getElementById('shippingAddress') as HTMLInputElement)?.value || '',
+        city: (document.getElementById('shippingCity') as HTMLInputElement)?.value || '',
+        state: (document.getElementById('shippingState') as HTMLInputElement)?.value || '',
+        pincode: (document.getElementById('shippingPincode') as HTMLInputElement)?.value || '',
+        country: 'India',
+      };
+
+      // Validate required fields
+      if (!billingAddress.fullName || !billingAddress.phone || !billingAddress.addressLine1 || 
+          !billingAddress.city || !billingAddress.state || !billingAddress.pincode) {
+        addToast({
+          type: "error",
+          title: "Missing Information",
+          description: "Please fill in all required billing address fields."
+        });
+        setIsProcessing(false);
+        return;
+      }
+
+      // Create order data
+      const orderData = {
+        orderNumber: `LNZ${Date.now().toString().slice(-6)}`,
+        userId: authState.user?.id || '',
+        customerEmail: (document.getElementById('email') as HTMLInputElement)?.value || authState.user?.email || '',
+        items: state.items,
+        subtotal: subtotal,
+        discountAmount: discountAmount,
+        shippingCost: shippingCost,
+        total: finalTotal,
+        shippingAddress: shippingAddress,
+        paymentMethod: paymentMethod as 'cod' | 'online',
+        couponCode: couponState.appliedCoupon?.code,
+        status: 'pending' as const,
+      };
+
+      // Import OrderService dynamically to avoid circular dependencies
+      const { OrderService } = await import('@/lib/order-services');
+      
+      // Create the order
+      const orderId = await OrderService.createOrder(orderData);
+      
+      addToast({
+        type: "success",
+        title: "Order placed successfully!",
+        description: "Your order has been confirmed and will be processed soon."
+      });
+      
+      // Mark order as completed to prevent cart redirect
+      setOrderCompleted(true);
+      
+      // Clear cart after successful order
+      dispatch({ type: "CLEAR_CART" });
+      
+      // Redirect to thank you page with order ID
+      router.replace(`/thank-you?orderId=${orderId}`);
+      
+    } catch (error: any) {
+      console.error('Error placing order:', error);
+      addToast({
+        type: "error",
+        title: "Order Failed",
+        description: error.message || "Failed to place order. Please try again."
+      });
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   // Calculate totals with coupon and shipping

@@ -50,7 +50,6 @@ export const PRODUCT_DETAILS = {
   quantity: "Quantity:",
   addToCart: "ADD TO CART",
   buyNow: "BUY NOW",
-  addToWishlist: "ADD TO WISHLIST",
   share: "Share:",
   deliveryDetails: "Delivery Details",
   enterPincode: "Enter Pincode",

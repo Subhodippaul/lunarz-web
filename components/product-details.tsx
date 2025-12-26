@@ -191,13 +191,6 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
             >
               {PRODUCT_DETAILS.buyNow}
             </Button>
-            <Button 
-              variant="outline" 
-              className="w-full border-teal-500 text-teal-500 hover:bg-teal-50 py-3"
-            >
-              <Heart className="w-4 h-4 mr-2" />
-              {PRODUCT_DETAILS.addToWishlist}
-            </Button>
           </div>
 
           {/* Share */}

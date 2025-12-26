@@ -24,13 +24,14 @@ import {
   PaymentMethod
 } from "@/lib/profile-data";
 import { 
-  OrderService,
   AddressService,
   PaymentMethodService,
   UserService
 } from "@/lib/firebase-services";
+import { OrderService } from "@/lib/order-services";
 import AddressModal from "@/components/address-modal";
 import PaymentModal from "@/components/payment-modal";
+import OrderTracking from "@/components/order-tracking";
 
 type TabType = "orders" | "addresses" | "payments" | "settings";
 
@@ -38,7 +39,6 @@ export default function ProfilePage() {
   const { addToast } = useToast();
   const { state: authState } = useAuth();
   const [activeTab, setActiveTab] = useState<TabType>("orders");
-  const [orders, setOrders] = useState<Order[]>([]);
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [loading, setLoading] = useState(true);
@@ -68,13 +68,11 @@ export default function ProfilePage() {
     
     setLoading(true);
     try {
-      const [userOrders, userAddresses, userPaymentMethods] = await Promise.all([
-        OrderService.getUserOrders(authState.user.id),
+      const [userAddresses, userPaymentMethods] = await Promise.all([
         AddressService.getUserAddresses(authState.user.id),
         PaymentMethodService.getUserPaymentMethods(authState.user.id),
       ]);
 
-      setOrders(userOrders);
       setAddresses(userAddresses);
       setPaymentMethods(userPaymentMethods);
     } catch (error) {
@@ -86,28 +84,6 @@ export default function ProfilePage() {
       });
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleCancelOrder = async (orderId: string) => {
-    try {
-      await OrderService.cancelOrder(orderId);
-      setOrders(orders.map(order => 
-        order.id === orderId 
-          ? { ...order, status: "cancelled" as const }
-          : order
-      ));
-      addToast({
-        title: "Order cancelled",
-        description: "Your order has been cancelled successfully.",
-        type: "success",
-      });
-    } catch (error) {
-      addToast({
-        title: "Error",
-        description: "Failed to cancel order. Please try again.",
-        type: "error",
-      });
     }
   };
 
@@ -265,28 +241,6 @@ export default function ProfilePage() {
     }
   };
 
-  const getStatusColor = (status: Order["status"]) => {
-    switch (status) {
-      case "pending": return "bg-yellow-100 text-yellow-800";
-      case "confirmed": return "bg-blue-100 text-blue-800";
-      case "shipped": return "bg-purple-100 text-purple-800";
-      case "delivered": return "bg-green-100 text-green-800";
-      case "cancelled": return "bg-red-100 text-red-800";
-      default: return "bg-gray-100 text-gray-800";
-    }
-  };
-
-  const getStatusText = (status: Order["status"]) => {
-    switch (status) {
-      case "pending": return PROFILE.pending;
-      case "confirmed": return PROFILE.confirmed;
-      case "shipped": return PROFILE.shipped;
-      case "delivered": return PROFILE.delivered;
-      case "cancelled": return PROFILE.cancelled;
-      default: return status;
-    }
-  };
-
   const tabs = [
     { id: "orders" as TabType, label: PROFILE.myOrders, icon: Package },
     { id: "addresses" as TabType, label: PROFILE.addresses, icon: MapPin },
@@ -376,67 +330,7 @@ export default function ProfilePage() {
                 <h2 className="text-2xl font-semibold">{PROFILE.myOrders}</h2>
               </div>
               
-              <div className="space-y-4">
-                {orders.map((order) => (
-                  <Card key={order.id}>
-                    <CardContent className="p-6">
-                      <div className="flex items-start justify-between mb-4">
-                        <div>
-                          <h3 className="font-semibold">
-                            {PROFILE.orderNumber}{order.orderNumber}
-                          </h3>
-                          <p className="text-sm text-gray-600">
-                            {PROFILE.orderDate}: {new Date(order.date).toLocaleDateString()}
-                          </p>
-                        </div>
-                        <Badge className={getStatusColor(order.status)}>
-                          {getStatusText(order.status)}
-                        </Badge>
-                      </div>
-
-                      <div className="space-y-2 mb-4">
-                        {order.items.map((item, index) => (
-                          <div key={index} className="flex justify-between text-sm">
-                            <span>
-                              {item.name} ({item.size}
-                              {item.variant && `, ${item.variant}`}) × {item.quantity}
-                            </span>
-                            <span>{CURRENCY.symbol}{(item.price * item.quantity).toLocaleString()}</span>
-                          </div>
-                        ))}
-                      </div>
-
-                      <div className="flex items-center justify-between pt-4 border-t">
-                        <div className="font-semibold">
-                          {PROFILE.orderTotal}: {CURRENCY.symbol}{order.total.toLocaleString()}
-                        </div>
-                        <div className="flex gap-2">
-                          <Button variant="outline" size="sm">
-                            <Eye className="w-4 h-4 mr-2" />
-                            {PROFILE.viewDetails}
-                          </Button>
-                          {order.status === "pending" && (
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => handleCancelOrder(order.id)}
-                              className="text-red-600 hover:text-red-700"
-                            >
-                              <X className="w-4 h-4 mr-2" />
-                              {PROFILE.cancelOrder}
-                            </Button>
-                          )}
-                          {(order.status === "shipped" || order.status === "delivered") && (
-                            <Button variant="outline" size="sm">
-                              {PROFILE.trackOrder}
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+              <OrderTracking showViewAll={false} />
             </div>
           )}
 

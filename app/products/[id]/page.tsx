@@ -284,11 +284,7 @@ export default function ProductDetailsPage() {
             </div>
             
             <div className="flex gap-4">
-              <Button variant="outline" className="flex-1">
-                <Heart className="w-4 h-4 mr-2" />
-                {PRODUCT_DETAILS.addToWishlist}
-              </Button>
-              <Button variant="outline" className="flex-1">
+              <Button variant="outline" className="w-full">
                 <Share2 className="w-4 h-4 mr-2" />
                 {PRODUCT_DETAILS.share}
               </Button>
