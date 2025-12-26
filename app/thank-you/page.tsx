@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { OrderService, OrderReceipt } from "@/lib/order-services";
 import { useAuth } from "@/lib/auth-context";
@@ -20,10 +20,11 @@ import {
 import { useToast } from "@/components/ui/toast";
 import Link from "next/link";
 
-export default function ThankYouPage() {
+function ThankYouContent() {
   const [order, setOrder] = useState<OrderReceipt | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
   const searchParams = useSearchParams();
   const { state } = useAuth();
   const { addToast } = useToast();
@@ -31,6 +32,12 @@ export default function ThankYouPage() {
   const orderId = searchParams.get('orderId');
 
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+    
     if (!orderId) {
       setError("Order ID not found");
       setLoading(false);
@@ -38,10 +45,10 @@ export default function ThankYouPage() {
     }
 
     fetchOrder();
-  }, [orderId]);
+  }, [orderId, mounted]);
 
   const fetchOrder = async () => {
-    if (!orderId) return;
+    if (!orderId || !mounted) return;
 
     try {
       setLoading(true);
@@ -374,6 +381,10 @@ export default function ThankYouPage() {
     `;
   };
 
+  if (!mounted) {
+    return <LoadingFallback />;
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -622,5 +633,24 @@ export default function ThankYouPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+function LoadingFallback() {
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+        <p className="text-gray-600">Loading your order details...</p>
+      </div>
+    </div>
+  );
+}
+
+export default function ThankYouPage() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <ThankYouContent />
+    </Suspense>
   );
 }
