@@ -1,5 +1,7 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { AdminAnalyticsService } from "@/lib/admin-services";
 import { OrderAnalyticsService } from "@/lib/order-analytics";
 import { ChatService } from "@/lib/chat-services";
@@ -21,7 +23,10 @@ interface DashboardStats {
 
 import { DashboardSkeleton } from "@/components/admin/skeleton-loaders";
 
-export default function AdminDashboard() {
+// Separate component that uses useSearchParams
+function AdminDashboardContent() {
+  const searchParams = useSearchParams();
+  const [uniqueId, setUniqueId] = useState<string | null>(null);
   const [stats, setStats] = useState<DashboardStats>({
     totalProducts: 0,
     totalOrders: 0,
@@ -38,6 +43,22 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [recentOrders, setRecentOrders] = useState<any[]>([]);
   const [topProducts, setTopProducts] = useState<any[]>([]);
+
+  // Get unique ID from localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const storedUniqueId = localStorage.getItem('uniqueId');
+      setUniqueId(storedUniqueId);
+    }
+  }, []);
+
+  // Generate admin URL with required parameters
+  const generateAdminUrl = (path: string) => {
+    if (uniqueId) {
+      return `${path}?uid=${uniqueId}&isAuthenticated=true`;
+    }
+    return path;
+  };
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -187,12 +208,12 @@ export default function AdminDashboard() {
               <BarChart3 className="h-5 w-5 mr-2" />
               Recent Orders
             </h2>
-            <a
-              href="/admin/orders"
+            <Link
+              href={generateAdminUrl("/admin/orders")}
               className="text-sm text-blue-600 hover:text-blue-800"
             >
               View All
-            </a>
+            </Link>
           </div>
           <div className="space-y-3">
             {recentOrders.length > 0 ? (
@@ -232,12 +253,12 @@ export default function AdminDashboard() {
               <TrendingUp className="h-5 w-5 mr-2" />
               Top Selling Products
             </h2>
-            <a
-              href="/admin/products"
+            <Link
+              href={generateAdminUrl("/admin/products")}
               className="text-sm text-blue-600 hover:text-blue-800"
             >
               View All
-            </a>
+            </Link>
           </div>
           <div className="space-y-3">
             {topProducts.length > 0 ? (
@@ -268,8 +289,8 @@ export default function AdminDashboard() {
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
         <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4">Quick Actions</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          <a
-            href="/admin/products"
+          <Link
+            href={generateAdminUrl("/admin/products")}
             className="flex items-center p-3 sm:p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
           >
             <Package className="h-6 w-6 sm:h-8 sm:w-8 text-blue-500 mr-3" />
@@ -277,10 +298,10 @@ export default function AdminDashboard() {
               <h3 className="font-medium text-gray-900 text-sm sm:text-base">Manage Products</h3>
               <p className="text-xs sm:text-sm text-gray-600">Add, edit, or remove products</p>
             </div>
-          </a>
+          </Link>
           
-          <a
-            href="/admin/orders"
+          <Link
+            href={generateAdminUrl("/admin/orders")}
             className="flex items-center p-3 sm:p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
           >
             <ShoppingCart className="h-6 w-6 sm:h-8 sm:w-8 text-green-500 mr-3" />
@@ -288,10 +309,10 @@ export default function AdminDashboard() {
               <h3 className="font-medium text-gray-900 text-sm sm:text-base">Manage Orders</h3>
               <p className="text-xs sm:text-sm text-gray-600">View and update order status</p>
             </div>
-          </a>
+          </Link>
           
-          <a
-            href="/admin/users"
+          <Link
+            href={generateAdminUrl("/admin/users")}
             className="flex items-center p-3 sm:p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
           >
             <Users className="h-6 w-6 sm:h-8 sm:w-8 text-purple-500 mr-3" />
@@ -299,9 +320,18 @@ export default function AdminDashboard() {
               <h3 className="font-medium text-gray-900 text-sm sm:text-base">Manage Users</h3>
               <p className="text-xs sm:text-sm text-gray-600">View and manage user accounts</p>
             </div>
-          </a>
+          </Link>
         </div>
       </div>
     </div>
+  );
+}
+
+// Main AdminDashboard component with Suspense boundary
+export default function AdminDashboard() {
+  return (
+    <Suspense fallback={<DashboardSkeleton />}>
+      <AdminDashboardContent />
+    </Suspense>
   );
 }

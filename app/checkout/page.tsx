@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { InlineLoader } from "@/components/ui/loader";
 import { useCart } from "@/lib/cart-context";
 import { useCoupon } from "@/lib/coupon-context";
 import { useAuth } from "@/lib/auth-context";
@@ -62,12 +63,10 @@ export default function CheckoutPage() {
   if (authState.isLoading || orderCompleted) {
     return (
       <div className="max-w-6xl mx-auto px-6 py-8">
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
-            <p>{orderCompleted ? "Redirecting to order confirmation..." : "Loading..."}</p>
-          </div>
-        </div>
+      <InlineLoader 
+        text={orderCompleted ? "Redirecting to order confirmation..." : "Loading..."} 
+        size="md" 
+      />
       </div>
     );
   }

@@ -1,10 +1,12 @@
 "use client";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import ProductCard from "@/components/product-card";
 import ProductFilters from "@/components/product-filters";
 import { Product } from "@/lib/data";
 import { ProductService } from "@/lib/firebase-services";
 import { PRODUCTS } from "@/lib/constants";
+import { CenteredLoader } from "@/components/ui/loader";
 
 interface FilterState {
   colors: string[];
@@ -13,7 +15,9 @@ interface FilterState {
   sizes: string[];
 }
 
-export default function ProductsPage() {
+// Separate component that uses useSearchParams
+function ProductsPageContent() {
+  const searchParams = useSearchParams();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState("featured");
@@ -27,6 +31,17 @@ export default function ProductsPage() {
   useEffect(() => {
     loadProducts();
   }, []);
+
+  useEffect(() => {
+    // Handle URL parameters for category filtering
+    const categoryParam = searchParams.get('category');
+    if (categoryParam) {
+      setFilters(prev => ({
+        ...prev,
+        categories: [categoryParam]
+      }));
+    }
+  }, [searchParams]);
 
   const loadProducts = async () => {
     try {
@@ -57,7 +72,13 @@ export default function ProductsPage() {
 
       // Category filter
       if (filters.categories.length > 0) {
-        if (!filters.categories.includes(product.category)) {
+        const productCategorySlug = product.category.toLowerCase().replace(/\s+/g, '-');
+        const matchesCategory = filters.categories.some(filterCategory => {
+          // Handle both slug format and original category name
+          const filterCategorySlug = filterCategory.toLowerCase().replace(/\s+/g, '-');
+          return productCategorySlug === filterCategorySlug || product.category.toLowerCase() === filterCategory.toLowerCase();
+        });
+        if (!matchesCategory) {
           return false;
         }
       }
@@ -109,17 +130,7 @@ export default function ProductsPage() {
   };
 
   if (loading) {
-    return (
-      <section className="max-w-7xl mx-auto px-6 py-12">
-        <h1 className="text-3xl font-bold mb-8">{PRODUCTS.pageTitle}</h1>
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
-            <p>Loading products...</p>
-          </div>
-        </div>
-      </section>
-    );
+    return <CenteredLoader text="Loading products..." size="lg" />;
   }
 
   return (
@@ -170,5 +181,14 @@ export default function ProductsPage() {
         </div>
       )}
     </section>
+  );
+}
+
+// Main ProductsPage component with Suspense boundary
+export default function ProductsPage() {
+  return (
+    <Suspense fallback={<CenteredLoader text="Loading products..." size="lg" />}>
+      <ProductsPageContent />
+    </Suspense>
   );
 }

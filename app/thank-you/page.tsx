@@ -3,6 +3,7 @@ import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { OrderService, OrderReceipt } from "@/lib/order-services";
 import { useAuth } from "@/lib/auth-context";
+import { CenteredLoader } from "@/components/ui/loader";
 import { 
   CheckCircle, 
   Download, 
@@ -387,12 +388,7 @@ function ThankYouContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading your order details...</p>
-        </div>
-      </div>
+      <CenteredLoader text="Loading your order details..." size="lg" />
     );
   }
 
@@ -638,12 +634,7 @@ function ThankYouContent() {
 
 function LoadingFallback() {
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-        <p className="text-gray-600">Loading your order details...</p>
-      </div>
-    </div>
+    <CenteredLoader text="Loading your order details..." size="lg" />
   );
 }
 

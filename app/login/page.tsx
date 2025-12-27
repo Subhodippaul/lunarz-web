@@ -1,23 +1,85 @@
 "use client";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/toast";
+import { InlineLoader } from "@/components/ui/loader";
 import { useAuth } from "@/lib/auth-context";
 import Link from "next/link";
 import { LOGIN, NAV_LINKS } from "@/lib/constants";
 
-export default function LoginPage() {
+// Separate component that uses useSearchParams
+function LoginPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { addToast } = useToast();
   const { login, loginWithGoogle, state } = useAuth();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
+  const [isValidating, setIsValidating] = useState(true);
+
+  // Validate unique ID on component mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      // Add a small delay to ensure UniqueIdGenerator has time to set the localStorage
+      const validateWithDelay = () => {
+        const urlUid = searchParams.get('uid');
+        const localStorageUid = localStorage.getItem('uniqueId');
+        // If URL doesn't have uid parameter, redirect to home page
+        if (!urlUid) {
+          addToast({
+            title: "Access Denied",
+            description: "Please login again",
+            type: "error",
+          });
+          router.push(NAV_LINKS.home);
+          return;
+        }
+        
+        // If URL has uid parameter, validate it against localStorage
+        if (!localStorageUid || urlUid !== localStorageUid) {
+          // IDs don't match, redirect to home page with toast message
+          addToast({
+            title: "Session Invalid",
+            description: "Please login again",
+            type: "error",
+          });
+          router.push(NAV_LINKS.home);
+          return;
+        }
+        
+        // Validation passed - uid exists and matches localStorage
+        setIsValidating(false);
+      };
+
+      // Try validation immediately, then with a delay if localStorage is empty
+      const localStorageUid = localStorage.getItem('uniqueId');
+      if (localStorageUid) {
+        validateWithDelay();
+      } else {
+        // If localStorage is empty, wait a bit for UniqueIdGenerator to finish
+        setTimeout(validateWithDelay, 500);
+      }
+    }
+  }, [searchParams, router, addToast]);
+
+  // Show loading while validating
+  if (isValidating) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
+        <Card className="w-full max-w-md rounded-2xl shadow-lg">
+          <CardContent className="flex items-center justify-center py-8">
+            <InlineLoader text="Validating session..." size="md" />
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -160,5 +222,22 @@ export default function LoginPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+// Main LoginPage component with Suspense boundary
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
+        <Card className="w-full max-w-md rounded-2xl shadow-lg">
+          <CardContent className="flex items-center justify-center py-8">
+            <InlineLoader text="Loading..." size="md" />
+          </CardContent>
+        </Card>
+      </div>
+    }>
+      <LoginPageContent />
+    </Suspense>
   );
 }

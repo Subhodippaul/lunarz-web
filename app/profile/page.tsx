@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { CenteredLoader, InlineLoader } from "@/components/ui/loader";
 import { 
   User, 
   Package, 
@@ -263,14 +264,7 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="max-w-6xl mx-auto px-6 py-8">
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
-            <p>Loading your profile...</p>
-          </div>
-        </div>
-      </div>
+      <CenteredLoader text="Loading your profile..." size="md" />
     );
   }
 

@@ -1,7 +1,7 @@
 "use client";
 import { useAuth } from "@/lib/auth-context";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { 
   LayoutDashboard, 
@@ -22,7 +22,8 @@ import AdminGuard from "@/components/admin/admin-guard";
 import { ToastProvider } from "@/components/ui/toast";
 import LogoutModal from "@/components/admin/logout-modal";
 
-export default function AdminLayout({
+// Separate component for the layout content that uses useSearchParams
+function AdminLayoutContent({
   children,
 }: {
   children: React.ReactNode;
@@ -31,6 +32,23 @@ export default function AdminLayout({
   const router = useRouter();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [uniqueId, setUniqueId] = useState<string | null>(null);
+
+  // Get unique ID from localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const storedUniqueId = localStorage.getItem('uniqueId');
+      setUniqueId(storedUniqueId);
+    }
+  }, []);
+
+  // Generate admin URL with required parameters
+  const generateAdminUrl = (path: string) => {
+    if (uniqueId && state.isAuthenticated) {
+      return `${path}?uid=${uniqueId}&isAuthenticated=true`;
+    }
+    return path;
+  };
 
   const handleLogoutClick = () => {
     setShowLogoutModal(true);
@@ -110,7 +128,7 @@ export default function AdminLayout({
                     {navigation.map((item) => (
                       <li key={item.name}>
                         <Link
-                          href={item.href}
+                          href={generateAdminUrl(item.href)}
                           onClick={() => setSidebarOpen(false)}
                           className="flex items-center px-4 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100 hover:text-gray-900 transition-colors"
                         >
@@ -170,7 +188,7 @@ export default function AdminLayout({
                 {navigation.map((item) => (
                   <li key={item.name}>
                     <Link
-                      href={item.href}
+                      href={generateAdminUrl(item.href)}
                       className="flex items-center px-4 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100 hover:text-gray-900 transition-colors"
                     >
                       <item.icon className="mr-3 h-5 w-5" />
@@ -233,5 +251,25 @@ export default function AdminLayout({
         />
       </ToastProvider>
     </AdminGuard>
+  );
+}
+
+// Main layout component with Suspense boundary
+export default function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading admin panel...</p>
+        </div>
+      </div>
+    }>
+      <AdminLayoutContent>{children}</AdminLayoutContent>
+    </Suspense>
   );
 }

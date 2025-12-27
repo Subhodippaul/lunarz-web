@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { HERO, NAV_LINKS } from "@/lib/constants";
+import UniqueIdGenerator from "./unique-id-generator";
 
 const heroSlides = [
   {
@@ -32,6 +33,9 @@ export default function HeroWorking() {
   const [isPaused, setIsPaused] = useState(false);
   const [progress, setProgress] = useState(0);
 
+  // useEffect(()=>{
+    UniqueIdGenerator();
+  // },[])
   // Auto-slide functionality
   useEffect(() => {
     if (isPaused) return;

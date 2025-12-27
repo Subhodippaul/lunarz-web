@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ShoppingCart, User, LogOut, Home, Grid3X3 } from "lucide-react";
@@ -14,8 +14,37 @@ export default function Navbar() {
   const { state: authState, logout } = useAuth();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [logoError, setLogoError] = useState(false);
+  const [uniqueId, setUniqueId] = useState<string | null>(null);
   const pathname = usePathname();
   const itemCount = state.items.reduce((sum, item) => sum + item.quantity, 0);
+
+  // Get unique ID from localStorage on client side
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const updateUniqueId = () => {
+        const storedUniqueId = localStorage.getItem('uniqueId');
+        setUniqueId(storedUniqueId);
+      };
+
+      // Initial check
+      updateUniqueId();
+
+      // Listen for storage events (when localStorage changes)
+      window.addEventListener('storage', updateUniqueId);
+
+      // Listen for custom uniqueIdUpdated event
+      window.addEventListener('uniqueIdUpdated', updateUniqueId);
+
+      // Also check periodically in case events don't fire
+      const interval = setInterval(updateUniqueId, 1000);
+
+      return () => {
+        window.removeEventListener('storage', updateUniqueId);
+        window.removeEventListener('uniqueIdUpdated', updateUniqueId);
+        clearInterval(interval);
+      };
+    }
+  }, []);
 
   const handleLogoutClick = () => {
     console.log("Logout button clicked"); // Debug log
@@ -109,7 +138,8 @@ export default function Navbar() {
           <div className="flex items-center space-x-2">
             {/* Admin Button (if admin) */}
             {authState.isAuthenticated && authState.user?.isAdmin && (
-              <Link href="/admin">
+              <Link href={uniqueId ? `/admin?uid=${uniqueId}&isAuthenticated=true` : "/admin"}
+                    onClick={() => console.log('Admin link clicked. UniqueId:', uniqueId, 'URL:', uniqueId ? `/admin?uid=${uniqueId}&isAuthenticated=true` : "/admin")}>
                 <Button size="sm" className="bg-purple-700 text-white hover:bg-black hover:text-white">
                   Admin
                 </Button>
@@ -160,7 +190,8 @@ export default function Navbar() {
               </div>
             ) : (
               <div className="flex items-center space-x-2">
-                <Link href={NAV_LINKS.login}>
+                <Link href={uniqueId ? `${NAV_LINKS.login}?uid=${uniqueId}` : NAV_LINKS.login} 
+                      onClick={() => console.log('Login link clicked. UniqueId:', uniqueId, 'URL:', uniqueId ? `${NAV_LINKS.login}?uid=${uniqueId}` : NAV_LINKS.login)}>
                   <Button variant="outline" size="sm">{NAV_TEXT.login}</Button>
                 </Link>
                 <Link href={NAV_LINKS.signup}>
