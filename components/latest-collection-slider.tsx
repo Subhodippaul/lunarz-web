@@ -2,31 +2,31 @@
 import { useState, useEffect } from "react";
 import { AdminProductService } from "@/lib/admin-services";
 import { Product } from "@/lib/data";
-import { ChevronLeft, ChevronRight, TrendingUp } from "lucide-react";
+import { ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { Separator } from "@/components/ui/separator";
 
-export default function TrendingProductsSlider() {
+export default function LatestCollectionSlider() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentMobileIndex, setCurrentMobileIndex] = useState(0);
   const [currentDesktopIndex, setCurrentDesktopIndex] = useState(0);
 
   useEffect(() => {
-    fetchTrendingProducts();
+    fetchLatestProducts();
   }, []);
 
-  const fetchTrendingProducts = async () => {
+  const fetchLatestProducts = async () => {
     try {
-      // Get all products and simulate trending logic
+      // Get all products and simulate latest collection logic
       const allProducts = await AdminProductService.getAllProducts();
       
-      // For now, we'll take the first 12 products as trending
-      // In a real app, this would be based on sales data, views, etc.
-      const trendingProducts = allProducts.slice(0, 12);
-      setProducts(trendingProducts);
+      // For latest collection, we'll take the most recent products (reverse order)
+      // In a real app, this would be based on creation date, featured flag, etc.
+      const latestProducts = allProducts.slice().reverse().slice(0, 12);
+      setProducts(latestProducts);
     } catch (error) {
-      console.error("Error fetching trending products:", error);
+      console.error("Error fetching latest products:", error);
       // Fallback to mock data if needed
     } finally {
       setLoading(false);
@@ -65,7 +65,7 @@ export default function TrendingProductsSlider() {
 
   if (loading) {
     return (
-      <section className="py-16 bg-white">
+      <section className="py-16 bg-gradient-to-br from-purple-50 to-pink-50">
         <div className="max-w-7xl mx-auto px-6">
           <div className="animate-pulse">
             <div className="h-8 bg-gray-200 rounded w-1/3 mb-4"></div>
@@ -101,25 +101,25 @@ export default function TrendingProductsSlider() {
   }
 
   return (
-    <section className="py-16 bg-white">
+    <section className="py-16 bg-gradient-to-br from-purple-50 to-pink-50">
       <div className="max-w-7xl mx-auto px-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
             <div className="flex items-center space-x-2 mb-2">
-              <TrendingUp className="h-6 w-6 text-orange-500" />
+              <Sparkles className="h-6 w-6 text-purple-500" />
               <h2 className="text-3xl md:text-4xl font-bold text-gray-900">
-                Trending Products
+                Latest Collection
               </h2>
             </div>
             <p className="text-lg text-gray-600">
-              Most popular items loved by our customers
+              Fresh arrivals and newest additions to our store
             </p>
           </div>
           
           <Link
             href="/products"
-            className="hidden md:inline-flex items-center text-blue-600 hover:text-blue-800 font-medium"
+            className="hidden md:inline-flex items-center text-purple-600 hover:text-purple-800 font-medium"
           >
             View All Products
           </Link>
@@ -156,10 +156,10 @@ export default function TrendingProductsSlider() {
                               }}
                             />
                             
-                            {/* Trending Badge */}
+                            {/* New Badge */}
                             <div className="absolute top-2 left-2">
-                              <div className="bg-orange-500 text-white px-1.5 py-0.5 rounded-full text-xs font-medium flex items-center space-x-1">
-                                <TrendingUp className="h-2.5 w-2.5" />
+                              <div className="bg-purple-500 text-white px-1.5 py-0.5 rounded-full text-xs font-medium flex items-center space-x-1">
+                                <Sparkles className="h-2.5 w-2.5" />
                               </div>
                             </div>
 
@@ -182,11 +182,11 @@ export default function TrendingProductsSlider() {
                           {/* Product Info */}
                           <div className="p-2">
                             <div className="mb-1">
-                              <span className="inline-block px-1.5 py-0.5 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
+                              <span className="inline-block px-1.5 py-0.5 text-xs font-medium bg-purple-100 text-purple-800 rounded-full">
                                 {product.category}
                               </span>
                             </div>
-                            <h3 className="font-semibold text-gray-900 mb-1 line-clamp-2 group-hover:text-blue-600 transition-colors text-sm">
+                            <h3 className="font-semibold text-gray-900 mb-1 line-clamp-2 group-hover:text-purple-600 transition-colors text-sm">
                               {product.name}
                             </h3>
                             
@@ -258,7 +258,7 @@ export default function TrendingProductsSlider() {
                   key={index}
                   onClick={() => goToMobileSlide(index)}
                   className={`w-2 h-2 rounded-full transition-colors ${
-                    index === currentMobileIndex ? 'bg-blue-600' : 'bg-gray-300'
+                    index === currentMobileIndex ? 'bg-purple-600' : 'bg-gray-300'
                   }`}
                 />
               ))}
@@ -297,11 +297,11 @@ export default function TrendingProductsSlider() {
                               }}
                             />
                             
-                            {/* Trending Badge */}
+                            {/* New Badge */}
                             <div className="absolute top-3 left-3">
-                              <div className="bg-orange-500 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center space-x-1">
-                                <TrendingUp className="h-3 w-3" />
-                                <span>Trending</span>
+                              <div className="bg-purple-500 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center space-x-1">
+                                <Sparkles className="h-3 w-3" />
+                                <span>New</span>
                               </div>
                             </div>
 
@@ -333,14 +333,14 @@ export default function TrendingProductsSlider() {
                           {/* Product Info */}
                           <div className="p-4">
                             <div className="mb-2">
-                              <span className="inline-block px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
+                              <span className="inline-block px-2 py-1 text-xs font-medium bg-purple-100 text-purple-800 rounded-full">
                                 {product.category}
                               </span>
                             </div>
                             <div className="space-y-4 w-20 mb-2">
                               <Separator/>
                             </div>
-                            <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors text-base">
+                            <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2 group-hover:text-purple-600 transition-colors text-base">
                               {product.name}
                             </h3>
                             
@@ -412,7 +412,7 @@ export default function TrendingProductsSlider() {
                   key={index}
                   onClick={() => goToDesktopSlide(index)}
                   className={`w-2 h-2 rounded-full transition-colors ${
-                    index === currentDesktopIndex ? 'bg-blue-600' : 'bg-gray-300'
+                    index === currentDesktopIndex ? 'bg-purple-600' : 'bg-gray-300'
                   }`}
                 />
               ))}
@@ -424,7 +424,7 @@ export default function TrendingProductsSlider() {
         <div className="text-center mt-8 md:hidden mobile-safe-bottom">
           <Link
             href="/products"
-            className="inline-flex items-center text-blue-600 hover:text-blue-800 font-medium"
+            className="inline-flex items-center text-purple-600 hover:text-purple-800 font-medium"
           >
             View All Products
           </Link>

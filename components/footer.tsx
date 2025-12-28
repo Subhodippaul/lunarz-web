@@ -264,7 +264,7 @@ export default function Footer() {
                     {method}
                   </div>
                 ))}
-                <span className="text-gray-400 text-xs">& more</span>
+                <span className="text-gray-400 text-xs"></span>
               </div>
             </div>
           </div>

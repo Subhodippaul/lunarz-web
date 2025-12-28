@@ -515,3 +515,32 @@
   transform: translateY(-1px);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
+/* Trending Products Mobile 2x2 Grid Layout */
+@media (max-width: 767px) {
+  .trending-products-container {
+    /* Ensure proper spacing for 2x2 grid on mobile */
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  
+  .trending-product-item {
+    /* Each item takes up half width minus gap for 2 columns */
+    width: calc(50% - 0.25rem);
+    flex-shrink: 0;
+  }
+  
+/* Smooth transitions for trending products */
+.trending-product-slide {
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Ensure proper aspect ratios on mobile */
+@media (max-width: 767px) {
+  .trending-product-image {
+    aspect-ratio: 1 / 1;
+    width: 100%;
+    height: auto;
+  }
+}
+}
