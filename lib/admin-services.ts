@@ -76,6 +76,142 @@ export class AdminProductService {
       throw new Error(error.message);
     }
   }
+
+  // ============================================================================
+  // TRENDING PRODUCTS MANAGEMENT
+  // ============================================================================
+
+  static async getTrendingProducts(): Promise<Product[]> {
+    try {
+      const q = query(
+        collection(db, COLLECTIONS.PRODUCTS),
+        where("isTrending", "==", true),
+        orderBy("trendingOrder", "asc")
+      );
+      const querySnapshot = await getDocs(q);
+      return querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as Product[];
+    } catch (error) {
+      console.error("Error fetching trending products:", error);
+      // Fallback to regular products if trending query fails
+      const allProducts = await this.getAllProducts();
+      return allProducts.slice(0, 12);
+    }
+  }
+
+  static async setProductTrending(productId: string, isTrending: boolean, order?: number): Promise<void> {
+    try {
+      const updates: Partial<Product> = { isTrending };
+      if (isTrending && order !== undefined) {
+        updates.trendingOrder = order;
+      }
+      await this.updateProduct(productId, updates);
+    } catch (error: any) {
+      throw new Error(error.message);
+    }
+  }
+
+  static async updateTrendingOrder(productId: string, newOrder: number): Promise<void> {
+    try {
+      await this.updateProduct(productId, { trendingOrder: newOrder });
+    } catch (error: any) {
+      throw new Error(error.message);
+    }
+  }
+
+  // ============================================================================
+  // LATEST COLLECTION MANAGEMENT
+  // ============================================================================
+
+  static async getLatestCollectionProducts(): Promise<Product[]> {
+    try {
+      const q = query(
+        collection(db, COLLECTIONS.PRODUCTS),
+        where("isLatestCollection", "==", true),
+        orderBy("latestOrder", "asc")
+      );
+      const querySnapshot = await getDocs(q);
+      return querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as Product[];
+    } catch (error) {
+      console.error("Error fetching latest collection products:", error);
+      // Fallback to recent products if latest collection query fails
+      const allProducts = await this.getAllProducts();
+      return allProducts.slice().reverse().slice(0, 12);
+    }
+  }
+
+  static async setProductLatestCollection(productId: string, isLatestCollection: boolean, order?: number): Promise<void> {
+    try {
+      const updates: Partial<Product> = { isLatestCollection };
+      if (isLatestCollection && order !== undefined) {
+        updates.latestOrder = order;
+      }
+      await this.updateProduct(productId, updates);
+    } catch (error: any) {
+      throw new Error(error.message);
+    }
+  }
+
+  static async updateLatestCollectionOrder(productId: string, newOrder: number): Promise<void> {
+    try {
+      await this.updateProduct(productId, { latestOrder: newOrder });
+    } catch (error: any) {
+      throw new Error(error.message);
+    }
+  }
+
+  // ============================================================================
+  // BULK OPERATIONS FOR HOMEPAGE SECTIONS
+  // ============================================================================
+
+  static async bulkUpdateTrendingProducts(productUpdates: Array<{ productId: string; isTrending: boolean; order?: number }>): Promise<void> {
+    try {
+      const batch = writeBatch(db);
+      
+      productUpdates.forEach(({ productId, isTrending, order }) => {
+        const docRef = doc(db, COLLECTIONS.PRODUCTS, productId);
+        const updates: any = { 
+          isTrending,
+          updatedAt: Timestamp.now()
+        };
+        if (isTrending && order !== undefined) {
+          updates.trendingOrder = order;
+        }
+        batch.update(docRef, updates);
+      });
+
+      await batch.commit();
+    } catch (error: any) {
+      throw new Error(error.message);
+    }
+  }
+
+  static async bulkUpdateLatestCollection(productUpdates: Array<{ productId: string; isLatestCollection: boolean; order?: number }>): Promise<void> {
+    try {
+      const batch = writeBatch(db);
+      
+      productUpdates.forEach(({ productId, isLatestCollection, order }) => {
+        const docRef = doc(db, COLLECTIONS.PRODUCTS, productId);
+        const updates: any = { 
+          isLatestCollection,
+          updatedAt: Timestamp.now()
+        };
+        if (isLatestCollection && order !== undefined) {
+          updates.latestOrder = order;
+        }
+        batch.update(docRef, updates);
+      });
+
+      await batch.commit();
+    } catch (error: any) {
+      throw new Error(error.message);
+    }
+  }
 }
 
 // ============================================================================

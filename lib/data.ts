@@ -17,6 +17,11 @@ export interface Product {
   sku?: string; // Stock Keeping Unit
   barcode?: string; // Product barcode
   stockHistory?: StockEntry[]; // Stock movement history
+  // Admin controlled flags for homepage sections
+  isTrending?: boolean; // Show in trending products section
+  isLatestCollection?: boolean; // Show in latest collection section
+  trendingOrder?: number; // Order in trending section (lower = higher priority)
+  latestOrder?: number; // Order in latest collection section (lower = higher priority)
 }
 
 export interface StockEntry {

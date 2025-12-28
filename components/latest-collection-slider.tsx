@@ -18,12 +18,8 @@ export default function LatestCollectionSlider() {
 
   const fetchLatestProducts = async () => {
     try {
-      // Get all products and simulate latest collection logic
-      const allProducts = await AdminProductService.getAllProducts();
-      
-      // For latest collection, we'll take the most recent products (reverse order)
-      // In a real app, this would be based on creation date, featured flag, etc.
-      const latestProducts = allProducts.slice().reverse().slice(0, 12);
+      // Get latest collection products as controlled by admin
+      const latestProducts = await AdminProductService.getLatestCollectionProducts();
       setProducts(latestProducts);
     } catch (error) {
       console.error("Error fetching latest products:", error);
@@ -33,9 +29,9 @@ export default function LatestCollectionSlider() {
     }
   };
 
-  // Mobile: slide by 4 products (2x2 grid), Desktop: slide by 5 products (single row)
+  // Mobile: slide by 4 products (2x2 grid), Desktop: slide by 4 products (single row)
   const mobileItemsPerSlide = 4;
-  const desktopItemsPerSlide = 5;
+  const desktopItemsPerSlide = 4;
   const maxMobileSlides = Math.max(0, Math.ceil(products.length / mobileItemsPerSlide) - 1);
   const maxDesktopSlides = Math.max(0, Math.ceil(products.length / desktopItemsPerSlide) - 1);
 
@@ -70,8 +66,8 @@ export default function LatestCollectionSlider() {
           <div className="animate-pulse">
             <div className="h-8 bg-gray-200 rounded w-1/3 mb-4"></div>
             <div className="h-4 bg-gray-200 rounded w-1/2 mb-8"></div>
-            {/* Mobile: 2x2 grid, Desktop: 1x5 grid */}
-            <div className="grid grid-cols-2 grid-rows-2 md:grid-cols-5 md:grid-rows-1 gap-4 md:gap-6">
+            {/* Mobile: 2x2 grid, Desktop: 1x4 grid */}
+            <div className="grid grid-cols-2 grid-rows-2 md:grid-cols-4 md:grid-rows-1 gap-4 md:gap-6">
               {[...Array(4)].map((_, i) => (
                 <div key={i} className="bg-gray-100 rounded-lg md:block" style={{ display: i >= 4 ? 'none' : 'block' }}>
                   <div className="aspect-square bg-gray-200 rounded-t-lg mb-4"></div>
@@ -275,8 +271,8 @@ export default function LatestCollectionSlider() {
             >
               {Array.from({ length: Math.ceil(products.length / desktopItemsPerSlide) }).map((_, slideIndex) => (
                 <div key={slideIndex} className="w-full shrink-0">
-                  {/* Desktop: 1x5 Grid (5 columns, 1 row) */}
-                  <div className="grid grid-cols-5 gap-6">
+                  {/* Desktop: 1x4 Grid (4 columns, 1 row) */}
+                  <div className="grid grid-cols-4 gap-6">
                     {products
                       .slice(slideIndex * desktopItemsPerSlide, (slideIndex + 1) * desktopItemsPerSlide)
                       .map((product) => (

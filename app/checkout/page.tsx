@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { InlineLoader } from "@/components/ui/loader";
+import PaymentConfirmationDrawer from "@/components/payment-confirmation-drawer";
 import { useCart } from "@/lib/cart-context";
 import { useCoupon } from "@/lib/coupon-context";
 import { useAuth } from "@/lib/auth-context";
@@ -12,7 +13,8 @@ import { useRouter } from "next/navigation";
 import { useToast } from "@/components/ui/toast";
 import { Alert, AlertDescription, AlertIcon } from "@/components/ui/alert";
 import { getShippingSettings, calculateShippingCost, type ShippingSettings } from "@/lib/shipping-services";
-import { RazorpayService, PaymentResult, RazorpayResponse } from "@/lib/razorpay-service";
+import { RazorpayService, RazorpayResponse } from "@/lib/razorpay-service";
+import { EmailService, OrderEmailData } from "@/lib/email-service";
 import { AUTH, NAV_LINKS, CHECKOUT, CURRENCY } from "@/lib/constants";
 
 export default function CheckoutPage() {
@@ -26,6 +28,7 @@ export default function CheckoutPage() {
   const [sameAsBilling, setSameAsBilling] = useState(true);
   const [paymentMethod, setPaymentMethod] = useState("online");
   const [shippingSettings, setShippingSettings] = useState<ShippingSettings | null>(null);
+  const [showPaymentDrawer, setShowPaymentDrawer] = useState(false);
 
   // Load shipping settings
   useEffect(() => {
@@ -139,6 +142,9 @@ export default function CheckoutPage() {
         // Handle COD order
         const orderId = await OrderService.createOrder(orderData);
         
+        // Send email notifications
+        await sendOrderEmails(orderData, orderId);
+        
         addToast({
           type: "success",
           title: "Order placed successfully!",
@@ -186,6 +192,9 @@ export default function CheckoutPage() {
 
                   // Create order in database
                   const orderId = await OrderService.createOrder(updatedOrderData);
+                  
+                  // Send email notifications
+                  await sendOrderEmails(updatedOrderData, orderId);
                   
                   addToast({
                     type: "success",
@@ -261,6 +270,66 @@ export default function CheckoutPage() {
       });
       setIsProcessing(false);
     }
+  };
+
+  // Email notification helper function
+  const sendOrderEmails = async (orderData: any, orderId: string) => {
+    try {
+      const emailData: OrderEmailData = {
+        orderId: orderId,
+        customerEmail: orderData.customerEmail || '',
+        customerName: orderData.shippingAddress?.fullName || 'Customer',
+        items: (orderData.items || []).map((item: any) => ({
+          name: item.name || 'Unknown Item',
+          quantity: item.quantity || 0,
+          price: item.price || 0,
+          image: item.image || item.images?.[0] || ''
+        })),
+        totalAmount: orderData.total || 0,
+        shippingAddress: {
+          fullName: orderData.shippingAddress?.fullName || '',
+          address: orderData.shippingAddress?.addressLine1 || '',
+          city: orderData.shippingAddress?.city || '',
+          state: orderData.shippingAddress?.state || '',
+          pincode: orderData.shippingAddress?.pincode || '',
+          phone: orderData.shippingAddress?.phone || ''
+        },
+        paymentMethod: orderData.paymentMethod === 'cod' ? 'Cash on Delivery' : 'Online Payment',
+        orderDate: new Date().toLocaleDateString('en-IN', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        })
+      };
+
+      // Send emails (these will run in background)
+      EmailService.sendOrderConfirmationToCustomer(emailData);
+      EmailService.sendOrderNotificationToAdmin(emailData);
+    } catch (error) {
+      console.error('Error sending emails:', error);
+      // Don't fail the order if email fails
+    }
+  };
+
+  // Payment drawer handlers
+  const handlePayNowClick = () => {
+    setShowPaymentDrawer(true);
+  };
+
+  const handleChangePaymentMethod = () => {
+    setShowPaymentDrawer(false);
+    // Scroll to payment method section
+    const paymentSection = document.getElementById('payment-method-section');
+    if (paymentSection) {
+      paymentSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  const handleProceedWithPayment = () => {
+    setShowPaymentDrawer(false);
+    handlePlaceOrder();
   };
 
   // Calculate totals with coupon and shipping
@@ -388,7 +457,7 @@ export default function CheckoutPage() {
           </Card>
 
           {/* Payment Method */}
-          <Card>
+          <Card id="payment-method-section">
             <CardHeader>
               <CardTitle>{CHECKOUT.paymentMethod}</CardTitle>
             </CardHeader>
@@ -542,7 +611,7 @@ export default function CheckoutPage() {
 
               <Button 
                 className="w-full bg-red-500 hover:bg-red-600 text-white"
-                onClick={handlePlaceOrder}
+                onClick={handlePayNowClick}
                 disabled={isProcessing}
               >
                 {isProcessing 
@@ -556,6 +625,17 @@ export default function CheckoutPage() {
           </Card>
         </div>
       </div>
+
+      {/* Payment Confirmation Drawer */}
+      <PaymentConfirmationDrawer
+        isOpen={showPaymentDrawer}
+        onClose={() => setShowPaymentDrawer(false)}
+        onChangeMethod={handleChangePaymentMethod}
+        onProceed={handleProceedWithPayment}
+        currentPaymentMethod={paymentMethod}
+        totalAmount={finalTotal}
+        isProcessing={isProcessing}
+      />
     </div>
   );
 }

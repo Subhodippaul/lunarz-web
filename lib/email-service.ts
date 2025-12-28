@@ -1,0 +1,261 @@
+// Email service for order notifications
+// This is a basic implementation - in production, you'd use services like:
+// - SendGrid, Mailgun, AWS SES, or Nodemailer with SMTP
+
+export interface OrderEmailData {
+  orderId: string;
+  customerEmail: string;
+  customerName: string;
+  items: Array<{
+    name: string;
+    quantity: number;
+    price: number;
+    image?: string;
+  }>;
+  totalAmount: number;
+  shippingAddress: {
+    fullName: string;
+    address: string;
+    city: string;
+    state: string;
+    pincode: string;
+    phone: string;
+  };
+  paymentMethod: string;
+  orderDate: string;
+}
+
+export class EmailService {
+  private static ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'lunarz.info@gmail.com';
+  
+  // Customer order confirmation email
+  static async sendOrderConfirmationToCustomer(orderData: OrderEmailData): Promise<boolean> {
+    try {
+      const customerEmailHtml = this.generateCustomerEmailTemplate(orderData);
+      
+      console.log('📧 Sending order confirmation to customer:', orderData.customerEmail);
+      
+      const response = await fetch('/api/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: orderData.customerEmail,
+          subject: `Order Confirmation - ${orderData.orderId}`,
+          html: customerEmailHtml
+        })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('✅ Customer email sent successfully:', result);
+        return true;
+      } else {
+        const error = await response.json();
+        console.error('❌ Failed to send customer email:', error);
+        return false;
+      }
+      
+    } catch (error) {
+      console.error('❌ Error sending customer email:', error);
+      return false;
+    }
+  }
+
+  // Admin order notification email
+  static async sendOrderNotificationToAdmin(orderData: OrderEmailData): Promise<boolean> {
+    try {
+      const adminEmailHtml = this.generateAdminEmailTemplate(orderData);
+      
+      console.log('📧 Sending order notification to admin:', this.ADMIN_EMAIL);
+      
+      const response = await fetch('/api/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: this.ADMIN_EMAIL,
+          subject: `🚨 New Order Received - ${orderData.orderId}`,
+          html: adminEmailHtml
+        })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('✅ Admin email sent successfully:', result);
+        return true;
+      } else {
+        const error = await response.json();
+        console.error('❌ Failed to send admin email:', error);
+        return false;
+      }
+      
+    } catch (error) {
+      console.error('❌ Error sending admin email:', error);
+      return false;
+    }
+  }
+
+  // Customer email template
+  private static generateCustomerEmailTemplate(orderData: OrderEmailData): string {
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Order Confirmation</title>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; text-align: center; }
+          .content { padding: 20px; background: #f9f9f9; }
+          .order-details { background: white; padding: 15px; margin: 15px 0; border-radius: 5px; }
+          .item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; }
+          .total { font-weight: bold; font-size: 18px; color: #667eea; }
+          .footer { text-align: center; padding: 20px; color: #666; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>Order Confirmation</h1>
+            <p>Thank you for your order, ${orderData.customerName}!</p>
+          </div>
+          
+          <div class="content">
+            <div class="order-details">
+              <h2>Order Details</h2>
+              <p><strong>Order ID:</strong> ${orderData.orderId}</p>
+              <p><strong>Order Date:</strong> ${orderData.orderDate}</p>
+              <p><strong>Payment Method:</strong> ${orderData.paymentMethod}</p>
+            </div>
+
+            <div class="order-details">
+              <h2>Items Ordered</h2>
+              ${orderData.items.map(item => `
+                <div class="item">
+                  <div>
+                    <strong>${item.name || 'Unknown Item'}</strong><br>
+                    Quantity: ${item.quantity || 0}
+                  </div>
+                  <div>₹${((item.price || 0) * (item.quantity || 0)).toLocaleString()}</div>
+                </div>
+              `).join('')}
+              <div class="item total">
+                <div>Total Amount</div>
+                <div>₹${(orderData.totalAmount || 0).toLocaleString()}</div>
+              </div>
+            </div>
+
+            <div class="order-details">
+              <h2>Shipping Address</h2>
+              <p>
+                ${orderData.shippingAddress.fullName}<br>
+                ${orderData.shippingAddress.address}<br>
+                ${orderData.shippingAddress.city}, ${orderData.shippingAddress.state} - ${orderData.shippingAddress.pincode}<br>
+                Phone: ${orderData.shippingAddress.phone}
+              </p>
+            </div>
+
+            <div class="order-details">
+              <h2>What's Next?</h2>
+              <p>• We'll process your order within 1-2 business days</p>
+              <p>• You'll receive a shipping confirmation with tracking details</p>
+              <p>• Expected delivery: 3-7 business days</p>
+            </div>
+          </div>
+
+          <div class="footer">
+            <p>Thank you for shopping with Lunarz!</p>
+            <p>If you have any questions, contact us at support@lunarz.com</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+  }
+
+  // Admin email template
+  private static generateAdminEmailTemplate(orderData: OrderEmailData): string {
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>New Order Received</title>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background: #dc3545; color: white; padding: 20px; text-align: center; }
+          .content { padding: 20px; background: #f9f9f9; }
+          .order-details { background: white; padding: 15px; margin: 15px 0; border-radius: 5px; }
+          .item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; }
+          .total { font-weight: bold; font-size: 18px; color: #dc3545; }
+          .urgent { background: #fff3cd; border: 1px solid #ffeaa7; padding: 10px; border-radius: 5px; margin: 10px 0; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>🚨 New Order Received</h1>
+            <p>Order ID: ${orderData.orderId}</p>
+          </div>
+          
+          <div class="content">
+            <div class="urgent">
+              <strong>⚡ Action Required:</strong> Process this order within 24 hours
+            </div>
+
+            <div class="order-details">
+              <h2>Customer Information</h2>
+              <p><strong>Name:</strong> ${orderData.customerName}</p>
+              <p><strong>Email:</strong> ${orderData.customerEmail}</p>
+              <p><strong>Phone:</strong> ${orderData.shippingAddress.phone}</p>
+            </div>
+
+            <div class="order-details">
+              <h2>Order Details</h2>
+              <p><strong>Order ID:</strong> ${orderData.orderId}</p>
+              <p><strong>Order Date:</strong> ${orderData.orderDate}</p>
+              <p><strong>Payment Method:</strong> ${orderData.paymentMethod}</p>
+            </div>
+
+            <div class="order-details">
+              <h2>Items to Ship</h2>
+              ${orderData.items.map(item => `
+                <div class="item">
+                  <div>
+                    <strong>${item.name || 'Unknown Item'}</strong><br>
+                    Qty: ${item.quantity || 0} × ₹${(item.price || 0).toLocaleString()}
+                  </div>
+                  <div>₹${((item.price || 0) * (item.quantity || 0)).toLocaleString()}</div>
+                </div>
+              `).join('')}
+              <div class="item total">
+                <div>Total Revenue</div>
+                <div>₹${(orderData.totalAmount || 0).toLocaleString()}</div>
+              </div>
+            </div>
+
+            <div class="order-details">
+              <h2>Shipping Address</h2>
+              <p>
+                ${orderData.shippingAddress.fullName}<br>
+                ${orderData.shippingAddress.address}<br>
+                ${orderData.shippingAddress.city}, ${orderData.shippingAddress.state} - ${orderData.shippingAddress.pincode}<br>
+                Phone: ${orderData.shippingAddress.phone}
+              </p>
+            </div>
+
+            <div class="order-details">
+              <h2>Next Steps</h2>
+              <p>1. ✅ Verify inventory availability</p>
+              <p>2. 📦 Prepare items for shipping</p>
+              <p>3. 🚚 Generate shipping label</p>
+              <p>4. 📧 Send tracking info to customer</p>
+            </div>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+  }
+}
