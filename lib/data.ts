@@ -4,6 +4,8 @@ export interface Product {
   price: number;
   category: string;
   images: string[];
+  // Color-wise images mapping
+  colorImages?: { [color: string]: string[] };
   variants?: string[];
   sizes: string[];
   description: string;
@@ -11,6 +13,8 @@ export interface Product {
   care: string;
   origin: string;
   manufacturer: string;
+  // Related products
+  relatedProducts?: string[]; // Array of product IDs
   // Inventory management fields
   stock?: number; // Total stock quantity
   lowStockThreshold?: number; // Alert when stock falls below this

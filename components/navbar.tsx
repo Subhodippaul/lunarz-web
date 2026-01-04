@@ -3,7 +3,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { ShoppingCart, User, LogOut, Home, Grid3X3 } from "lucide-react";
+import { ShoppingCart, User, LogOut, Home, Grid3X3, Shirt } from "lucide-react";
 import { useCart } from "@/lib/cart-context";
 import { useAuth } from "@/lib/auth-context";
 import { SITE_CONFIG, NAV_LINKS, NAV_TEXT } from "@/lib/constants";
@@ -121,6 +121,12 @@ export default function Navbar() {
               {NAV_TEXT.shop}
             </Link>
             <Link 
+              href={NAV_LINKS.customTshirt} 
+              className={getMenuItemClasses(NAV_LINKS.customTshirt)}
+            >
+              {NAV_TEXT.customTshirt}
+            </Link>
+            <Link 
               href="/about" 
               className={getMenuItemClasses("/about")}
             >
@@ -212,10 +218,10 @@ export default function Navbar() {
             <span>Home</span>
           </Link>
 
-          {/* Categories */}
-          <Link href="/categories" className={getMobileNavClasses("/categories")}>
-            <Grid3X3 className="w-6 h-6 mb-1" />
-            <span>Categories</span>
+          {/* Custom T-Shirt */}
+          <Link href={NAV_LINKS.customTshirt} className={getMobileNavClasses(NAV_LINKS.customTshirt)}>
+            <Shirt className="w-6 h-6 mb-1" />
+            <span>Custom</span>
           </Link>
 
           {/* Cart */}

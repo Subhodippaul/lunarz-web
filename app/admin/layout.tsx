@@ -16,7 +16,8 @@ import {
   X,
   BarChart3,
   MessageCircle,
-  Star
+  Star,
+  FileText
 } from "lucide-react";
 import AdminGuard from "@/components/admin/admin-guard";
 import { ToastProvider } from "@/components/ui/toast";
@@ -68,6 +69,7 @@ function AdminLayoutContent({
     { name: "Products", href: "/admin/products", icon: Package },
     { name: "Inventory", href: "/admin/inventory", icon: BarChart3 },
     { name: "Orders", href: "/admin/orders", icon: ShoppingCart },
+    { name: "Invoices", href: "/admin/invoices", icon: FileText },
     { name: "Users", href: "/admin/users", icon: Users },
     { name: "Reviews", href: "/admin/reviews", icon: Star },
     { name: "Support", href: "/admin/support", icon: MessageCircle },
@@ -183,7 +185,7 @@ function AdminLayoutContent({
               </Link>
             </div>
             
-            <nav className="mt-8 px-4">
+            <nav className="flex-1 px-4 overflow-y-auto">
               <ul className="space-y-2">
                 {navigation.map((item) => (
                   <li key={item.name}>
@@ -200,15 +202,15 @@ function AdminLayoutContent({
             </nav>
 
             {/* Back to Website Button - Desktop */}
-            <div className="px-4 mt-6">
-              <Link
-                href="/"
-                className="flex items-center gap-2 w-full px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                Back to Website
-              </Link>
-            </div>
+            <div className="px-4 py-3 border-t bg-white">
+    <Link
+      href="/"
+      className="flex items-center gap-2 w-full px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+    >
+      <ArrowLeft className="h-4 w-4" />
+      Back to Website
+    </Link>
+  </div>
 
             <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200">
               <div className="flex items-center mb-4">

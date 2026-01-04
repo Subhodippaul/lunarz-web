@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { AdminOrderService } from "@/lib/admin-services";
-import { Order } from "@/lib/profile-data";
+import { Order, mockOrders } from "@/lib/profile-data";
 import { Search, Eye, Package, Truck, CheckCircle, XCircle, Clock, Plus } from "lucide-react";
 import { OrderTableSkeleton } from "@/components/admin/skeleton-loaders";
 import OrderModal from "@/components/admin/order-modal";
@@ -28,9 +28,27 @@ export default function AdminOrders() {
   const fetchOrders = async () => {
     try {
       const fetchedOrders = await AdminOrderService.getAllOrders();
-      setOrders(fetchedOrders);
+      console.log("Fetched orders:", fetchedOrders);
+      
+      // If no orders found, use mock data for testing
+      if (fetchedOrders.length === 0) {
+        console.log("No orders found, using mock data");
+        const mockOrdersWithUserId = mockOrders.map(order => ({
+          ...order,
+          userId: "mock-user-id"
+        }));
+        setOrders(mockOrdersWithUserId);
+      } else {
+        setOrders(fetchedOrders);
+      }
     } catch (error) {
       console.error("Error fetching orders:", error);
+      // Fallback to mock data on error
+      const mockOrdersWithUserId = mockOrders.map(order => ({
+        ...order,
+        userId: "mock-user-id"
+      }));
+      setOrders(mockOrdersWithUserId);
     } finally {
       setLoading(false);
     }
@@ -58,6 +76,7 @@ export default function AdminOrders() {
   };
 
   const handleViewOrder = (order: OrderWithUser) => {
+    console.log("Viewing order:", order);
     setSelectedOrder(order);
     setIsViewModalOpen(true);
   };

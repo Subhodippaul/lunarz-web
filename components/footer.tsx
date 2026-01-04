@@ -45,9 +45,9 @@ export default function Footer() {
       links: [
         { name: "Contact Us", href: "/contact" },
         { name: "FAQ", href: "/faq" },
+        { name: "Shipping Policy", href: "/shipping-policy" },
+        { name: "Refund Policy", href: "/refund-policy" },
         { name: "Size Guide", href: "/size-guide" },
-        { name: "Shipping Info", href: "/shipping" },
-        { name: "Returns & Exchanges", href: "/returns" },
         { name: "Track Your Order", href: "/track-order" },
         { name: "Help Center", href: "/help" }
       ]
@@ -56,7 +56,7 @@ export default function Footer() {
       title: "Company",
       links: [
         { name: "About Us", href: "/about" },
-        { name: "Our Story", href: "/story" },
+        { name: "Our Story", href: "/our-story" },
         { name: "Careers", href: "/careers" },
         { name: "Press", href: "/press" },
         { name: "Blog", href: "/blog" },
@@ -67,11 +67,9 @@ export default function Footer() {
     legal: {
       title: "Legal",
       links: [
-        { name: "Privacy Policy", href: "/privacy" },
-        { name: "Terms of Service", href: "/terms" },
-        { name: "Cookie Policy", href: "/cookies" },
-        { name: "Refund Policy", href: "/refund-policy" },
-        { name: "Shipping Policy", href: "/shipping-policy" },
+        { name: "Privacy Policy", href: "/privacy-policy" },
+        { name: "Terms of Service", href: "/terms-of-service" },
+        { name: "Cookie Policy", href: "/cookie-policy" },
         { name: "Terms & Conditions", href: "/terms-conditions" }
       ]
     }
@@ -133,11 +131,11 @@ export default function Footer() {
             <div className="space-y-3 mb-6">
               <div className="flex items-center space-x-3">
                 <Mail className="h-4 w-4 text-gray-400" />
-                <span className="text-sm text-gray-300">support@lunarz.com</span>
+                <span className="text-sm text-gray-300">lunarz.info@gmail.com</span>
               </div>
               <div className="flex items-center space-x-3">
                 <Phone className="h-4 w-4 text-gray-400" />
-                <span className="text-sm text-gray-300">+91 98765 43210</span>
+                <span className="text-sm text-gray-300">+91 12345 67890</span>
               </div>
               <div className="flex items-start space-x-3">
                 <MapPin className="h-4 w-4 text-gray-400 mt-0.5" />

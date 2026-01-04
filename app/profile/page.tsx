@@ -245,7 +245,7 @@ export default function ProfilePage() {
   const tabs = [
     { id: "orders" as TabType, label: PROFILE.myOrders, icon: Package },
     { id: "addresses" as TabType, label: PROFILE.addresses, icon: MapPin },
-    { id: "payments" as TabType, label: PROFILE.paymentMethods, icon: CreditCard },
+    // { id: "payments" as TabType, label: PROFILE.paymentMethods, icon: CreditCard },
     { id: "settings" as TabType, label: PROFILE.accountSettings, icon: Settings },
   ];
 

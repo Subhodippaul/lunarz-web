@@ -112,6 +112,17 @@ export default function CartPage() {
                       {item.selectedVariant && <span>{CART.color} {item.selectedVariant}</span>}
                     </div>
 
+                    {/* Custom Design Info */}
+                    {item.isCustom && item.customDesign && (
+                      <div className="bg-blue-50 p-2 rounded-lg mb-3">
+                        <p className="text-xs font-medium text-blue-800 mb-1">Custom Design:</p>
+                        <div className="flex gap-2 text-xs text-blue-700">
+                          {item.customDesign.image && <span>• Custom Image</span>}
+                          {item.customDesign.text && <span>• Text: "{item.customDesign.text}"</span>}
+                        </div>
+                      </div>
+                    )}
+
                     {/* Quantity Controls */}
                     <div className="flex items-center gap-2">
                       <Button

@@ -72,11 +72,13 @@ function LoginPageContent() {
   if (isValidating) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
-        <Card className="w-full max-w-md rounded-2xl shadow-lg">
-          <CardContent className="flex items-center justify-center py-8">
-            <InlineLoader text="Validating session..." size="md" />
-          </CardContent>
-        </Card>
+        <div className="w-full max-w-md">
+          <Card className="rounded-2xl shadow-lg">
+            <CardContent className="flex items-center justify-center py-8">
+              <InlineLoader text="Validating session..." size="md" />
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
@@ -132,12 +134,56 @@ function LoginPageContent() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
-      <Card className="w-full max-w-md rounded-2xl shadow-lg">
-        <CardHeader>
-          <CardTitle className="text-center text-2xl font-semibold">
-            {LOGIN.title}
-          </CardTitle>
-        </CardHeader>
+      <div className="w-full max-w-md space-y-4">
+        {/* Announcement Section */}
+        <Card className="rounded-2xl shadow-lg bg-linear-to-r from-blue-50 to-indigo-50 border-blue-200">
+  <CardContent className="pr-4 pl-4">
+
+    {/* Icon + Text */}
+    <div className="flex items-start gap-3 mb-4">
+      <div className="bg-blue-100 p-2 rounded-full shrink-0">
+        <svg
+          className="w-5 h-5 text-blue-600"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+        </svg>
+      </div>
+
+      <p className="text-gray-700 text-sm leading-relaxed">
+        New to Lunarz or already with us? Sign up to unlock a seamless shopping experience.
+      </p>
+    </div>
+
+    {/* Button below text */}
+    <Link href={NAV_LINKS.signup}>
+      <Button
+        variant="outline"
+        size="sm"
+        className="bg-white hover:bg-blue-50 border-blue-200 text-blue-700 hover:text-blue-800 font-medium"
+      >
+        Sign Up Now
+      </Button>
+    </Link>
+
+  </CardContent>
+</Card>
+
+
+        {/* Login Form */}
+        <Card className="rounded-2xl shadow-lg">
+          <CardHeader>
+            <CardTitle className="text-center text-2xl font-semibold">
+              {LOGIN.title}
+            </CardTitle>
+          </CardHeader>
         <CardContent className="space-y-4">
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
@@ -220,7 +266,8 @@ function LoginPageContent() {
             </Link>
           </p>
         </CardContent>
-      </Card>
+        </Card>
+      </div>
     </div>
   );
 }
@@ -230,11 +277,13 @@ export default function LoginPage() {
   return (
     <Suspense fallback={
       <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
-        <Card className="w-full max-w-md rounded-2xl shadow-lg">
-          <CardContent className="flex items-center justify-center py-8">
-            <InlineLoader text="Loading..." size="md" />
-          </CardContent>
-        </Card>
+        <div className="w-full max-w-md">
+          <Card className="rounded-2xl shadow-lg">
+            <CardContent className="flex items-center justify-center py-8">
+              <InlineLoader text="Loading..." size="md" />
+            </CardContent>
+          </Card>
+        </div>
       </div>
     }>
       <LoginPageContent />

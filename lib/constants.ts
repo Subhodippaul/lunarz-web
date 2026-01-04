@@ -9,6 +9,7 @@ export const SITE_CONFIG = {
 export const NAV_LINKS = {
   home: "/",
   shop: "/products",
+  customTshirt: "/custom-tshirt",
   cart: "/cart",
   checkout: "/checkout",
   profile: "/profile",
@@ -18,6 +19,7 @@ export const NAV_LINKS = {
 
 export const NAV_TEXT = {
   shop: "All Products",
+  customTshirt: "Custom T-Shirt",
   profile: "Profile",
   login: "Login",
   logout: "Logout",

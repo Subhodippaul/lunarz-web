@@ -15,6 +15,7 @@ import { Alert, AlertDescription, AlertIcon } from "@/components/ui/alert";
 import { getShippingSettings, calculateShippingCost, type ShippingSettings } from "@/lib/shipping-services";
 import { RazorpayService, RazorpayResponse } from "@/lib/razorpay-service";
 import { EmailService, OrderEmailData } from "@/lib/email-service";
+import { GoogleDriveService } from "@/lib/google-drive-service";
 import { AUTH, NAV_LINKS, CHECKOUT, CURRENCY } from "@/lib/constants";
 
 export default function CheckoutPage() {
@@ -145,6 +146,9 @@ export default function CheckoutPage() {
         // Send email notifications
         await sendOrderEmails(orderData, orderId);
         
+        // Upload custom designs to Google Drive
+        await uploadCustomDesigns(orderData, orderId);
+        
         addToast({
           type: "success",
           title: "Order placed successfully!",
@@ -195,6 +199,9 @@ export default function CheckoutPage() {
                   
                   // Send email notifications
                   await sendOrderEmails(updatedOrderData, orderId);
+                  
+                  // Upload custom designs to Google Drive
+                  await uploadCustomDesigns(updatedOrderData, orderId);
                   
                   addToast({
                     type: "success",
@@ -310,6 +317,39 @@ export default function CheckoutPage() {
     } catch (error) {
       console.error('Error sending emails:', error);
       // Don't fail the order if email fails
+    }
+  };
+
+  // Upload custom design images to Google Drive
+  const uploadCustomDesigns = async (orderData: any, orderId: string) => {
+    try {
+      const customItems = orderData.items.filter((item: any) => item.isCustom && item.customDesign?.image);
+      
+      if (customItems.length === 0) {
+        return; // No custom items to upload
+      }
+
+      console.log(`📤 Uploading ${customItems.length} custom design(s) for order ${orderId}`);
+
+      for (let i = 0; i < customItems.length; i++) {
+        const item = customItems[i];
+        const fileName = GoogleDriveService.generateFileName(
+          `${orderId}-item-${i + 1}`,
+          orderData.customerEmail
+        );
+
+        await GoogleDriveService.uploadCustomDesign({
+          orderId: orderId,
+          customerEmail: orderData.customerEmail,
+          designImage: item.customDesign.image,
+          fileName: fileName
+        });
+      }
+
+      console.log('✅ All custom designs uploaded successfully');
+    } catch (error) {
+      console.error('❌ Error uploading custom designs:', error);
+      // Don't fail the order if upload fails
     }
   };
 

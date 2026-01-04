@@ -23,6 +23,8 @@ export default function ProductModal({ isOpen, onClose, product }: ProductModalP
     images: [""],
     variants: [""],
     sizes: [""],
+    colorImages: {} as { [color: string]: string[] },
+    relatedProducts: [""],
     stock: 0,
     lowStockThreshold: 10,
     sku: "",
@@ -44,6 +46,8 @@ export default function ProductModal({ isOpen, onClose, product }: ProductModalP
         images: product.images.length > 0 ? product.images : [""],
         variants: product.variants && product.variants.length > 0 ? product.variants : [""],
         sizes: product.sizes.length > 0 ? product.sizes : [""],
+        colorImages: product.colorImages || {},
+        relatedProducts: product.relatedProducts && product.relatedProducts.length > 0 ? product.relatedProducts : [""],
         stock: product.stock || 0,
         lowStockThreshold: product.lowStockThreshold || 10,
         sku: product.sku || "",
@@ -62,6 +66,8 @@ export default function ProductModal({ isOpen, onClose, product }: ProductModalP
         images: [""],
         variants: [""],
         sizes: [""],
+        colorImages: {},
+        relatedProducts: [""],
         stock: 0,
         lowStockThreshold: 10,
         sku: "",
@@ -80,6 +86,8 @@ export default function ProductModal({ isOpen, onClose, product }: ProductModalP
         images: formData.images.filter(img => img.trim() !== ""),
         variants: formData.variants.filter(variant => variant.trim() !== ""),
         sizes: formData.sizes.filter(size => size.trim() !== ""),
+        relatedProducts: formData.relatedProducts.filter(id => id.trim() !== ""),
+        colorImages: formData.colorImages,
       };
 
       if (product) {
@@ -97,24 +105,54 @@ export default function ProductModal({ isOpen, onClose, product }: ProductModalP
     }
   };
 
-  const addArrayItem = (field: "images" | "variants" | "sizes") => {
+  const addArrayItem = (field: "images" | "variants" | "sizes" | "relatedProducts") => {
     setFormData(prev => ({
       ...prev,
       [field]: [...prev[field], ""]
     }));
   };
 
-  const removeArrayItem = (field: "images" | "variants" | "sizes", index: number) => {
+  const removeArrayItem = (field: "images" | "variants" | "sizes" | "relatedProducts", index: number) => {
     setFormData(prev => ({
       ...prev,
       [field]: prev[field].filter((_, i) => i !== index)
     }));
   };
 
-  const updateArrayItem = (field: "images" | "variants" | "sizes", index: number, value: string) => {
+  const updateArrayItem = (field: "images" | "variants" | "sizes" | "relatedProducts", index: number, value: string) => {
     setFormData(prev => ({
       ...prev,
       [field]: prev[field].map((item, i) => i === index ? value : item)
+    }));
+  };
+
+  const addColorImage = (color: string) => {
+    setFormData(prev => ({
+      ...prev,
+      colorImages: {
+        ...prev.colorImages,
+        [color]: [...(prev.colorImages[color] || []), ""]
+      }
+    }));
+  };
+
+  const removeColorImage = (color: string, index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      colorImages: {
+        ...prev.colorImages,
+        [color]: prev.colorImages[color]?.filter((_, i) => i !== index) || []
+      }
+    }));
+  };
+
+  const updateColorImage = (color: string, index: number, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      colorImages: {
+        ...prev.colorImages,
+        [color]: prev.colorImages[color]?.map((item, i) => i === index ? value : item) || []
+      }
     }));
   };
 
@@ -427,6 +465,87 @@ export default function ProductModal({ isOpen, onClose, product }: ProductModalP
               >
                 <Plus className="h-4 w-4 mr-1" />
                 Add Size
+              </button>
+            </div>
+
+            {/* Color-wise Images */}
+            {formData.variants.some(v => v.trim() !== "") && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Color-wise Images
+                </label>
+                <p className="text-xs text-gray-500 mb-4">
+                  Add specific images for each color variant. These will be shown when customers select different colors.
+                </p>
+                {formData.variants.filter(v => v.trim() !== "").map((color) => (
+                  <div key={color} className="mb-4 p-4 border border-gray-200 rounded-lg">
+                    <h4 className="font-medium text-gray-900 mb-2">{color} Images</h4>
+                    {(formData.colorImages[color] || []).map((image, index) => (
+                      <div key={index} className="flex items-center space-x-2 mb-2">
+                        <input
+                          type="url"
+                          value={image}
+                          onChange={(e) => updateColorImage(color, index, e.target.value)}
+                          placeholder={`https://example.com/${color.toLowerCase()}-image.jpg`}
+                          className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeColorImage(color, index)}
+                          className="p-2 text-red-600 hover:text-red-800"
+                        >
+                          <Minus className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => addColorImage(color)}
+                      className="flex items-center text-sm text-blue-600 hover:text-blue-800"
+                    >
+                      <Plus className="h-4 w-4 mr-1" />
+                      Add {color} Image
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Related Products */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Related Products (Product IDs)
+              </label>
+              <p className="text-xs text-gray-500 mb-2">
+                Add product IDs that should be shown as "You might also like" on the product page.
+              </p>
+              {formData.relatedProducts.map((productId, index) => (
+                <div key={index} className="flex items-center space-x-2 mb-2">
+                  <input
+                    type="text"
+                    value={productId}
+                    onChange={(e) => updateArrayItem("relatedProducts", index, e.target.value)}
+                    placeholder="e.g., 1, 2, 3"
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                  {formData.relatedProducts.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeArrayItem("relatedProducts", index)}
+                      className="p-2 text-red-600 hover:text-red-800"
+                    >
+                      <Minus className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={() => addArrayItem("relatedProducts")}
+                className="flex items-center text-sm text-blue-600 hover:text-blue-800"
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                Add Related Product
               </button>
             </div>
 
