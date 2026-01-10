@@ -212,6 +212,29 @@ export class AdminProductService {
       throw new Error(error.message);
     }
   }
+
+  // ============================================================================
+  // USER ORDER SERVICES
+  // ============================================================================
+
+  static async getUserOrders(userId: string): Promise<Order[]> {
+    try {
+      const q = query(
+        collection(db, COLLECTIONS.ORDERS),
+        where("userId", "==", userId),
+        orderBy("createdAt", "desc")
+      );
+      const querySnapshot = await getDocs(q);
+      
+      return querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as Order[];
+    } catch (error) {
+      console.error("Error fetching user orders:", error);
+      return [];
+    }
+  }
 }
 
 // ============================================================================

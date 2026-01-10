@@ -5,11 +5,20 @@ import nodemailer from 'nodemailer';
 const createTransporter = () => {
   // Option 1: Gmail SMTP (recommended for development)
   if (process.env.EMAIL_SERVICE === 'gmail') {
+    // Remove spaces from app password (Gmail app passwords sometimes have spaces)
+    const appPassword = process.env.EMAIL_APP_PASSWORD?.replace(/\s/g, '') || '';
+    
+    console.log('Gmail configuration:', {
+      user: process.env.EMAIL_USER,
+      hasPassword: !!appPassword,
+      passwordLength: appPassword.length
+    });
+
     return nodemailer.createTransport({
       service: 'gmail',
       auth: {
         user: process.env.EMAIL_USER, // Your Gmail address
-        pass: process.env.EMAIL_APP_PASSWORD, // Gmail App Password (not regular password)
+        pass: appPassword, // Gmail App Password (spaces removed)
       },
     });
   }

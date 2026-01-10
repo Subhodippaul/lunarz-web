@@ -17,7 +17,8 @@ import {
   BarChart3,
   MessageCircle,
   Star,
-  FileText
+  FileText,
+  RotateCcw
 } from "lucide-react";
 import AdminGuard from "@/components/admin/admin-guard";
 import { ToastProvider } from "@/components/ui/toast";
@@ -69,6 +70,7 @@ function AdminLayoutContent({
     { name: "Products", href: "/admin/products", icon: Package },
     { name: "Inventory", href: "/admin/inventory", icon: BarChart3 },
     { name: "Orders", href: "/admin/orders", icon: ShoppingCart },
+    { name: "Returns", href: "/admin/returns", icon: RotateCcw },
     { name: "Invoices", href: "/admin/invoices", icon: FileText },
     { name: "Users", href: "/admin/users", icon: Users },
     { name: "Reviews", href: "/admin/reviews", icon: Star },

@@ -66,8 +66,8 @@ export default function LatestCollectionSlider() {
           <div className="animate-pulse">
             <div className="h-8 bg-gray-200 rounded w-1/3 mb-4"></div>
             <div className="h-4 bg-gray-200 rounded w-1/2 mb-8"></div>
-            {/* Mobile: 2x2 grid, Desktop: 1x4 grid */}
-            <div className="grid grid-cols-2 grid-rows-2 md:grid-cols-4 md:grid-rows-1 gap-4 md:gap-6">
+            {/* Mobile: 2x2 grid, Desktop: 1x4 grid, Tablet: 1x3 grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 md:gap-6">
               {[...Array(4)].map((_, i) => (
                 <div key={i} className="bg-gray-100 rounded-lg md:block" style={{ display: i >= 4 ? 'none' : 'block' }}>
                   <div className="aspect-square bg-gray-200 rounded-t-lg mb-4"></div>
@@ -131,7 +131,7 @@ export default function LatestCollectionSlider() {
               {Array.from({ length: Math.ceil(products.length / mobileItemsPerSlide) }).map((_, slideIndex) => (
                 <div key={slideIndex} className="w-full shrink-0">
                   {/* Mobile: 2x2 Grid (2 columns, 2 rows) */}
-                  <div className="grid grid-cols-2 grid-rows-2 gap-3">
+                  <div className="grid grid-cols-2 gap-3">
                     {products
                       .slice(slideIndex * mobileItemsPerSlide, (slideIndex + 1) * mobileItemsPerSlide)
                       .map((product) => (
@@ -271,8 +271,8 @@ export default function LatestCollectionSlider() {
             >
               {Array.from({ length: Math.ceil(products.length / desktopItemsPerSlide) }).map((_, slideIndex) => (
                 <div key={slideIndex} className="w-full shrink-0">
-                  {/* Desktop: 1x4 Grid (4 columns, 1 row) */}
-                  <div className="grid grid-cols-4 gap-6">
+                  {/* Desktop: 1x4 Grid (4 columns, 1 row) - Tablet: 1x3 Grid */}
+                  <div className="grid grid-cols-3 md:grid-cols-4 gap-4 md:gap-6">
                     {products
                       .slice(slideIndex * desktopItemsPerSlide, (slideIndex + 1) * desktopItemsPerSlide)
                       .map((product) => (

@@ -94,6 +94,37 @@ export class EmailService {
     }
   }
 
+  // Password reset OTP email
+  static async sendPasswordResetOTP(email: string, otp: string): Promise<boolean> {
+    try {
+      const otpEmailHtml = this.generateOTPEmailTemplate(otp);
+      
+      const response = await fetch('/api/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: email,
+          subject: 'Password Reset - Verification Code',
+          html: otpEmailHtml
+        })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('✅ OTP email sent successfully to:', email);
+        return true;
+      } else {
+        const error = await response.json();
+        console.error('❌ Failed to send OTP email:', error);
+        return false;
+      }
+      
+    } catch (error) {
+      console.error('❌ Error sending OTP email:', error);
+      return false;
+    }
+  }
+
   // Customer email template
   private static generateCustomerEmailTemplate(orderData: OrderEmailData): string {
     return `
@@ -252,6 +283,70 @@ export class EmailService {
               <p>3. 🚚 Generate shipping label</p>
               <p>4. 📧 Send tracking info to customer</p>
             </div>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+  }
+
+  // OTP email template
+  private static generateOTPEmailTemplate(otp: string): string {
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Password Reset - Verification Code</title>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; }
+          .content { padding: 30px; background: #f9f9f9; }
+          .otp-box { background: white; padding: 30px; margin: 20px 0; border-radius: 10px; text-align: center; border: 2px solid #667eea; }
+          .otp-code { font-size: 36px; font-weight: bold; color: #667eea; letter-spacing: 8px; margin: 20px 0; }
+          .warning { background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 5px; margin: 20px 0; }
+          .footer { text-align: center; padding: 20px; color: #666; font-size: 14px; }
+          .security-tips { background: white; padding: 20px; margin: 15px 0; border-radius: 5px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>🔐 Password Reset</h1>
+            <p>Your verification code is ready</p>
+          </div>
+          
+          <div class="content">
+            <div class="otp-box">
+              <h2>Your Verification Code</h2>
+              <div class="otp-code">${otp}</div>
+              <p>Enter this code to reset your password</p>
+            </div>
+
+            <div class="warning">
+              <strong>⏰ Important:</strong> This code will expire in 5 minutes for security reasons.
+            </div>
+
+            <div class="security-tips">
+              <h3>🛡️ Security Tips</h3>
+              <ul>
+                <li>Never share this code with anyone</li>
+                <li>Lunarz will never ask for this code via phone or email</li>
+                <li>If you didn't request this reset, please ignore this email</li>
+                <li>Use a strong, unique password for your account</li>
+              </ul>
+            </div>
+
+            <div class="security-tips">
+              <h3>Need Help?</h3>
+              <p>If you're having trouble resetting your password or didn't request this code, please contact our support team at <strong>support@lunarz.com</strong></p>
+            </div>
+          </div>
+
+          <div class="footer">
+            <p>This is an automated message from Lunarz</p>
+            <p>Please do not reply to this email</p>
           </div>
         </div>
       </body>

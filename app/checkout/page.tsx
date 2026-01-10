@@ -149,6 +149,9 @@ export default function CheckoutPage() {
         // Upload custom designs to Google Drive
         await uploadCustomDesigns(orderData, orderId);
         
+        // Create Shiprocket order
+        await createShiprocketOrder(orderData, orderId);
+        
         addToast({
           type: "success",
           title: "Order placed successfully!",
@@ -202,6 +205,9 @@ export default function CheckoutPage() {
                   
                   // Upload custom designs to Google Drive
                   await uploadCustomDesigns(updatedOrderData, orderId);
+                  
+                  // Create Shiprocket order
+                  await createShiprocketOrder(updatedOrderData, orderId);
                   
                   addToast({
                     type: "success",
@@ -353,6 +359,75 @@ export default function CheckoutPage() {
     }
   };
 
+  // Create Shiprocket order
+  const createShiprocketOrder = async (orderData: any, orderId: string) => {
+    try {
+      console.log(`📦 Creating Shiprocket order for ${orderId}`);
+
+      // Format order data for Shiprocket API
+      const shiprocketOrderData = {
+        id: orderId,
+        createdAt: new Date().toISOString(),
+        customerInfo: {
+          firstName: orderData.shippingAddress.fullName.split(' ')[0],
+          lastName: orderData.shippingAddress.fullName.split(' ').slice(1).join(' '),
+          email: orderData.customerEmail,
+          phone: orderData.shippingAddress.phone,
+        },
+        shippingAddress: {
+          address: orderData.shippingAddress.addressLine1,
+          city: orderData.shippingAddress.city,
+          state: orderData.shippingAddress.state,
+          pincode: orderData.shippingAddress.pincode,
+          country: orderData.shippingAddress.country || 'India',
+        },
+        items: orderData.items.map((item: any) => ({
+          product: {
+            id: item.id,
+            name: item.name || item.product?.name || 'Product',
+            price: item.price || item.product?.price || 0,
+            sku: item.sku || item.product?.sku || item.id,
+          },
+          quantity: item.quantity || 1,
+        })),
+        totalAmount: orderData.total,
+        paymentMethod: orderData.paymentMethod.toUpperCase(),
+        shippingCharges: orderData.shippingCost || 0,
+        discount: orderData.discountAmount || 0,
+      };
+
+      // Create order via API route
+      const response = await fetch('/api/shiprocket/create-order', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(shiprocketOrderData),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.details || result.message || 'Failed to create Shiprocket order');
+      }
+
+      console.log('✅ Shiprocket order created successfully:', result.data);
+
+      // You might want to store the Shiprocket order ID and shipment ID in your database
+      // for future reference and tracking
+      
+    } catch (error) {
+      console.error('❌ Error creating Shiprocket order:', error);
+      
+      // Show warning to user but don't fail the main order
+      addToast({
+        type: "warning",
+        title: "Shipping Integration Warning",
+        description: "Order placed successfully, but shipping integration failed. We'll process your order manually."
+      });
+    }
+  };
+
   // Payment drawer handlers
   const handlePayNowClick = () => {
     setShowPaymentDrawer(true);
@@ -390,8 +465,8 @@ export default function CheckoutPage() {
       <h1 className="text-3xl font-bold mb-8">{CHECKOUT.pageTitle}</h1>
       
       {/* Security Alert */}
-      <Alert variant="info" className="mb-6">
-        <AlertIcon variant="info" />
+      <Alert variant="info" className="mb-6 flex items-start space-x-2">
+        <AlertIcon variant="info"/>
         <AlertDescription>
           Your payment information is secure and encrypted. We never store your full card details.
         </AlertDescription>
@@ -407,37 +482,37 @@ export default function CheckoutPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                <div>
+                <div className="grid gap-3">
                   <Label htmlFor="firstName">{CHECKOUT.firstName}</Label>
                   <Input id="firstName" placeholder="John" />
                 </div>
-                <div>
+                <div className="grid gap-3">
                   <Label htmlFor="lastName">{CHECKOUT.lastName}</Label>
                   <Input id="lastName" placeholder="Doe" />
                 </div>
               </div>
-              <div>
+              <div className="grid gap-3">
                 <Label htmlFor="email">{CHECKOUT.email}</Label>
                 <Input id="email" type="email" placeholder="john@example.com" />
               </div>
-              <div>
+              <div className="grid gap-3">
                 <Label htmlFor="phone">{CHECKOUT.phone}</Label>
                 <Input id="phone" placeholder="+91 9876543210" />
               </div>
-              <div>
+              <div className="grid gap-3">
                 <Label htmlFor="address">{CHECKOUT.address}</Label>
                 <Input id="address" placeholder="123 Main Street" />
               </div>
               <div className="grid grid-cols-3 gap-4">
-                <div>
+                <div className="grid gap-3">
                   <Label htmlFor="city">{CHECKOUT.city}</Label>
                   <Input id="city" placeholder="Mumbai" />
                 </div>
-                <div>
+                <div className="grid gap-3">
                   <Label htmlFor="state">{CHECKOUT.state}</Label>
                   <Input id="state" placeholder="Maharashtra" />
                 </div>
-                <div>
+                <div className="grid gap-3">
                   <Label htmlFor="pincode">{CHECKOUT.pincode}</Label>
                   <Input id="pincode" placeholder="400001" />
                 </div>

@@ -14,8 +14,10 @@ import {
   Edit,
   Trash2,
   Eye,
-  X
+  X,
+  RefreshCw
 } from "lucide-react";
+import Link from "next/link";
 import { useToast } from "@/components/ui/toast";
 import { useAuth } from "@/lib/auth-context";
 import { PROFILE, CURRENCY } from "@/lib/constants";
@@ -32,7 +34,7 @@ import {
 import { OrderService } from "@/lib/order-services";
 import AddressModal from "@/components/address-modal";
 import PaymentModal from "@/components/payment-modal";
-import OrderTracking from "@/components/order-tracking";
+import OrdersWithActions from "@/components/orders-with-actions";
 
 type TabType = "orders" | "addresses" | "payments" | "settings";
 
@@ -244,7 +246,7 @@ export default function ProfilePage() {
 
   const tabs = [
     { id: "orders" as TabType, label: PROFILE.myOrders, icon: Package },
-    { id: "addresses" as TabType, label: PROFILE.addresses, icon: MapPin },
+    // { id: "addresses" as TabType, label: PROFILE.addresses, icon: MapPin },
     // { id: "payments" as TabType, label: PROFILE.paymentMethods, icon: CreditCard },
     { id: "settings" as TabType, label: PROFILE.accountSettings, icon: Settings },
   ];
@@ -322,9 +324,29 @@ export default function ProfilePage() {
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-semibold">{PROFILE.myOrders}</h2>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => window.location.reload()}
+                >
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Refresh
+                </Button>
               </div>
               
-              <OrderTracking showViewAll={false} />
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <p className="text-blue-800">
+                  <strong>Order Management:</strong> You can return, exchange, or cancel your orders directly from this section. Actions available depend on order status and delivery date.
+                </p>
+                <div className="mt-2 text-sm text-blue-700">
+                  <p>• <strong>Cancel:</strong> Available for pending/processing orders</p>
+                  <p>• <strong>Return:</strong> Available within 30 days of delivery</p>
+                  <p>• <strong>Exchange:</strong> Available within 15 days of delivery</p>
+                </div>
+              </div>
+              
+              {/* Orders List with Actions */}
+              <OrdersWithActions />
             </div>
           )}
 

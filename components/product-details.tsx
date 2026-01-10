@@ -5,9 +5,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Share2, ChevronDown, ChevronUp, ShoppingCart } from "lucide-react";
 import { Product } from "@/lib/data";
 import { useCart } from "@/lib/cart-context";
+import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/components/ui/toast";
 import { PRODUCT_DETAILS, CURRENCY, DEFAULTS, NAV_LINKS } from "@/lib/constants";
 import RelatedProducts from "./related-products";
+import SizeChart from "./size-chart";
 import { useRouter } from "next/navigation";
 
 interface ProductDetailsProps {
@@ -16,6 +18,7 @@ interface ProductDetailsProps {
 
 export default function ProductDetails({ product }: ProductDetailsProps) {
   const { dispatch, state: cartState } = useCart();
+  const { state: authState } = useAuth();
   const { addToast } = useToast();
   const router = useRouter();
   const [selectedSize, setSelectedSize] = useState<string>("");
@@ -25,6 +28,7 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
   const [showProductDetails, setShowProductDetails] = useState(false);
   const [showDescription, setShowDescription] = useState(false);
   const [isInCart, setIsInCart] = useState(false);
+  const [showSizeChart, setShowSizeChart] = useState(false);
 
   // Get current images based on selected variant
   const getCurrentImages = () => {
@@ -52,6 +56,26 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
   }, [selectedVariant]);
 
   const handleAddToCart = () => {
+    // Check if user is authenticated
+    if (!authState.isAuthenticated) {
+      // Store current page URL for redirect after login
+      const currentUrl = window.location.pathname + window.location.search;
+      localStorage.setItem('redirectAfterLogin', currentUrl);
+      
+      // Get unique ID and redirect to login
+      const uniqueId = localStorage.getItem('uniqueId');
+      const loginUrl = uniqueId ? `${NAV_LINKS.login}?uid=${uniqueId}` : NAV_LINKS.login;
+      
+      addToast({
+        title: "Login Required",
+        description: "Please login to add items to your cart.",
+        type: "warning",
+      });
+      
+      router.push(loginUrl);
+      return;
+    }
+
     if (!selectedSize) {
       addToast({
         title: "Size required",
@@ -83,6 +107,26 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
   };
 
   const handleBuyNow = () => {
+    // Check if user is authenticated
+    if (!authState.isAuthenticated) {
+      // Store current page URL for redirect after login
+      const currentUrl = window.location.pathname + window.location.search;
+      localStorage.setItem('redirectAfterLogin', currentUrl);
+      
+      // Get unique ID and redirect to login
+      const uniqueId = localStorage.getItem('uniqueId');
+      const loginUrl = uniqueId ? `${NAV_LINKS.login}?uid=${uniqueId}` : NAV_LINKS.login;
+      
+      addToast({
+        title: "Login Required",
+        description: "Please login to purchase products.",
+        type: "warning",
+      });
+      
+      router.push(loginUrl);
+      return;
+    }
+
     if (!selectedSize) {
       addToast({
         title: "Size required",
@@ -190,7 +234,12 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
             <div>
               <div className="flex items-center justify-between mb-3">
                 <span className="font-medium">{PRODUCT_DETAILS.selectSize}</span>
-                <button className="text-sm text-blue-600 underline">{PRODUCT_DETAILS.sizeChart}</button>
+                <button 
+                  onClick={() => setShowSizeChart(true)}
+                  className="text-sm text-blue-600 underline hover:text-blue-700 transition-colors"
+                >
+                  {PRODUCT_DETAILS.sizeChart}
+                </button>
               </div>
               <div className="grid grid-cols-7 gap-2">
                 {product.sizes.map((size) => (
@@ -338,6 +387,17 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
 
       {/* Related Products */}
       <RelatedProducts currentProduct={product} />
+
+      {/* Size Chart Modal */}
+      <SizeChart 
+        isOpen={showSizeChart}
+        onClose={() => setShowSizeChart(false)}
+        productType={
+          product.category.toLowerCase().includes('hoodie') ? 'hoodie' :
+          product.category.toLowerCase().includes('t-shirt') || product.category.toLowerCase().includes('tee') ? 't-shirt' :
+          'general'
+        }
+      />
     </>
   );
 }

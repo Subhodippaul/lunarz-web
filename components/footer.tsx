@@ -34,7 +34,6 @@ export default function Footer() {
         { name: "All Products", href: "/products" },
         { name: "T-Shirts", href: "/products?category=t-shirts" },
         { name: "Hoodies", href: "/products?category=hoodies" },
-        { name: "Accessories", href: "/products?category=accessories" },
         { name: "New Arrivals", href: "/products?sort=newest" },
         { name: "Best Sellers", href: "/products?sort=popular" },
         { name: "Sale", href: "/products?sale=true" }
@@ -57,11 +56,11 @@ export default function Footer() {
       links: [
         { name: "About Us", href: "/about" },
         { name: "Our Story", href: "/our-story" },
-        { name: "Careers", href: "/careers" },
-        { name: "Press", href: "/press" },
+        // { name: "Careers", href: "/careers" },
+        // { name: "Press", href: "/press" },
         { name: "Blog", href: "/blog" },
         { name: "Sustainability", href: "/sustainability" },
-        { name: "Affiliate Program", href: "/affiliate" }
+        // { name: "Affiliate Program", href: "/affiliate" }
       ]
     },
     legal: {
@@ -78,8 +77,8 @@ export default function Footer() {
   const socialLinks = [
     { name: "Facebook", icon: Facebook, href: "https://facebook.com/lunarz", color: "hover:text-blue-600" },
     { name: "Instagram", icon: Instagram, href: "https://instagram.com/lunarz", color: "hover:text-pink-600" },
-    { name: "Twitter", icon: Twitter, href: "https://twitter.com/lunarz", color: "hover:text-blue-400" },
-    { name: "YouTube", icon: Youtube, href: "https://youtube.com/lunarz", color: "hover:text-red-600" }
+    // { name: "Twitter", icon: Twitter, href: "https://twitter.com/lunarz", color: "hover:text-blue-400" },
+    // { name: "YouTube", icon: Youtube, href: "https://youtube.com/lunarz", color: "hover:text-red-600" }
   ];
 
   const paymentMethods = [
@@ -98,7 +97,7 @@ export default function Footer() {
       {/* Features Section */}
       <div className="border-b border-gray-800">
         <div className="max-w-7xl mx-auto px-6 py-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
             {features.map((feature, index) => (
               <div key={index} className="flex items-center space-x-3">
                 <feature.icon className="h-8 w-8 text-blue-400 shrink-0" />
@@ -135,13 +134,16 @@ export default function Footer() {
               </div>
               <div className="flex items-center space-x-3">
                 <Phone className="h-4 w-4 text-gray-400" />
-                <span className="text-sm text-gray-300">+91 12345 67890</span>
+                <span className="text-sm text-gray-300">+91 9432436470</span>
               </div>
               <div className="flex items-start space-x-3">
                 <MapPin className="h-4 w-4 text-gray-400 mt-0.5" />
                 <span className="text-sm text-gray-300">
-                  123 Fashion Street,<br />
-                  Mumbai, Maharashtra 400001
+                 741,<br /> 
+                 SATYA NARAYAN PALLY,<br /> 
+                 DAKSHIN BEHALA ROAD, <br /> 
+                 Sarsuna, South 24 Parganas, <br /> 
+                 Kolkata, West Bengal, 700061, India
                 </span>
               </div>
             </div>
@@ -219,7 +221,7 @@ export default function Footer() {
         </div>
 
         {/* Newsletter Signup */}
-        <div className="border-t border-gray-800 pt-8 mt-8">
+        {/* <div className="border-t border-gray-800 pt-8 mt-8">
           <div className="max-w-md mx-auto text-center lg:max-w-none lg:text-left">
             <h3 className="font-semibold text-white mb-2">Stay Updated</h3>
             <p className="text-gray-400 text-sm mb-4">
@@ -236,7 +238,7 @@ export default function Footer() {
               </button>
             </div>
           </div>
-        </div>
+        </div> */}
       </div>
 
       {/* Bottom Bar */}
@@ -246,7 +248,7 @@ export default function Footer() {
             {/* Copyright */}
             <div className="text-center lg:text-left">
               <p className="text-gray-400 text-sm">
-                © 2024 Lunarz. All rights reserved. | Made with ❤️ in India
+                © 2025 Lunarz. All rights reserved. | Made with ❤️ in India
               </p>
             </div>
 

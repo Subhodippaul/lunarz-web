@@ -230,6 +230,9 @@ export class OrderService {
             items,
             total: orderData.total,
             shippingAddress: orderData.shippingAddress,
+            createdAt: orderData.createdAt,
+            deliveryDate: orderData.deliveryDate,
+            paymentMethod: orderData.paymentMethod,
           } as Order;
         })
       );

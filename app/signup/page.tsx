@@ -1,17 +1,20 @@
 "use client";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/toast";
+import { InlineLoader } from "@/components/ui/loader";
 import { useAuth } from "@/lib/auth-context";
 import Link from "next/link";
 import { SIGNUP, NAV_LINKS } from "@/lib/constants";
 
-export default function SignupPage() {
+// Separate component that uses useSearchParams
+function SignupPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { addToast } = useToast();
   const { register, loginWithGoogle, state } = useAuth();
   const [formData, setFormData] = useState({
@@ -20,6 +23,67 @@ export default function SignupPage() {
     password: "",
     confirmPassword: "",
   });
+  const [isValidating, setIsValidating] = useState(true);
+
+  // Validate unique ID on component mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const validateWithDelay = () => {
+        const urlUid = searchParams.get('uid');
+        const localStorageUid = localStorage.getItem('uniqueId');
+        
+        // If URL doesn't have uid parameter, redirect to home page
+        if (!urlUid) {
+          addToast({
+            title: "Access Denied",
+            description: "Please signup again",
+            type: "error",
+          });
+          router.push(NAV_LINKS.home);
+          return;
+        }
+        
+        // If URL has uid parameter, validate it against localStorage
+        if (!localStorageUid || urlUid !== localStorageUid) {
+          // IDs don't match, redirect to home page with toast message
+          addToast({
+            title: "Session Invalid",
+            description: "Please signup again",
+            type: "error",
+          });
+          router.push(NAV_LINKS.home);
+          return;
+        }
+        
+        // Validation passed - uid exists and matches localStorage
+        setIsValidating(false);
+      };
+
+      // Try validation immediately, then with a delay if localStorage is empty
+      const localStorageUid = localStorage.getItem('uniqueId');
+      if (localStorageUid) {
+        validateWithDelay();
+      } else {
+        // If localStorage is empty, wait a bit for UniqueIdGenerator to finish
+        setTimeout(validateWithDelay, 500);
+      }
+    }
+  }, [searchParams, router, addToast]);
+
+  // Show loading while validating
+  if (isValidating) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
+        <div className="w-full max-w-md">
+          <Card className="rounded-2xl shadow-lg">
+            <CardContent className="flex items-center justify-center py-8">
+              <InlineLoader text="Validating session..." size="md" />
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,7 +123,15 @@ export default function SignupPage() {
         description: "Welcome to Lunarz! You can now start shopping.",
         type: "success",
       });
-      router.push(NAV_LINKS.home);
+      
+      // Check for redirect URL
+      const redirectUrl = localStorage.getItem('redirectAfterLogin');
+      if (redirectUrl) {
+        localStorage.removeItem('redirectAfterLogin');
+        router.push(redirectUrl);
+      } else {
+        router.push(NAV_LINKS.home);
+      }
     } else {
       addToast({
         title: "Signup failed",
@@ -78,7 +150,15 @@ export default function SignupPage() {
         description: "Welcome to Lunarz! You can now start shopping.",
         type: "success",
       });
-      router.push(NAV_LINKS.home);
+      
+      // Check for redirect URL
+      const redirectUrl = localStorage.getItem('redirectAfterLogin');
+      if (redirectUrl) {
+        localStorage.removeItem('redirectAfterLogin');
+        router.push(redirectUrl);
+      } else {
+        router.push(NAV_LINKS.home);
+      }
     } else {
       addToast({
         title: "Signup failed",
@@ -193,12 +273,37 @@ export default function SignupPage() {
 
           <p className="text-center text-sm text-gray-500">
             {SIGNUP.haveAccount}{' '}
-            <Link href={NAV_LINKS.login} className="text-blue-600 hover:underline">
+            <Link 
+              href={(() => {
+                const uniqueId = typeof window !== 'undefined' ? localStorage.getItem('uniqueId') : null;
+                return uniqueId ? `${NAV_LINKS.login}?uid=${uniqueId}` : NAV_LINKS.login;
+              })()} 
+              className="text-blue-600 hover:underline"
+            >
               {SIGNUP.login}
             </Link>
           </p>
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+// Main SignupPage component with Suspense boundary
+export default function SignupPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
+        <div className="w-full max-w-md">
+          <Card className="rounded-2xl shadow-lg">
+            <CardContent className="flex items-center justify-center py-8">
+              <InlineLoader text="Loading..." size="md" />
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    }>
+      <SignupPageContent />
+    </Suspense>
   );
 }

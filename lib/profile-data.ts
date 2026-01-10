@@ -4,7 +4,7 @@ export interface Order {
   id: string;
   orderNumber: string;
   date: string;
-  status: "pending" | "confirmed" | "shipped" | "delivered" | "cancelled";
+  status: "pending" | "confirmed" | "shipped" | "delivered" | "cancelled" | "returned" | "exchanged" | "return-requested" | "exchange-requested";
   items: {
     productId: string; // Changed from number to string to match Product.id
     name: string;

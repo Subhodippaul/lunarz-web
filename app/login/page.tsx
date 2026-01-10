@@ -103,7 +103,15 @@ function LoginPageContent() {
         description: "You have been logged in successfully.",
         type: "success",
       });
-      router.push(NAV_LINKS.home);
+      
+      // Check for redirect URL
+      const redirectUrl = localStorage.getItem('redirectAfterLogin');
+      if (redirectUrl) {
+        localStorage.removeItem('redirectAfterLogin');
+        router.push(redirectUrl);
+      } else {
+        router.push(NAV_LINKS.home);
+      }
     } else {
       addToast({
         title: "Login failed",
@@ -122,7 +130,15 @@ function LoginPageContent() {
         description: "You have been logged in with Google.",
         type: "success",
       });
-      router.push(NAV_LINKS.home);
+      
+      // Check for redirect URL
+      const redirectUrl = localStorage.getItem('redirectAfterLogin');
+      if (redirectUrl) {
+        localStorage.removeItem('redirectAfterLogin');
+        router.push(redirectUrl);
+      } else {
+        router.push(NAV_LINKS.home);
+      }
     } else {
       addToast({
         title: "Login failed",
@@ -163,7 +179,10 @@ function LoginPageContent() {
     </div>
 
     {/* Button below text */}
-    <Link href={NAV_LINKS.signup}>
+    <Link href={(() => {
+      const uniqueId = typeof window !== 'undefined' ? localStorage.getItem('uniqueId') : null;
+      return uniqueId ? `${NAV_LINKS.signup}?uid=${uniqueId}` : NAV_LINKS.signup;
+    })()}>
       <Button
         variant="outline"
         size="sm"
@@ -209,7 +228,13 @@ function LoginPageContent() {
             </div>
 
             <div className="flex justify-between items-center text-sm">
-              <Link href="#" className="text-blue-600 hover:underline">
+              <Link 
+                href={(() => {
+                  const uniqueId = typeof window !== 'undefined' ? localStorage.getItem('uniqueId') : null;
+                  return uniqueId ? `/forgot-password?uid=${uniqueId}` : '/forgot-password';
+                })()} 
+                className="text-blue-600 hover:underline"
+              >
                 {LOGIN.forgotPassword}
               </Link>
             </div>
@@ -261,7 +286,13 @@ function LoginPageContent() {
 
           <p className="text-center text-sm text-gray-500">
             {LOGIN.noAccount}{' '}
-            <Link href={NAV_LINKS.signup} className="text-blue-600 hover:underline">
+            <Link 
+              href={(() => {
+                const uniqueId = typeof window !== 'undefined' ? localStorage.getItem('uniqueId') : null;
+                return uniqueId ? `${NAV_LINKS.signup}?uid=${uniqueId}` : NAV_LINKS.signup;
+              })()} 
+              className="text-blue-600 hover:underline"
+            >
               {LOGIN.signUp}
             </Link>
           </p>

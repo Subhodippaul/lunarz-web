@@ -1,5 +1,6 @@
 import HeroWorking from "@/components/hero-working";
 import CategoryCarousel from "@/components/category-carousel";
+import CustomTshirtPoster from "@/components/custom-tshirt-poster";
 import TrendingProductsSlider from "@/components/trending-products-slider";
 import LatestCollectionSlider from "@/components/latest-collection-slider";
 import AdvertisementSection from "@/components/advertisement-section";
@@ -12,6 +13,7 @@ export default function HomePage() {
       <UniqueIdGenerator />
       <HeroWorking />
       <CategoryCarousel />
+      <CustomTshirtPoster />
       <TrendingProductsSlider />
       <LatestCollectionSlider />
       <AdvertisementSection />

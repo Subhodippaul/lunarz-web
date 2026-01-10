@@ -3,6 +3,8 @@ import { useState, useEffect, useMemo, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import ProductCard from "@/components/product-card";
 import ProductFilters from "@/components/product-filters";
+import ProductsBanner from "@/components/products-banner";
+// Alternative: import ProductsBannerSimple from "@/components/products-banner-simple";
 import { Product } from "@/lib/data";
 import { ProductService } from "@/lib/firebase-services";
 import { PRODUCTS } from "@/lib/constants";
@@ -21,6 +23,7 @@ function ProductsPageContent() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState("featured");
+  const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState<FilterState>({
     colors: [],
     priceRange: { min: 0, max: 999999 },
@@ -33,13 +36,19 @@ function ProductsPageContent() {
   }, []);
 
   useEffect(() => {
-    // Handle URL parameters for category filtering
+    // Handle URL parameters for category filtering and search
     const categoryParam = searchParams.get('category');
+    const searchParam = searchParams.get('search');
+    
     if (categoryParam) {
       setFilters(prev => ({
         ...prev,
         categories: [categoryParam]
       }));
+    }
+    
+    if (searchParam) {
+      setSearchQuery(searchParam);
     }
   }, [searchParams]);
 
@@ -57,6 +66,18 @@ function ProductsPageContent() {
   // Filter and sort products
   const filteredAndSortedProducts = useMemo(() => {
     let filtered = products.filter((product) => {
+      // Search filter
+      if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase();
+        const matchesSearch = 
+          product.name.toLowerCase().includes(query) ||
+          product.description.toLowerCase().includes(query) ||
+          product.category.toLowerCase().includes(query);
+        if (!matchesSearch) {
+          return false;
+        }
+      }
+
       // Color filter
       if (filters.colors.length > 0) {
         const productColors = product.variants || [];
@@ -118,7 +139,7 @@ function ProductsPageContent() {
     }
 
     return filtered;
-  }, [products, filters, sortBy]);
+  }, [products, filters, sortBy, searchQuery]);
 
   const handleClearFilters = () => {
     setFilters({
@@ -135,7 +156,22 @@ function ProductsPageContent() {
 
   return (
     <section className="max-w-7xl mx-auto px-6 py-12">
-      <h1 className="text-3xl font-bold mb-8">{PRODUCTS.pageTitle}</h1>
+      {/* Banner Section */}
+      <ProductsBanner />
+      
+      {/* Search Results Header */}
+      {searchQuery && (
+        <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+          <h2 className="text-lg font-semibold text-blue-900">
+            Search Results for "{searchQuery}"
+          </h2>
+          <p className="text-blue-700 text-sm">
+            Found {filteredAndSortedProducts.length} products
+          </p>
+        </div>
+      )}
+      
+      {/* <h1 className="text-3xl font-bold mb-8">{PRODUCTS.pageTitle}</h1> */}
       
       {/* Filters and Sort */}
       <ProductFilters

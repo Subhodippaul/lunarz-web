@@ -668,6 +668,47 @@ export class UserService {
     }
   }
 
+  static async checkUserExists(email: string): Promise<boolean> {
+    try {
+      const q = query(collection(db, COLLECTIONS.USERS), where("email", "==", email));
+      const querySnapshot = await getDocs(q);
+      return !querySnapshot.empty;
+    } catch (error: any) {
+      console.error("Error checking user existence:", error);
+      return false;
+    }
+  }
+
+  static async resetPassword(email: string, newPassword: string): Promise<boolean> {
+    try {
+      // Note: Firebase Auth doesn't allow direct password updates without current password
+      // In a real implementation, you would need to use Firebase Admin SDK on the server
+      // For now, we'll just update the user document to indicate password was reset
+      
+      const q = query(collection(db, COLLECTIONS.USERS), where("email", "==", email));
+      const querySnapshot = await getDocs(q);
+
+      if (!querySnapshot.empty) {
+        const userDoc = querySnapshot.docs[0];
+        await updateDoc(userDoc.ref, {
+          passwordResetAt: Timestamp.now(),
+          updatedAt: Timestamp.now(),
+        });
+        
+        // In production, you would use Firebase Admin SDK here:
+        // await admin.auth().updateUser(uid, { password: newPassword });
+        
+        console.log(`Password reset recorded for user: ${email}`);
+        return true;
+      }
+      
+      return false;
+    } catch (error: any) {
+      console.error("Error resetting password:", error);
+      return false;
+    }
+  }
+
   static async deleteUser(userId: string): Promise<void> {
     try {
       // Delete user document

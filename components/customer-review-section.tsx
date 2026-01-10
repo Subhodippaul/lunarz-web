@@ -146,24 +146,6 @@ export default function CustomerReviewSection() {
           <p className="text-lg text-gray-600 mb-6">
             Real reviews from our happy customers across India
           </p>
-          
-          {/* Rating Summary */}
-          <div className="flex items-center justify-center space-x-6 mb-8">
-            <div className="text-center">
-              <div className="flex items-center justify-center space-x-2 mb-2">
-                {renderStars(Math.round(averageRating), "lg")}
-                <span className="text-2xl font-bold text-gray-900">{averageRating}</span>
-              </div>
-              <p className="text-sm text-gray-600">
-                Based on {totalReviews}+ reviews
-              </p>
-            </div>
-            
-            <div className="flex items-center space-x-2 text-green-600">
-              <Shield className="h-5 w-5" />
-              <span className="text-sm font-medium">Verified Reviews</span>
-            </div>
-          </div>
         </div>
 
         {/* Reviews Slider */}
