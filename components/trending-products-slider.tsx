@@ -182,7 +182,7 @@ export default function TrendingProductsSlider() {
                                 {product.category}
                               </span>
                             </div>
-                            <h3 className="font-semibold text-gray-900 mb-1 line-clamp-2 group-hover:text-blue-600 transition-colors text-sm">
+                            <h3 className="truncate font-semibold text-gray-900 mb-1 group-hover:text-blue-600 transition-colors text-sm">
                               {product.name}
                             </h3>
                             
@@ -315,15 +315,6 @@ export default function TrendingProductsSlider() {
                                 ) : null}
                               </div>
                             )}
-
-                            {/* Quick View Overlay - Desktop Only */}
-                            <div className="flex absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 items-center justify-center">
-                              <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                <div className="bg-white text-gray-900 px-4 py-2 rounded-lg font-medium">
-                                  Quick View
-                                </div>
-                              </div>
-                            </div>
                           </div>
 
                           {/* Product Info */}
@@ -336,9 +327,10 @@ export default function TrendingProductsSlider() {
                             <div className="space-y-4 w-20 mb-2">
                               <Separator/>
                             </div>
-                            <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors text-base">
+                            <h3 className="truncate font-semibold text-gray-900 mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors text-base">
                               {product.name}
                             </h3>
+                            
                             
                             <div className="flex items-center justify-between">
                               <div className="flex items-center space-x-2">
@@ -387,13 +379,13 @@ export default function TrendingProductsSlider() {
             <>
               <button
                 onClick={prevDesktopSlide}
-                className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 bg-white rounded-full p-3 shadow-lg border border-gray-200 hover:bg-gray-50 transition-colors z-10"
+                className="cursor-pointer absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 bg-white rounded-full p-3 shadow-lg border border-gray-200 hover:bg-gray-50 transition-colors z-10"
               >
                 <ChevronLeft className="h-5 w-5 text-gray-600" />
               </button>
               <button
                 onClick={nextDesktopSlide}
-                className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 bg-white rounded-full p-3 shadow-lg border border-gray-200 hover:bg-gray-50 transition-colors z-10"
+                className="cursor-pointer absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 bg-white rounded-full p-3 shadow-lg border border-gray-200 hover:bg-gray-50 transition-colors z-10"
               >
                 <ChevronRight className="h-5 w-5 text-gray-600" />
               </button>

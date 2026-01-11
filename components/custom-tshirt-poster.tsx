@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Palette, Shirt, Sparkles, ArrowRight } from "lucide-react";
+import { Palette, Shirt, Sparkles, ArrowRight, Car, Upload } from "lucide-react";
 
 export default function CustomTshirtPoster() {
   return (
@@ -38,7 +38,7 @@ export default function CustomTshirtPoster() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4 py-4">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
-                    <Palette className="w-4 h-4" />
+                    <Upload className="w-4 h-4" />
                   </div>
                   <span className="text-sm">Upload Your Design</span>
                 </div>
@@ -46,7 +46,7 @@ export default function CustomTshirtPoster() {
                   <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
                     <Shirt className="w-4 h-4" />
                   </div>
-                  <span className="text-sm">6 Colors Available</span>
+                  <span className="text-sm">Perfect Size</span>
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
@@ -56,7 +56,7 @@ export default function CustomTshirtPoster() {
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
-                    <ArrowRight className="w-4 h-4" />
+                    <Car className="w-4 h-4" />
                   </div>
                   <span className="text-sm">Fast Delivery</span>
                 </div>
@@ -75,8 +75,9 @@ export default function CustomTshirtPoster() {
                 </Link>
                 <Link href="/products">
                   <Button 
-                    variant="outline" 
+                    variant="ghost" 
                     size="lg"
+                    // className="border-2"
                     className="w-full sm:w-auto border-2 border-white text-white hover:bg-white hover:text-purple-600 font-semibold px-6 md:px-8 py-2.5 md:py-3 rounded-full transition-all duration-300"
                   >
                     Browse Products
@@ -107,7 +108,7 @@ export default function CustomTshirtPoster() {
                     </div>
                     
                     {/* Floating Elements */}
-                    <div className="absolute -top-3 -right-3 sm:-top-4 sm:-right-4 w-10 h-10 sm:w-12 sm:h-12 bg-yellow-400 rounded-full flex items-center justify-center shadow-lg animate-bounce">
+                    <div className="absolute bottom-30 -right-7 sm:bottom-50 sm:-right-4 w-10 h-10 sm:w-12 sm:h-12 bg-yellow-400 rounded-full flex items-center justify-center shadow-lg animate-bounce">
                       <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                     </div>
                     <div className="absolute -bottom-3 -left-3 sm:-bottom-4 sm:-left-4 w-8 h-8 sm:w-10 sm:h-10 bg-pink-400 rounded-full shadow-lg animate-pulse"></div>
@@ -117,14 +118,12 @@ export default function CustomTshirtPoster() {
 
               {/* Floating Price Tag */}
               <div className="absolute top-2 right-2 sm:top-4 sm:right-4 bg-yellow-400 text-purple-900 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full font-bold shadow-lg transform rotate-12 hover:rotate-0 transition-transform duration-300 text-sm sm:text-base">
-                Starting ₹299
+                Starting ₹349
               </div>
             </div>
           </div>
 
-          {/* Bottom Highlight */}
-          <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-yellow-400 via-pink-400 to-purple-400"></div>
-        </div>
+         </div>
       </div>
     </section>
   );
