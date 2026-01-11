@@ -1,6 +1,61 @@
 import { NextRequest, NextResponse } from "next/server";
 import { OrderManagementService } from "@/lib/order-management-service";
-import { EmailService } from "@/lib/email-service";
+import nodemailer from 'nodemailer';
+
+// Email sending function
+const sendEmail = async (to: string, subject: string, html: string) => {
+  try {
+    // Create transporter (same logic as send-email API)
+    const createTransporter = () => {
+      if (process.env.EMAIL_SERVICE === 'gmail') {
+        const appPassword = process.env.EMAIL_APP_PASSWORD?.replace(/\s/g, '') || '';
+        return nodemailer.createTransport({
+          service: 'gmail',
+          auth: {
+            user: process.env.EMAIL_USER,
+            pass: appPassword,
+          },
+        });
+      }
+      
+      if (process.env.SMTP_HOST) {
+        return nodemailer.createTransport({
+          host: process.env.SMTP_HOST,
+          port: parseInt(process.env.SMTP_PORT || '587'),
+          secure: process.env.SMTP_SECURE === 'true',
+          auth: {
+            user: process.env.SMTP_USER,
+            pass: process.env.SMTP_PASSWORD,
+          },
+        });
+      }
+
+      return nodemailer.createTransport({
+        host: 'smtp.ethereal.email',
+        port: 587,
+        auth: {
+          user: 'ethereal.user@ethereal.email',
+          pass: 'ethereal.pass'
+        }
+      });
+    };
+
+    const transporter = createTransporter();
+    const mailOptions = {
+      from: process.env.EMAIL_FROM || 'Lunarz <noreply@lunarz.com>',
+      to: to,
+      subject: subject,
+      html: html,
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    console.log('✅ Email sent successfully:', info.messageId);
+    return true;
+  } catch (error) {
+    console.error('❌ Email sending failed:', error);
+    return false;
+  }
+};
 
 export async function POST(request: NextRequest) {
   try {
@@ -58,11 +113,20 @@ export async function POST(request: NextRequest) {
       </div>
     `;
 
-    await EmailService.sendEmail({
-      to: "lunarz.info@gmail.com",
-      subject: `${type?.charAt(0).toUpperCase() + type?.slice(1)} Request Updated - ${requestId}`,
-      html: adminEmailContent
-    });
+    try {
+      const emailSent = await sendEmail(
+        "lunarz.info@gmail.com",
+        `${type?.charAt(0).toUpperCase() + type?.slice(1)} Request Updated - ${requestId}`,
+        adminEmailContent
+      );
+      
+      if (!emailSent) {
+        console.error('⚠️ Failed to send admin email');
+      }
+    } catch (emailError) {
+      console.error('⚠️ Failed to send admin email:', emailError);
+      // Don't fail the request if email fails
+    }
 
     // Send status update email to customer
     if (userEmail) {
@@ -151,11 +215,20 @@ export async function POST(request: NextRequest) {
         </div>
       `;
 
-      await EmailService.sendEmail({
-        to: userEmail,
-        subject: `${statusInfo.title} - Request #${requestId}`,
-        html: customerEmailContent
-      });
+      try {
+        const emailSent = await sendEmail(
+          userEmail,
+          `${statusInfo.title} - Request #${requestId}`,
+          customerEmailContent
+        );
+        
+        if (!emailSent) {
+          console.error('⚠️ Failed to send customer email');
+        }
+      } catch (emailError) {
+        console.error('⚠️ Failed to send customer email:', emailError);
+        // Don't fail the request if email fails
+      }
     }
 
     return NextResponse.json({ 
