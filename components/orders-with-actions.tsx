@@ -51,72 +51,6 @@ export default function OrdersWithActions() {
     return items?.reduce((total, item) => total + (item.price * item.quantity), 0) || 0;
   };
 
-  const testOrderCreation = async () => {
-    if (!authState.user?.id) return;
-    
-    try {
-      const response = await fetch('/api/test-order-creation', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ userId: authState.user.id }),
-      });
-      
-      const data = await response.json();
-      console.log('🧪 Test Order Response:', data);
-      
-      if (data.success) {
-        console.log(`✅ Test order created! Found ${data.userOrdersCount} total orders`);
-        // Reload orders to see the new test order
-        loadOrders();
-      }
-    } catch (error) {
-      console.error('❌ Test order error:', error);
-    }
-  };
-
-  const viewRequests = async () => {
-    if (!authState.user?.id) return;
-    
-    try {
-      const response = await fetch(`/api/orders/requests?userId=${authState.user.id}`);
-      const data = await response.json();
-      
-      if (data.success) {
-        console.log('📋 Return/Exchange Requests:', data.requests);
-        alert(`You have ${data.requests.length} return/exchange requests. Check console for details.`);
-      }
-    } catch (error) {
-      console.error('❌ Error fetching requests:', error);
-    }
-  };
-
-  const createTestDeliveredOrder = async () => {
-    if (!authState.user?.id) return;
-    
-    try {
-      const response = await fetch('/api/test-delivered-order', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ userId: authState.user.id }),
-      });
-      
-      const data = await response.json();
-      console.log('🧪 Test Delivered Order Response:', data);
-      
-      if (data.success) {
-        console.log(`✅ Test delivered order created! Order ID: ${data.testOrderId}`);
-        // Reload orders to see the new test order
-        loadOrders();
-      }
-    } catch (error) {
-      console.error('❌ Test delivered order error:', error);
-    }
-  };
-
   if (loading) {
     return <CenteredLoader text="Loading your orders..." size="md" />;
   }
@@ -147,45 +81,15 @@ export default function OrdersWithActions() {
           </Button>
           <div className="text-sm text-gray-500">
             <p>If you recently placed an order and it's not showing up:</p>
-            <div className="flex gap-2 mt-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={loadOrders}
-              >
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Refresh Orders
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={testOrderCreation}
-              >
-                Test Order
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={createTestDeliveredOrder}
-                className="text-green-600 border-green-200 hover:bg-green-50"
-              >
-                Test Delivered
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={viewRequests}
-              >
-                View Requests
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => window.location.href = '/products'}
-              >
-                Return to Shop
-              </Button>
-            </div>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={loadOrders}
+              className="mt-2"
+            >
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Refresh Orders
+            </Button>
           </div>
         </div>
       </div>

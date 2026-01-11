@@ -59,11 +59,7 @@ const sendEmail = async (to: string, subject: string, html: string) => {
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('📥 Return/Exchange API called');
-    
     const body = await request.json();
-    console.log('📋 Request body:', body);
-    
     const { 
       orderId, 
       userId, 
@@ -79,14 +75,11 @@ export async function POST(request: NextRequest) {
 
     // Validate required fields
     if (!orderId || !userId || !type || !reason || !items || items.length === 0) {
-      console.error('❌ Missing required fields:', { orderId, userId, type, reason, itemsLength: items?.length });
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
       );
     }
-
-    console.log('✅ Validation passed, creating request...');
 
     // Create the request
     const requestId = await OrderManagementService.createRequest({
@@ -99,8 +92,6 @@ export async function POST(request: NextRequest) {
       pickupAddress,
       images
     });
-
-    console.log('✅ Request created with ID:', requestId);
 
     // Send email notification to admin
     const emailSubject = `New ${type.charAt(0).toUpperCase() + type.slice(1)} Request - Order #${orderId}`;
@@ -162,13 +153,7 @@ export async function POST(request: NextRequest) {
 
     try {
       const emailSent = await sendEmail("lunarz.info@gmail.com", emailSubject, emailContent);
-      if (emailSent) {
-        console.log('✅ Admin email sent');
-      } else {
-        console.error('⚠️ Failed to send admin email');
-      }
     } catch (emailError) {
-      console.error('⚠️ Failed to send admin email:', emailError);
       // Don't fail the request if email fails
     }
 
@@ -203,24 +188,15 @@ export async function POST(request: NextRequest) {
       `;
 
       try {
-        const emailSent = await sendEmail(
+        await sendEmail(
           userEmail,
           `${type.charAt(0).toUpperCase() + type.slice(1)} Request Confirmation - Order #${orderId}`,
           customerEmailContent
         );
-        
-        if (emailSent) {
-          console.log('✅ Customer email sent');
-        } else {
-          console.error('⚠️ Failed to send customer email');
-        }
       } catch (emailError) {
-        console.error('⚠️ Failed to send customer email:', emailError);
         // Don't fail the request if email fails
       }
     }
-
-    console.log('🎉 Request processed successfully');
 
     return NextResponse.json({ 
       success: true, 

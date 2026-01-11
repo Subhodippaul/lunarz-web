@@ -49,9 +49,6 @@ export default function ReturnExchangeModal({
 
   useEffect(() => {
     if (isOpen && order?.items) {
-      console.log('🔍 Modal opened with order:', order);
-      console.log('📦 Order items:', order.items);
-      
       // Initialize selected items with all order items
       setFormData(prev => ({
         ...prev,
@@ -78,9 +75,6 @@ export default function ReturnExchangeModal({
   const handleSubmit = async () => {
     try {
       setLoading(true);
-      console.log('🚀 Starting form submission...');
-      console.log('📋 Form data:', formData);
-      console.log('👤 Auth state:', authState.user);
 
       const selectedItems = formData.selectedItems
         .filter(item => item.selected)
@@ -96,8 +90,6 @@ export default function ReturnExchangeModal({
             exchangeColor: item.exchangeColor
           })
         }));
-
-      console.log('📦 Selected items:', selectedItems);
 
       if (selectedItems.length === 0) {
         alert('Please select at least one item');
@@ -136,8 +128,6 @@ export default function ReturnExchangeModal({
         requestData.images = formData.images;
       }
 
-      console.log('📤 Submitting request data:', requestData);
-
       const response = await fetch('/api/orders/return-exchange', {
         method: 'POST',
         headers: {
@@ -146,10 +136,7 @@ export default function ReturnExchangeModal({
         body: JSON.stringify(requestData),
       });
 
-      console.log('📡 API response status:', response.status);
-      
       const result = await response.json();
-      console.log('📋 API response data:', result);
       
       if (!response.ok) {
         throw new Error(result.error || 'Failed to submit request');
@@ -161,7 +148,7 @@ export default function ReturnExchangeModal({
       // Call onSuccess to refresh the orders list and close modal
       onSuccess();
     } catch (error: any) {
-      console.error('❌ Error submitting request:', error);
+      console.error('Error submitting request:', error);
       alert(`Failed to submit request: ${error.message}`);
     } finally {
       setLoading(false);

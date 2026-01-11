@@ -61,8 +61,6 @@ export class OrderManagementService {
   // Create return/exchange/cancel request
   static async createRequest(request: Omit<ReturnExchangeRequest, 'id' | 'requestDate' | 'status'>): Promise<string> {
     try {
-      console.log('🔄 OrderManagementService.createRequest called with:', request);
-      
       const requestData: any = {
         orderId: request.orderId,
         userId: request.userId,
@@ -86,29 +84,20 @@ export class OrderManagementService {
         requestData.images = request.images;
       }
 
-      console.log('📝 Creating request document:', requestData);
-      
       const docRef = await addDoc(collection(db, this.COLLECTION_NAME), requestData);
-      console.log('✅ Request document created with ID:', docRef.id);
       
       // Update order status based on request type
       if (request.type === 'cancel') {
-        console.log('🚫 Updating order status to cancelled for order:', request.orderId);
         await this.updateOrderStatus(request.orderId, 'cancelled');
-        console.log('✅ Order status updated to cancelled');
       } else if (request.type === 'return') {
-        console.log('↩️ Updating order status to return-requested for order:', request.orderId);
         await this.updateOrderStatus(request.orderId, 'return-requested');
-        console.log('✅ Order status updated to return-requested');
       } else if (request.type === 'exchange') {
-        console.log('🔄 Updating order status to exchange-requested for order:', request.orderId);
         await this.updateOrderStatus(request.orderId, 'exchange-requested');
-        console.log('✅ Order status updated to exchange-requested');
       }
 
       return docRef.id;
     } catch (error: any) {
-      console.error("❌ Error creating request:", error);
+      console.error("Error creating request:", error);
       throw new Error(`Failed to create request: ${error.message}`);
     }
   }
@@ -201,16 +190,12 @@ export class OrderManagementService {
   // Update order status
   static async updateOrderStatus(orderId: string, status: OrderStatus['status']): Promise<void> {
     try {
-      console.log(`🔄 Updating order ${orderId} status to ${status}`);
-      
       await updateDoc(doc(db, this.ORDERS_COLLECTION, orderId), {
         status,
         updatedAt: Timestamp.now()
       });
-      
-      console.log(`✅ Order ${orderId} status updated to ${status}`);
     } catch (error: any) {
-      console.error("❌ Error updating order status:", error);
+      console.error("Error updating order status:", error);
       throw new Error(`Failed to update order status: ${error.message}`);
     }
   }
@@ -253,21 +238,6 @@ export class OrderManagementService {
                        !hasExchangeRequest && 
                        !isReturned && 
                        !isExchanged;
-
-    console.log('🔍 Order eligibility check:', {
-      orderId: order.id,
-      status: order.status,
-      orderDate,
-      deliveryDate,
-      daysSinceOrder,
-      daysSinceDelivery,
-      effectiveDaysSinceDelivery,
-      hasReturnRequest,
-      hasExchangeRequest,
-      canCancel,
-      canReturn,
-      canExchange
-    });
 
     return {
       orderId: order.id,
