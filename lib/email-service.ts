@@ -28,6 +28,37 @@ export interface OrderEmailData {
 export class EmailService {
   private static ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'lunarz.info@gmail.com';
   
+  // Generic email sending method
+  static async sendEmail({ to, subject, html }: { to: string; subject: string; html: string }): Promise<boolean> {
+    try {
+      console.log('📧 Sending email to:', to);
+      
+      const response = await fetch('/api/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to,
+          subject,
+          html
+        })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('✅ Email sent successfully:', result);
+        return true;
+      } else {
+        const error = await response.json();
+        console.error('❌ Failed to send email:', error);
+        return false;
+      }
+      
+    } catch (error) {
+      console.error('❌ Error sending email:', error);
+      return false;
+    }
+  }
+  
   // Customer order confirmation email
   static async sendOrderConfirmationToCustomer(orderData: OrderEmailData): Promise<boolean> {
     try {

@@ -31,6 +31,7 @@ const AuthContext = createContext<{
   loginWithGoogle: () => Promise<boolean>;
   register: (email: string, password: string, name: string) => Promise<boolean>;
   logout: () => void;
+  refreshUser: () => Promise<void>;
 } | null>(null);
 
 function authReducer(state: AuthState, action: AuthAction): AuthState {
@@ -134,6 +135,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const refreshUser = async () => {
+    if (auth.currentUser) {
+      try {
+        const userData = await AuthService.getUserByUid(auth.currentUser.uid);
+        dispatch({ type: "SET_USER", payload: userData });
+      } catch (error) {
+        console.error("Error refreshing user data:", error);
+      }
+    }
+  };
+
   return (
     <AuthContext.Provider value={{ 
       state, 
@@ -141,7 +153,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       login, 
       loginWithGoogle, 
       register, 
-      logout 
+      logout,
+      refreshUser
     }}>
       {children}
     </AuthContext.Provider>

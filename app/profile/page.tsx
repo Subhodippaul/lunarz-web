@@ -3,44 +3,44 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CenteredLoader, InlineLoader } from "@/components/ui/loader";
+import { CenteredLoader } from "@/components/ui/loader";
 import { 
   User, 
   Package, 
-  MapPin, 
-  CreditCard, 
   Settings,
   Plus,
   Edit,
   Trash2,
-  Eye,
-  X,
   RefreshCw
 } from "lucide-react";
-import Link from "next/link";
 import { useToast } from "@/components/ui/toast";
 import { useAuth } from "@/lib/auth-context";
-import { PROFILE, CURRENCY } from "@/lib/constants";
+import { PROFILE } from "@/lib/constants";
 import { 
-  Order,
   Address,
   PaymentMethod
 } from "@/lib/profile-data";
 import { 
   AddressService,
-  PaymentMethodService,
-  UserService
+  PaymentMethodService
 } from "@/lib/firebase-services";
-import { OrderService } from "@/lib/order-services";
+import { 
+  updatePassword, 
+  reauthenticateWithCredential, 
+  EmailAuthProvider 
+} from "firebase/auth";
+import { auth } from "@/lib/firebase";
 import AddressModal from "@/components/address-modal";
 import PaymentModal from "@/components/payment-modal";
 import OrdersWithActions from "@/components/orders-with-actions";
+import ConfirmationDialog from "@/components/ui/confirmation-dialog";
+import SuccessNotification from "@/components/ui/success-notification";
 
 type TabType = "orders" | "addresses" | "payments" | "settings";
 
 export default function ProfilePage() {
   const { addToast } = useToast();
-  const { state: authState } = useAuth();
+  const { state: authState, refreshUser } = useAuth();
   const [activeTab, setActiveTab] = useState<TabType>("orders");
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
@@ -59,10 +59,53 @@ export default function ProfilePage() {
     card?: PaymentMethod;
   }>({ isOpen: false, mode: "add" });
 
+  // Profile update states
+  const [profileData, setProfileData] = useState({
+    name: '',
+    email: ''
+  });
+  
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+
+  // Dialog states
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    type: 'profile' | 'password';
+    title: string;
+    message: string;
+    loading: boolean;
+  }>({
+    isOpen: false,
+    type: 'profile',
+    title: '',
+    message: '',
+    loading: false
+  });
+
+  // Success notification state
+  const [successNotification, setSuccessNotification] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+  }>({
+    isOpen: false,
+    title: '',
+    message: ''
+  });
+
   // Load data when user is authenticated
   useEffect(() => {
     if (authState.isAuthenticated && authState.user) {
       loadUserData();
+      // Initialize profile data
+      setProfileData({
+        name: authState.user.name || '',
+        email: authState.user.email || ''
+      });
     }
   }, [authState.isAuthenticated, authState.user]);
 
@@ -225,22 +268,179 @@ export default function ProfilePage() {
     }
   };
 
-  const handleUpdateProfile = async (updates: { name?: string; email?: string; phone?: string }) => {
+  const handleUpdateProfile = async () => {
     if (!authState.user) return;
     
-    try {
-      await UserService.updateUserProfile(authState.user.id, updates);
+    // Validation
+    if (!profileData.name.trim()) {
       addToast({
-        title: "Profile updated",
-        description: "Your profile information has been saved successfully.",
-        type: "success",
-      });
-    } catch (error) {
-      addToast({
-        title: "Error",
-        description: "Failed to update profile. Please try again.",
+        title: "Validation Error",
+        description: "Name is required.",
         type: "error",
       });
+      return;
+    }
+
+    if (!profileData.email.trim()) {
+      addToast({
+        title: "Validation Error", 
+        description: "Email is required.",
+        type: "error",
+      });
+      return;
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(profileData.email)) {
+      addToast({
+        title: "Validation Error",
+        description: "Please enter a valid email address.",
+        type: "error",
+      });
+      return;
+    }
+
+    // Show confirmation dialog
+    setConfirmDialog({
+      isOpen: true,
+      type: 'profile',
+      title: 'Update Profile',
+      message: 'Are you sure you want to update your profile information?',
+      loading: false
+    });
+  };
+
+  const handleChangePassword = async () => {
+    // Validation
+    if (!passwordData.currentPassword) {
+      addToast({
+        title: "Validation Error",
+        description: "Current password is required.",
+        type: "error",
+      });
+      return;
+    }
+
+    if (!passwordData.newPassword) {
+      addToast({
+        title: "Validation Error",
+        description: "New password is required.",
+        type: "error",
+      });
+      return;
+    }
+
+    if (passwordData.newPassword.length < 6) {
+      addToast({
+        title: "Validation Error",
+        description: "New password must be at least 6 characters long.",
+        type: "error",
+      });
+      return;
+    }
+
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      addToast({
+        title: "Validation Error",
+        description: "New password and confirm password do not match.",
+        type: "error",
+      });
+      return;
+    }
+
+    // Show confirmation dialog
+    setConfirmDialog({
+      isOpen: true,
+      type: 'password',
+      title: 'Change Password',
+      message: 'Are you sure you want to change your password? You will need to use the new password for future logins.',
+      loading: false
+    });
+  };
+
+  const handleConfirmAction = async () => {
+    setConfirmDialog(prev => ({ ...prev, loading: true }));
+
+    try {
+      if (confirmDialog.type === 'profile') {
+        // Update profile
+        const response = await fetch('/api/profile/update', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            userId: authState.user?.id,
+            name: profileData.name,
+            email: profileData.email
+          }),
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.error || 'Failed to update profile');
+        }
+
+        // Refresh user data in auth context
+        await refreshUser();
+
+        // Show success notification
+        setSuccessNotification({
+          isOpen: true,
+          title: 'Profile Updated',
+          message: 'Your profile information has been updated successfully.'
+        });
+
+      } else if (confirmDialog.type === 'password') {
+        // Handle password change on client side with Firebase Auth
+        const user = auth.currentUser;
+        if (!user || !user.email) {
+          throw new Error('User not authenticated');
+        }
+
+        // Re-authenticate user with current password
+        const credential = EmailAuthProvider.credential(user.email, passwordData.currentPassword);
+        await reauthenticateWithCredential(user, credential);
+
+        // Update password
+        await updatePassword(user, passwordData.newPassword);
+
+        // Clear password fields
+        setPasswordData({
+          currentPassword: '',
+          newPassword: '',
+          confirmPassword: ''
+        });
+
+        // Show success notification
+        setSuccessNotification({
+          isOpen: true,
+          title: 'Password Changed',
+          message: 'Your password has been changed successfully.'
+        });
+      }
+
+    } catch (error: any) {
+      let errorMessage = error.message || "An error occurred. Please try again.";
+      
+      // Handle Firebase Auth errors
+      if (error.code === 'auth/wrong-password') {
+        errorMessage = 'Current password is incorrect';
+      } else if (error.code === 'auth/weak-password') {
+        errorMessage = 'New password is too weak';
+      } else if (error.code === 'auth/requires-recent-login') {
+        errorMessage = 'Please log out and log back in before changing your password';
+      }
+      
+      addToast({
+        title: "Error",
+        description: errorMessage,
+        type: "error",
+      });
+    } finally {
+      setConfirmDialog(prev => ({ ...prev, isOpen: false, loading: false }));
     }
   };
 
@@ -478,38 +678,48 @@ export default function ProfilePage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium mb-2">
-                        {PROFILE.fullName}
+                        {PROFILE.fullName} <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="text"
-                        defaultValue={authState.user?.name}
-                        id="profileName"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                        value={profileData.name}
+                        onChange={(e) => setProfileData(prev => ({ ...prev, name: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                        placeholder="Enter your full name"
                       />
                     </div>
                     <div>
                       <label className="block text-sm font-medium mb-2">
-                        {PROFILE.emailAddress}
+                        {PROFILE.emailAddress} <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="email"
-                        defaultValue={authState.user?.email}
-                        id="profileEmail"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                        value={profileData.email}
+                        onChange={(e) => setProfileData(prev => ({ ...prev, email: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                        placeholder="Enter your email address"
                       />
                     </div>
                   </div>
-                  <Button onClick={() => {
-                    const nameInput = document.getElementById('profileName') as HTMLInputElement;
-                    const emailInput = document.getElementById('profileEmail') as HTMLInputElement;
-                    
-                    handleUpdateProfile({
-                      name: nameInput.value,
-                      email: emailInput.value,
-                    });
-                  }}>
-                    {PROFILE.update}
-                  </Button>
+                  <div className="flex gap-3">
+                    <Button 
+                      onClick={handleUpdateProfile}
+                      className="bg-red-600 hover:bg-red-700"
+                    >
+                      {PROFILE.update} Profile
+                    </Button>
+                    <Button 
+                      variant="outline"
+                      onClick={() => {
+                        setProfileData({
+                          name: authState.user?.name || '',
+                          email: authState.user?.email || ''
+                        });
+                      }}
+                    >
+                      Reset
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
 
@@ -520,34 +730,69 @@ export default function ProfilePage() {
                 <CardContent className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium mb-2">
-                      {PROFILE.currentPassword}
+                      {PROFILE.currentPassword} <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="password"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                      value={passwordData.currentPassword}
+                      onChange={(e) => setPasswordData(prev => ({ ...prev, currentPassword: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                      placeholder="Enter your current password"
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-2">
-                      {PROFILE.newPassword}
+                      {PROFILE.newPassword} <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="password"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                      value={passwordData.newPassword}
+                      onChange={(e) => setPasswordData(prev => ({ ...prev, newPassword: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                      placeholder="Enter your new password (min 6 characters)"
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-2">
-                      {PROFILE.confirmPassword}
+                      {PROFILE.confirmPassword} <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="password"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                      value={passwordData.confirmPassword}
+                      onChange={(e) => setPasswordData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                      placeholder="Confirm your new password"
                     />
                   </div>
-                  <Button>
-                    {PROFILE.update}
-                  </Button>
+                  <div className="flex gap-3">
+                    <Button 
+                      onClick={handleChangePassword}
+                      className="bg-red-600 hover:bg-red-700"
+                    >
+                      Change Password
+                    </Button>
+                    <Button 
+                      variant="outline"
+                      onClick={() => {
+                        setPasswordData({
+                          currentPassword: '',
+                          newPassword: '',
+                          confirmPassword: ''
+                        });
+                      }}
+                    >
+                      Clear
+                    </Button>
+                  </div>
+                  
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
+                    <h4 className="font-medium text-blue-900 mb-2">Password Requirements:</h4>
+                    <ul className="text-sm text-blue-800 space-y-1">
+                      <li>• At least 6 characters long</li>
+                      <li>• Should be different from your current password</li>
+                      <li>• Use a combination of letters, numbers, and symbols for better security</li>
+                    </ul>
+                  </div>
                 </CardContent>
               </Card>
             </div>
@@ -570,6 +815,26 @@ export default function ProfilePage() {
         onSave={handleSaveCard}
         card={paymentModal.card}
         mode={paymentModal.mode}
+      />
+
+      {/* Confirmation Dialog */}
+      <ConfirmationDialog
+        isOpen={confirmDialog.isOpen}
+        onClose={() => setConfirmDialog(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={handleConfirmAction}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        confirmText={confirmDialog.type === 'profile' ? 'Update Profile' : 'Change Password'}
+        type="info"
+        loading={confirmDialog.loading}
+      />
+
+      {/* Success Notification */}
+      <SuccessNotification
+        isOpen={successNotification.isOpen}
+        onClose={() => setSuccessNotification(prev => ({ ...prev, isOpen: false }))}
+        title={successNotification.title}
+        message={successNotification.message}
       />
     </div>
   );

@@ -110,7 +110,7 @@ export default function Navbar() {
             </Link>
 
             {/* Center Section - Navigation + Search */}
-            <div className="hidden md:flex items-center space-x-6 flex-1 justify-center max-w-4xl">
+            <div className="hidden md:flex items-center space-x-6 flex-1 justify-center max-w-xl ml-60">
               {/* Navigation Links */}
               <div className="flex items-center space-x-6">
                 <Link 
