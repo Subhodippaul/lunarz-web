@@ -72,8 +72,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // Get user data from Firestore
           const userData = await AuthService.getUserByUid(firebaseUser.uid);
           dispatch({ type: "SET_USER", payload: userData });
-        } catch (error) {
-          console.error("Error fetching user data:", error);
+        } catch (error: any) {
+          // Silently handle permission errors or missing user data
+          console.warn("Could not fetch user data:", error?.message || error);
           dispatch({ type: "SET_USER", payload: null });
         }
       } else {

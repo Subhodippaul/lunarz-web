@@ -12,11 +12,12 @@ interface ConditionalLayoutProps {
 export default function ConditionalLayout({ children }: ConditionalLayoutProps) {
   const pathname = usePathname();
   
-  // Check if current path is admin route
+  // Check if current path is admin route or invoice-maker route
   const isAdminRoute = pathname?.startsWith('/admin');
+  const isInvoiceMakerRoute = pathname === '/invoice-maker';
 
-  if (isAdminRoute) {
-    // For admin routes, render children without navbar and footer
+  if (isAdminRoute || isInvoiceMakerRoute) {
+    // For admin and invoice-maker routes, render children without navbar, footer, and chat widget
     return <>{children}</>;
   }
 

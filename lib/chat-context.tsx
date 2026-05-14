@@ -90,8 +90,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         );
         dispatch({ type: "SET_UNREAD_COUNT", payload: unreadMessages.length });
       }
-    } catch (error) {
-      dispatch({ type: "SET_ERROR", payload: "Failed to load chat session" });
+    } catch (error: any) {
+      // Silently handle permission errors
+      console.warn("Could not load chat session:", error?.message || error);
+      dispatch({ type: "SET_ERROR", payload: null });
     } finally {
       dispatch({ type: "SET_LOADING", payload: false });
     }
