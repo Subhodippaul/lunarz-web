@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { Plus, Trash2, Download, Eye, FileText, Lock, Unlock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { buildInvoiceHTML } from "@/lib/invoice-html-template";
 
 interface LineItem {
   id: string;
@@ -232,7 +233,7 @@ export default function InvoiceMaker() {
   const downloadPDF = () => {
     const win = window.open("", "_blank");
     if (!win) { alert("Please allow popups to download the invoice."); return; }
-    win.document.write(buildHTML(data, totals));
+    win.document.write(buildInvoiceHTML(data, totals));
     win.document.close();
     win.onload = () => { win.print(); };
   };
@@ -436,11 +437,6 @@ export default function InvoiceMaker() {
   );
 }
 
-function buildHTML(data: InvoiceData, totals: ReturnType<typeof calcTotals>): string {
-  const { buildInvoiceHTML } = require('@/lib/invoice-html-template');
-  return buildInvoiceHTML(data, totals);
-}
-
 function PreviewPage({
   data,
   totals,
@@ -476,7 +472,7 @@ function PreviewPage({
 
         {/* Invoice Preview */}
         <div className="bg-white shadow-lg rounded-lg p-6 sm:p-8 md:p-10">
-          <div dangerouslySetInnerHTML={{ __html: buildHTML(data, totals) }} />
+          <div dangerouslySetInnerHTML={{ __html: buildInvoiceHTML(data, totals) }} />
         </div>
 
         {/* Bottom Action Buttons */}
