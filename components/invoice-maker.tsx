@@ -344,12 +344,26 @@ export default function InvoiceMaker() {
                             value={item.description} onChange={e => updateItem(item.id, "description", e.target.value)} placeholder="Item description" />
                         </td>
                         <td className="py-2 px-2">
-                          <input className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm text-center focus:ring-1 focus:ring-blue-500 outline-none"
-                            value={item.size} onChange={e => updateItem(item.id, "size", e.target.value)} placeholder="M/L/XL" />
+                          <select className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm text-center focus:ring-1 focus:ring-blue-500 outline-none"
+                            value={item.size} onChange={e => updateItem(item.id, "size", e.target.value)}>
+                            <option value="">Select</option>
+                            <option value="XS">XS</option>
+                            <option value="S">S</option>
+                            <option value="M">M</option>
+                            <option value="L">L</option>
+                            <option value="XL">XL</option>
+                            <option value="XXL">XXL</option>
+                          </select>
                         </td>
                         <td className="py-2 px-2">
-                          <input type="number" min="1" className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm text-center focus:ring-1 focus:ring-blue-500 outline-none"
-                            value={item.quantity} onChange={e => updateItem(item.id, "quantity", parseFloat(e.target.value) || 0)} />
+                          <select className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm text-center focus:ring-1 focus:ring-blue-500 outline-none"
+                            value={item.quantity} onChange={e => updateItem(item.id, "quantity", parseFloat(e.target.value) || 1)}>
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
+                          </select>
                         </td>
                         <td className="py-2 px-2">
                           <input type="number" min="0" className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm text-right focus:ring-1 focus:ring-blue-500 outline-none"

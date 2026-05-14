@@ -6,10 +6,13 @@ export function buildInvoiceHTML(data: any, totals: any): string {
   <title>Invoice ${data.invoiceNumber}</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: Arial, sans-serif; font-size: 13px; line-height: 1.5; padding: 30px; color: #000; }
-    .invoice { max-width: 900px; margin: 0 auto; }
+    body { font-family: Arial, sans-serif; font-size: 13px; line-height: 1.5; padding: 30px; color: #000; position: relative; }
+    .invoice { max-width: 900px; margin: 0 auto; position: relative; z-index: 1; }
+    .watermark { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-30deg); opacity: 0.08; z-index: 0; pointer-events: none; width: 60%; max-width: 500px; height: auto; }
     .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 30px; }
-    .company-info { flex: 1; }
+    .company-info { flex: 1; display: flex; align-items: flex-start; gap: 15px; }
+    .company-logo { width: 80px; height: 80px; object-fit: contain; }
+    .company-text { flex: 1; }
     .company-name { font-size: 22px; font-weight: bold; color: #000; margin-bottom: 8px; }
     .company-name span { color: #dc2626; }
     .company-details { font-size: 12px; line-height: 1.6; color: #333; }
@@ -46,19 +49,26 @@ export function buildInvoiceHTML(data: any, totals: any): string {
     .notes-section h3 { font-size: 14px; margin-bottom: 10px; color: #374151; }
     .notes-section p { font-size: 12px; line-height: 1.6; }
     .computer-generated { clear: both; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center; font-size: 11px; color: #6b7280; font-style: italic; }
-    @media print { body { padding: 0; } }
+    @media print { 
+      body { padding: 0; } 
+      .watermark { position: fixed; }
+    }
   </style>
 </head>
 <body>
+  <img src="/logo2.png" alt="Watermark" class="watermark" />
   <div class="invoice">
     <div class="header">
       <div class="company-info">
-        <div class="company-name">${data.sellerName.split(' ')[0] || 'Company'} <span>${data.sellerName.split(' ').slice(1).join(' ') || 'Name'}</span></div>
-        <div class="company-details">
-          ${data.sellerAddress ? data.sellerAddress.replace(/\n/g, '<br>') : ''}<br>
-          ${data.sellerPhone ? `Phone: ${data.sellerPhone}<br>` : ''}
-          ${data.sellerEmail ? `Email: <a href="mailto:${data.sellerEmail}">${data.sellerEmail}</a>` : ''}
-          ${data.sellerGSTIN ? `<br>GSTIN: ${data.sellerGSTIN}` : ''}
+        <img src="/logo2.png" alt="Company Logo" class="company-logo" />
+        <div class="company-text">
+          <div class="company-name">${data.sellerName.split(' ')[0] || 'Company'} <span>${data.sellerName.split(' ').slice(1).join(' ') || 'Name'}</span></div>
+          <div class="company-details">
+            ${data.sellerAddress ? data.sellerAddress.replace(/\n/g, '<br>') : ''}<br>
+            ${data.sellerPhone ? `Phone: ${data.sellerPhone}<br>` : ''}
+            ${data.sellerEmail ? `Email: <a href="mailto:${data.sellerEmail}">${data.sellerEmail}</a>` : ''}
+            ${data.sellerGSTIN ? `<br>GSTIN: ${data.sellerGSTIN}` : ''}
+          </div>
         </div>
       </div>
       <div>
