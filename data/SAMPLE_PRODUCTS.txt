@@ -1,0 +1,19 @@
+# Sample Products for Excel
+
+Copy this into Excel (tab-separated):
+
+id	name	price	category	image	description	material	weight	sizes	colors	printArea
+custom-001	Classic Cotton Tee	599	Customizable T-Shirts	classic-white.svg	Premium quality cotton t-shirt	100% Cotton	180 GSM	XS,S,M,L,XL,XXL	White,Black,Navy,Grey	Front & Back
+custom-002	Oversized Drop Shoulder	699	Customizable T-Shirts	oversized-black.svg	Trendy oversized fit	100% Cotton	220 GSM	S,M,L,XL,XXL	Black,White,Olive	Front & Back
+custom-003	Premium Polo Tee	799	Customizable T-Shirts	polo-navy.svg	Classic polo with collar	Cotton Blend	200 GSM	S,M,L,XL,XXL,XXXL	Navy,Black,White	Front,Back,Sleeve
+custom-004	V-Neck Tee	549	Customizable T-Shirts	vneck-grey.svg	Stylish V-neck design	100% Cotton	180 GSM	XS,S,M,L,XL,XXL	Grey,Black,White,Navy	Front & Back
+custom-005	Long Sleeve Tee	749	Customizable T-Shirts	longsleeve-white.svg	Full sleeve for all seasons	100% Cotton	200 GSM	S,M,L,XL,XXL	White,Black,Grey,Navy	Front,Back,Sleeves
+
+Or use this minimal version (only required columns):
+
+name	price
+Classic Cotton Tee	599
+Oversized Tee	699
+Premium Polo	799
+V-Neck Tee	549
+Long Sleeve Tee	749
