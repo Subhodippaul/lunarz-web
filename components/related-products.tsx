@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { Product } from "@/lib/data";
-import { ProductService } from "@/lib/firebase-services";
+import { ProductService } from "@/lib/supabase-services";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 

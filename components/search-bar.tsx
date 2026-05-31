@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { ProductService } from "@/lib/firebase-services";
+import { ProductService } from "@/lib/supabase-services";
 import { Product } from "@/lib/data";
 
 interface SearchBarProps {

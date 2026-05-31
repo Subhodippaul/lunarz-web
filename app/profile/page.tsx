@@ -23,13 +23,8 @@ import {
 import { 
   AddressService,
   PaymentMethodService
-} from "@/lib/firebase-services";
-import { 
-  updatePassword, 
-  reauthenticateWithCredential, 
-  EmailAuthProvider 
-} from "firebase/auth";
-import { auth } from "@/lib/firebase";
+} from "@/lib/supabase-services";
+import { supabase } from "@/lib/supabase";
 import AddressModal from "@/components/address-modal";
 import PaymentModal from "@/components/payment-modal";
 import OrdersWithActions from "@/components/orders-with-actions";
@@ -394,8 +389,8 @@ export default function ProfilePage() {
         });
 
       } else if (confirmDialog.type === 'password') {
-        // Handle password change on client side with Firebase Auth
-        const user = auth.currentUser;
+        // Handle password change with Supabase Auth
+        const { data: { user } } = await supabase.auth.getUser();
         if (!user || !user.email) {
           throw new Error('User not authenticated');
         }
@@ -425,9 +420,10 @@ export default function ProfilePage() {
     } catch (error: any) {
       let errorMessage = error.message || "An error occurred. Please try again.";
       
-      // Handle Firebase Auth errors
-      if (error.code === 'auth/wrong-password') {
+      // Handle Supabase Auth errors
+      if (error.message?.includes('Invalid login credentials')) {
         errorMessage = 'Current password is incorrect';
+      } else if (error.message?.includes('Password')) {
       } else if (error.code === 'auth/weak-password') {
         errorMessage = 'New password is too weak';
       } else if (error.code === 'auth/requires-recent-login') {

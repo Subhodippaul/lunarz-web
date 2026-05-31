@@ -1,22 +1,4 @@
-import {
-  collection,
-  doc,
-  addDoc,
-  updateDoc,
-  getDocs,
-  getDoc,
-  query,
-  where,
-  onSnapshot,
-  Timestamp,
-} from "firebase/firestore";
-import { db } from "./firebase";
-
-// Collections
-const COLLECTIONS = {
-  CHAT_SESSIONS: "chatSessions",
-  CHAT_MESSAGES: "chatMessages",
-} as const;
+import { supabase } from './supabase';
 
 export interface ChatSession {
   id: string;
@@ -58,31 +40,26 @@ export class ChatService {
       const sessionData: any = {
         status: 'waiting',
         priority: 'medium',
-        createdAt: Timestamp.now(),
-        updatedAt: Timestamp.now(),
-        unreadCount: 0,
-        userUnreadCount: 0,
+        unread_count: 0,
+        user_unread_count: 0,
       };
 
-      // Only add fields that are not undefined
-      if (userId) {
-        sessionData.userId = userId;
-      }
-      if (guestEmail) {
-        sessionData.guestEmail = guestEmail;
-      }
-      if (guestName) {
-        sessionData.guestName = guestName;
-      }
-      if (subject) {
-        sessionData.subject = subject;
-      }
+      if (userId) sessionData.user_id = userId;
+      if (guestEmail) sessionData.guest_email = guestEmail;
+      if (guestName) sessionData.guest_name = guestName;
+      if (subject) sessionData.subject = subject;
 
-      const docRef = await addDoc(collection(db, COLLECTIONS.CHAT_SESSIONS), sessionData);
+      const { data, error } = await supabase
+        .from('chat_sessions')
+        .insert(sessionData)
+        .select()
+        .single();
+
+      if (error) throw error;
 
       // Send welcome message
       await this.sendMessage(
-        docRef.id,
+        data.id,
         'system',
         'system',
         'System',
@@ -90,7 +67,7 @@ export class ChatService {
         'system'
       );
 
-      return docRef.id;
+      return data.id;
     } catch (error: any) {
       throw new Error(`Failed to create chat session: ${error.message}`);
     }
@@ -106,37 +83,45 @@ export class ChatService {
     messageType: 'text' | 'system' | 'email_notification' = 'text'
   ): Promise<string> {
     try {
-      const messageData: any = {
-        sessionId,
-        senderId,
-        senderType,
-        senderName,
-        message,
-        timestamp: Timestamp.now(),
-        isRead: false,
-        messageType,
-      };
+      const { data: messageData, error: messageError } = await supabase
+        .from('chat_messages')
+        .insert({
+          session_id: sessionId,
+          sender_id: senderId,
+          sender_type: senderType,
+          sender_name: senderName,
+          message,
+          message_type: messageType,
+          is_read: false,
+        })
+        .select()
+        .single();
 
-      const docRef = await addDoc(collection(db, COLLECTIONS.CHAT_MESSAGES), messageData);
+      if (messageError) throw messageError;
 
       // Update session with last message and unread count
-      const sessionRef = doc(db, COLLECTIONS.CHAT_SESSIONS, sessionId);
       const updateData: any = {
-        lastMessage: message,
-        updatedAt: Timestamp.now(),
+        last_message: message,
         status: senderType === 'system' ? 'waiting' : 'active',
       };
 
       // Increment unread count for the recipient
       if (senderType === 'user') {
-        updateData.unreadCount = await this.getUnreadCount(sessionId, 'admin') + 1;
+        const unreadCount = await this.getUnreadCount(sessionId, 'admin');
+        updateData.unread_count = unreadCount + 1;
       } else if (senderType === 'admin') {
-        updateData.userUnreadCount = await this.getUnreadCount(sessionId, 'user') + 1;
+        const userUnreadCount = await this.getUnreadCount(sessionId, 'user');
+        updateData.user_unread_count = userUnreadCount + 1;
       }
 
-      await updateDoc(sessionRef, updateData);
+      const { error: updateError } = await supabase
+        .from('chat_sessions')
+        .update(updateData)
+        .eq('id', sessionId);
 
-      return docRef.id;
+      if (updateError) throw updateError;
+
+      return messageData.id;
     } catch (error: any) {
       throw new Error(`Failed to send message: ${error.message}`);
     }
@@ -145,18 +130,14 @@ export class ChatService {
   // Get chat sessions for admin
   static async getAdminChatSessions(): Promise<ChatSession[]> {
     try {
-      const q = query(collection(db, COLLECTIONS.CHAT_SESSIONS));
-      const querySnapshot = await getDocs(q);
-      
-      const sessions = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        createdAt: doc.data().createdAt?.toDate?.()?.toISOString() || doc.data().createdAt,
-        updatedAt: doc.data().updatedAt?.toDate?.()?.toISOString() || doc.data().updatedAt,
-      })) as ChatSession[];
+      const { data, error } = await supabase
+        .from('chat_sessions')
+        .select('*')
+        .order('updated_at', { ascending: false });
 
-      // Sort by updatedAt in JavaScript
-      return sessions.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+      if (error) throw error;
+
+      return (data || []).map(row => this.mapToChatSession(row));
     } catch (error) {
       console.error("Error fetching admin chat sessions:", error);
       return [];
@@ -166,21 +147,15 @@ export class ChatService {
   // Get user's chat sessions
   static async getUserChatSessions(userId: string): Promise<ChatSession[]> {
     try {
-      const q = query(
-        collection(db, COLLECTIONS.CHAT_SESSIONS),
-        where("userId", "==", userId)
-      );
-      const querySnapshot = await getDocs(q);
-      
-      const sessions = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        createdAt: doc.data().createdAt?.toDate?.()?.toISOString() || doc.data().createdAt,
-        updatedAt: doc.data().updatedAt?.toDate?.()?.toISOString() || doc.data().updatedAt,
-      })) as ChatSession[];
+      const { data, error } = await supabase
+        .from('chat_sessions')
+        .select('*')
+        .eq('user_id', userId)
+        .order('updated_at', { ascending: false });
 
-      // Sort by updatedAt in JavaScript instead of Firestore
-      return sessions.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+      if (error) throw error;
+
+      return (data || []).map(row => this.mapToChatSession(row));
     } catch (error) {
       console.error("Error fetching user chat sessions:", error);
       return [];
@@ -190,25 +165,17 @@ export class ChatService {
   // Get guest chat session by email
   static async getGuestChatSession(email: string): Promise<ChatSession | null> {
     try {
-      const q = query(
-        collection(db, COLLECTIONS.CHAT_SESSIONS),
-        where("guestEmail", "==", email)
-      );
-      const querySnapshot = await getDocs(q);
-      
-      if (querySnapshot.empty) return null;
-      
-      // Get the most recent session by sorting in JavaScript
-      const sessions = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        createdAt: doc.data().createdAt?.toDate?.()?.toISOString() || doc.data().createdAt,
-        updatedAt: doc.data().updatedAt?.toDate?.()?.toISOString() || doc.data().updatedAt,
-      })) as ChatSession[];
+      const { data, error } = await supabase
+        .from('chat_sessions')
+        .select('*')
+        .eq('guest_email', email)
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .single();
 
-      // Sort by updatedAt and return the most recent
-      sessions.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
-      return sessions[0];
+      if (error || !data) return null;
+
+      return this.mapToChatSession(data);
     } catch (error) {
       console.error("Error fetching guest chat session:", error);
       return null;
@@ -218,20 +185,25 @@ export class ChatService {
   // Get messages for a chat session
   static async getChatMessages(sessionId: string): Promise<ChatMessage[]> {
     try {
-      const q = query(
-        collection(db, COLLECTIONS.CHAT_MESSAGES),
-        where("sessionId", "==", sessionId)
-      );
-      const querySnapshot = await getDocs(q);
-      
-      const messages = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        timestamp: doc.data().timestamp?.toDate?.()?.toISOString() || doc.data().timestamp,
-      })) as ChatMessage[];
+      const { data, error } = await supabase
+        .from('chat_messages')
+        .select('*')
+        .eq('session_id', sessionId)
+        .order('timestamp', { ascending: true });
 
-      // Sort by timestamp in JavaScript
-      return messages.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+      if (error) throw error;
+
+      return (data || []).map(row => ({
+        id: row.id,
+        sessionId: row.session_id,
+        senderId: row.sender_id,
+        senderType: row.sender_type,
+        senderName: row.sender_name,
+        message: row.message,
+        timestamp: row.timestamp,
+        isRead: row.is_read,
+        messageType: row.message_type,
+      }));
     } catch (error) {
       console.error("Error fetching chat messages:", error);
       return [];
@@ -241,19 +213,16 @@ export class ChatService {
   // Mark messages as read
   static async markMessagesAsRead(sessionId: string, readerType: 'user' | 'admin'): Promise<void> {
     try {
-      const sessionRef = doc(db, COLLECTIONS.CHAT_SESSIONS, sessionId);
-      
-      if (readerType === 'user') {
-        await updateDoc(sessionRef, {
-          userUnreadCount: 0,
-          updatedAt: Timestamp.now(),
-        });
-      } else {
-        await updateDoc(sessionRef, {
-          unreadCount: 0,
-          updatedAt: Timestamp.now(),
-        });
-      }
+      const updateData = readerType === 'user' 
+        ? { user_unread_count: 0 }
+        : { unread_count: 0 };
+
+      const { error } = await supabase
+        .from('chat_sessions')
+        .update(updateData)
+        .eq('id', sessionId);
+
+      if (error) throw error;
     } catch (error) {
       console.error("Error marking messages as read:", error);
     }
@@ -262,14 +231,14 @@ export class ChatService {
   // Get unread count
   static async getUnreadCount(sessionId: string, readerType: 'user' | 'admin'): Promise<number> {
     try {
-      const sessionRef = doc(db, COLLECTIONS.CHAT_SESSIONS, sessionId);
-      const sessionDoc = await getDoc(sessionRef);
-      
-      if (sessionDoc.exists()) {
-        const data = sessionDoc.data();
-        return readerType === 'user' ? (data.userUnreadCount || 0) : (data.unreadCount || 0);
-      }
-      return 0;
+      const { data, error } = await supabase
+        .from('chat_sessions')
+        .select(readerType === 'user' ? 'user_unread_count' : 'unread_count')
+        .eq('id', sessionId)
+        .single();
+
+      if (error || !data) return 0;
+      return readerType === 'user' ? (data.user_unread_count || 0) : (data.unread_count || 0);
     } catch (error) {
       console.error("Error getting unread count:", error);
       return 0;
@@ -279,17 +248,15 @@ export class ChatService {
   // Update chat session status
   static async updateChatStatus(sessionId: string, status: ChatSession['status'], assignedTo?: string): Promise<void> {
     try {
-      const sessionRef = doc(db, COLLECTIONS.CHAT_SESSIONS, sessionId);
-      const updateData: any = {
-        status,
-        updatedAt: Timestamp.now(),
-      };
+      const updateData: any = { status };
+      if (assignedTo) updateData.assigned_to = assignedTo;
 
-      if (assignedTo) {
-        updateData.assignedTo = assignedTo;
-      }
+      const { error } = await supabase
+        .from('chat_sessions')
+        .update(updateData)
+        .eq('id', sessionId);
 
-      await updateDoc(sessionRef, updateData);
+      if (error) throw error;
     } catch (error: any) {
       throw new Error(`Failed to update chat status: ${error.message}`);
     }
@@ -300,42 +267,55 @@ export class ChatService {
     sessionId: string,
     callback: (messages: ChatMessage[]) => void
   ): () => void {
-    const q = query(
-      collection(db, COLLECTIONS.CHAT_MESSAGES),
-      where("sessionId", "==", sessionId)
-    );
+    const channel = supabase
+      .channel(`chat_messages:${sessionId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'chat_messages',
+          filter: `session_id=eq.${sessionId}`,
+        },
+        async () => {
+          // Fetch all messages when any change occurs
+          const messages = await this.getChatMessages(sessionId);
+          callback(messages);
+        }
+      )
+      .subscribe();
 
-    return onSnapshot(q, (querySnapshot) => {
-      const messages = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        timestamp: doc.data().timestamp?.toDate?.()?.toISOString() || doc.data().timestamp,
-      })) as ChatMessage[];
-      
-      // Sort by timestamp in JavaScript
-      messages.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
-      callback(messages);
-    });
+    // Return unsubscribe function
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }
 
   // Subscribe to admin chat sessions (real-time)
   static subscribeToAdminChatSessions(
     callback: (sessions: ChatSession[]) => void
   ): () => void {
-    const q = query(collection(db, COLLECTIONS.CHAT_SESSIONS));
+    const channel = supabase
+      .channel('admin_chat_sessions')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'chat_sessions',
+        },
+        async () => {
+          // Fetch all sessions when any change occurs
+          const sessions = await this.getAdminChatSessions();
+          callback(sessions);
+        }
+      )
+      .subscribe();
 
-    return onSnapshot(q, (querySnapshot) => {
-      const sessions = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        createdAt: doc.data().createdAt?.toDate?.()?.toISOString() || doc.data().createdAt,
-        updatedAt: doc.data().updatedAt?.toDate?.()?.toISOString() || doc.data().updatedAt,
-      })) as ChatSession[];
-      
-      // Sort by updatedAt in JavaScript
-      sessions.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
-      callback(sessions);
-    });
+    // Return unsubscribe function
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }
 
   // Send email notification (placeholder - would integrate with email service)
@@ -361,5 +341,24 @@ export class ChatService {
     } catch (error) {
       console.error("Error sending email notification:", error);
     }
+  }
+
+  // Helper method to map database row to ChatSession
+  private static mapToChatSession(row: any): ChatSession {
+    return {
+      id: row.id,
+      userId: row.user_id,
+      guestEmail: row.guest_email,
+      guestName: row.guest_name,
+      status: row.status,
+      subject: row.subject,
+      priority: row.priority,
+      assignedTo: row.assigned_to,
+      lastMessage: row.last_message,
+      unreadCount: row.unread_count,
+      userUnreadCount: row.user_unread_count,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    };
   }
 }

@@ -9,7 +9,7 @@ import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/components/ui/toast";
 import { Upload, X, Palette, Ruler } from "lucide-react";
 import SizeChart from "@/components/size-chart";
-import { ProductService } from "@/lib/firebase-services";
+import { ProductService } from "@/lib/supabase-services";
 import { Product } from "@/lib/data";
 import Link from "next/link";
 

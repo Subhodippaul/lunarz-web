@@ -6,7 +6,7 @@ import ProductFilters from "@/components/product-filters";
 import ProductsBanner from "@/components/products-banner";
 // Alternative: import ProductsBannerSimple from "@/components/products-banner-simple";
 import { Product } from "@/lib/data";
-import { ProductService } from "@/lib/firebase-services";
+import { ProductService } from "@/lib/supabase-services";
 import { PRODUCTS } from "@/lib/constants";
 import { CenteredLoader } from "@/components/ui/loader";
 

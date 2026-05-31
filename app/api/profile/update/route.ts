@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { doc, updateDoc, getDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { supabase } from "@/lib/supabase";
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,21 +10,28 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify user exists
-    const userRef = doc(db, "users", userId);
-    const userDoc = await getDoc(userRef);
+    const { data: user, error: fetchError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', userId)
+      .single();
     
-    if (!userDoc.exists()) {
+    if (fetchError || !user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // Update user document in Firestore
-    const updateData: any = {};
+    // Update user in database
+    const updateData: any = { updated_at: new Date().toISOString() };
     
-    if (name) updateData.name = name;
+    if (name) updateData.display_name = name;
     if (email) updateData.email = email;
-    updateData.updatedAt = new Date();
 
-    await updateDoc(userRef, updateData);
+    const { error: updateError } = await supabase
+      .from('users')
+      .update(updateData)
+      .eq('id', userId);
+
+    if (updateError) throw updateError;
 
     return NextResponse.json({
       success: true,

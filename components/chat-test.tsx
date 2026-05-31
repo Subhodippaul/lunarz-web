@@ -125,13 +125,13 @@ export default function ChatTest() {
         <ul className="list-disc list-inside mt-2 space-y-1">
           <li><strong>Guest Chat:</strong> Create session with email/name, send message</li>
           <li><strong>User Chat:</strong> Create session with userId, send message</li>
-          <li>Verify Firebase connection and data handling</li>
-          <li>Check if collections are accessible</li>
+          <li>Verify Supabase connection and data handling</li>
+          <li>Check if tables are accessible</li>
         </ul>
         
         <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded">
           <p className="text-xs text-yellow-800">
-            <strong>Note:</strong> These tests create actual data in your Firebase database. 
+            <strong>Note:</strong> These tests create actual data in your Supabase database. 
             You can view the created sessions in the Admin → Support page.
           </p>
         </div>

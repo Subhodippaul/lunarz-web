@@ -6,10 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint",
-    "init-firebase": "node scripts/init-firebase.js",
-    "create-admin": "node scripts/create-admin.js",
-    "debug-user": "node scripts/debug-user.js"
+    "lint": "eslint"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.15",

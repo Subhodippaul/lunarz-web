@@ -365,6 +365,238 @@ export async function updateOrderRequest(requestId: string, updates: Partial<Ord
 export async function updateOrderRequestStatus(
   requestId: string,
   status: 'pending' | 'approved' | 'rejected'
-): Promise<OrderRequest> {
+): Promise<void> {
   return updateOrderRequest(requestId, { status });
+}
+
+// ==================== PRODUCT SERVICE (for compatibility) ====================
+
+export class ProductService {
+  static async getAllProducts(): Promise<Product[]> {
+    return getAllProducts();
+  }
+
+  static async getProductById(id: string): Promise<Product | null> {
+    return getProductById(id);
+  }
+
+  static async getProductsByCategory(category: string): Promise<Product[]> {
+    return getProductsByCategory(category);
+  }
+
+  static async createProduct(product: Omit<Product, 'id' | 'created_at' | 'updated_at'>): Promise<Product> {
+    return createProduct(product);
+  }
+
+  static async updateProduct(id: string, updates: Partial<Product>): Promise<Product> {
+    return updateProduct(id, updates);
+  }
+
+  static async deleteProduct(id: string): Promise<void> {
+    return deleteProduct(id);
+  }
+
+  static async searchProducts(searchTerm: string): Promise<Product[]> {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .or(`name.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%,category.ilike.%${searchTerm}%`)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error searching products:', error);
+      return [];
+    }
+  }
+}
+
+// ==================== USER SERVICE (for compatibility) ====================
+
+export class UserService {
+  static async getUserByEmail(email: string): Promise<User | null> {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('email', email)
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error fetching user by email:', error);
+      return null;
+    }
+  }
+
+  static async checkUserExists(email: string): Promise<boolean> {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('id')
+        .eq('email', email)
+        .single();
+
+      return !!data && !error;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  static async updateUserPassword(userId: string, newPassword: string): Promise<void> {
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+
+      if (error) throw error;
+    } catch (error: any) {
+      console.error('Error updating password:', error);
+      throw new Error(error.message);
+    }
+  }
+}
+
+// ==================== ADDRESS SERVICE ====================
+
+export interface Address {
+  id?: string;
+  user_id: string;
+  name: string;
+  phone: string;
+  address_line1: string;
+  address_line2?: string;
+  city: string;
+  state: string;
+  pincode: string;
+  is_default: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export class AddressService {
+  static async getUserAddresses(userId: string): Promise<Address[]> {
+    try {
+      const { data, error } = await supabase
+        .from('addresses')
+        .select('*')
+        .eq('user_id', userId)
+        .order('is_default', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching addresses:', error);
+      return [];
+    }
+  }
+
+  static async createAddress(address: Omit<Address, 'id' | 'created_at' | 'updated_at'>): Promise<string> {
+    try {
+      const { data, error } = await supabase
+        .from('addresses')
+        .insert([address])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data.id;
+    } catch (error: any) {
+      console.error('Error creating address:', error);
+      throw new Error(error.message);
+    }
+  }
+
+  static async updateAddress(id: string, updates: Partial<Address>): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('addresses')
+        .update({ ...updates, updated_at: new Date().toISOString() })
+        .eq('id', id);
+
+      if (error) throw error;
+    } catch (error: any) {
+      console.error('Error updating address:', error);
+      throw new Error(error.message);
+    }
+  }
+
+  static async deleteAddress(id: string): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('addresses')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+    } catch (error: any) {
+      console.error('Error deleting address:', error);
+      throw new Error(error.message);
+    }
+  }
+}
+
+// ==================== PAYMENT METHOD SERVICE ====================
+
+export interface PaymentMethod {
+  id?: string;
+  user_id: string;
+  type: string;
+  card_last4?: string;
+  card_brand?: string;
+  upi_id?: string;
+  is_default: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export class PaymentMethodService {
+  static async getUserPaymentMethods(userId: string): Promise<PaymentMethod[]> {
+    try {
+      const { data, error } = await supabase
+        .from('payment_methods')
+        .select('*')
+        .eq('user_id', userId)
+        .order('is_default', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching payment methods:', error);
+      return [];
+    }
+  }
+
+  static async createPaymentMethod(paymentMethod: Omit<PaymentMethod, 'id' | 'created_at' | 'updated_at'>): Promise<string> {
+    try {
+      const { data, error } = await supabase
+        .from('payment_methods')
+        .insert([paymentMethod])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data.id;
+    } catch (error: any) {
+      console.error('Error creating payment method:', error);
+      throw new Error(error.message);
+    }
+  }
+
+  static async deletePaymentMethod(id: string): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('payment_methods')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+    } catch (error: any) {
+      console.error('Error deleting payment method:', error);
+      throw new Error(error.message);
+    }
+  }
 }

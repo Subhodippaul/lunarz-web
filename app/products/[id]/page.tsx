@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
 import { Product } from "@/lib/data";
-import { ProductService } from "@/lib/firebase-services";
+import { ProductService } from "@/lib/supabase-services";
 import ProductDetails from "@/components/product-details";
 
 export default function ProductDetailsPage() {

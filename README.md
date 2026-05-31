@@ -62,12 +62,24 @@ lunarz-web/
 │   ├── supabase.ts               # Supabase config
 │   ├── supabase-services.ts      # Supabase CRUD operations
 │   ├── auth-context.tsx          # Authentication context
+│   ├── auth-utils.ts             # Auth utility functions
 │   ├── cart-context.tsx          # Shopping cart context
+│   ├── coupon-context.tsx        # Coupon context
 │   ├── excel-loader.ts           # Excel file reader
 │   ├── email-service.ts          # Email sending service
-│   ├── order-services.ts         # Order management
+│   ├── razorpay-service.ts       # Razorpay integration
 │   ├── shiprocket-service.ts     # Shiprocket integration
-│   └── invoice-service.ts        # Invoice generation
+│   ├── order-services.ts         # Order management
+│   ├── order-management-service.ts # Order status updates
+│   ├── admin-services.ts         # Admin operations
+│   ├── order-analytics.ts        # Analytics and reports
+│   ├── coupon-services.ts        # Coupon management
+│   ├── review-services.ts        # Review management
+│   ├── shipping-services.ts      # Shipping settings
+│   ├── invoice-service.ts        # Invoice generation
+│   ├── inventory-services.ts     # Stock management
+│   ├── chat-services.ts          # Chat support
+│   └── data.ts                   # TypeScript types
 │
 ├── data/                         # Data Files
 │   ├── products.xlsx             # Custom t-shirt products (Excel)
@@ -109,7 +121,9 @@ lunarz-web/
 - `app/products/[id]/page.tsx` - Product details
 - `app/cart/page.tsx` - Shopping cart
 - `app/checkout/page.tsx` - Checkout form
-- `lib/supabase-services.ts` - Database operations
+- `lib/supabase-services.ts` - All database operations
+- `lib/order-services.ts` - Order management
+- `lib/shipping-services.ts` - Shipping settings
 - `app/api/razorpay/create-order/route.ts` - Payment creation
 - `app/api/razorpay/verify-payment/route.ts` - Payment verification
 
@@ -179,7 +193,8 @@ Example: custom-001, Classic Cotton Tee, 599, Customizable T-Shirts, classic-whi
 - `app/login/page.tsx` - Login form
 - `app/signup/page.tsx` - Registration
 - `app/forgot-password/page.tsx` - Password reset
-- `lib/auth-context.tsx` - Auth state management
+- `lib/auth-context.tsx` - Auth state management (Supabase + Dummy)
+- `lib/auth-utils.ts` - Auth utility functions
 - `app/api/auth/` - Auth API routes
 
 ---
@@ -204,9 +219,21 @@ Example: custom-001, Classic Cotton Tee, 599, Customizable T-Shirts, classic-whi
 
 **Key Files:**
 - `app/admin/layout.tsx` - Admin layout with guard
-- `app/admin/page.tsx` - Dashboard
+- `app/admin/page.tsx` - Dashboard with analytics
 - `app/admin/products/page.tsx` - Product management
 - `app/admin/orders/page.tsx` - Order management
+- `app/admin/coupons/page.tsx` - Coupon management
+- `app/admin/reviews/page.tsx` - Review management
+- `app/admin/invoices/page.tsx` - Invoice generation
+- `app/admin/inventory/page.tsx` - Stock management
+- `app/admin/support/page.tsx` - Chat support
+- `lib/admin-services.ts` - Admin operations
+- `lib/order-analytics.ts` - Analytics and reports
+- `lib/coupon-services.ts` - Coupon management
+- `lib/review-services.ts` - Review management
+- `lib/invoice-service.ts` - Invoice generation
+- `lib/inventory-services.ts` - Stock management
+- `lib/chat-services.ts` - Chat support
 - `components/admin/admin-guard.tsx` - Access control
 
 ---
@@ -359,6 +386,8 @@ GOOGLE_DRIVE_FOLDER_ID=your_folder_id
 
 ## 🚀 GETTING STARTED
 
+**Quick Installation:** See [INSTALL.md](./INSTALL.md) for complete setup guide.
+
 ### Installation
 
 ```bash
@@ -392,6 +421,8 @@ npm install @supabase/supabase-js razorpay nodemailer xlsx googleapis
    - Go to Supabase Table Editor → `users` table
    - Find your user and set `is_admin = true`
 
+**Full setup guide:** [INSTALL.md](./INSTALL.md)
+
 ### Development
 
 ```bash
@@ -412,7 +443,7 @@ http://localhost:3000
 2. **Dummy Login:**
    - Username: `123456`
    - Password: `123456`
-   - For quick testing without Firebase
+   - For quick testing without Supabase auth
 
 3. **Custom T-Shirt Orders:**
    - No database storage
@@ -427,9 +458,9 @@ http://localhost:3000
 
 ## 📊 DATABASE STRUCTURE (Supabase PostgreSQL)
 
-### Tables
+### Core Tables
 
-**users**
+**users** - User accounts
 ```sql
 id UUID PRIMARY KEY (references auth.users)
 email TEXT NOT NULL UNIQUE
@@ -440,7 +471,7 @@ created_at TIMESTAMP
 updated_at TIMESTAMP
 ```
 
-**products**
+**products** - Product catalog
 ```sql
 id UUID PRIMARY KEY
 name TEXT NOT NULL
@@ -454,11 +485,13 @@ care TEXT
 origin TEXT
 manufacturer TEXT
 stock INTEGER DEFAULT 0
+is_trending BOOLEAN DEFAULT FALSE
+is_latest_collection BOOLEAN DEFAULT FALSE
 created_at TIMESTAMP
 updated_at TIMESTAMP
 ```
 
-**orders**
+**orders** - Customer orders
 ```sql
 id UUID PRIMARY KEY
 order_id TEXT NOT NULL UNIQUE
@@ -477,7 +510,7 @@ created_at TIMESTAMP
 updated_at TIMESTAMP
 ```
 
-**order_requests** (Returns/Exchanges)
+**order_requests** - Returns/Exchanges
 ```sql
 id UUID PRIMARY KEY
 request_id TEXT NOT NULL UNIQUE
@@ -490,6 +523,132 @@ created_at TIMESTAMP
 updated_at TIMESTAMP
 ```
 
+**addresses** - Saved addresses
+```sql
+id UUID PRIMARY KEY
+user_id UUID REFERENCES users(id)
+name TEXT NOT NULL
+phone TEXT NOT NULL
+address_line1 TEXT NOT NULL
+address_line2 TEXT
+city TEXT NOT NULL
+state TEXT NOT NULL
+pincode TEXT NOT NULL
+is_default BOOLEAN DEFAULT FALSE
+created_at TIMESTAMP
+updated_at TIMESTAMP
+```
+
+**coupons** - Discount coupons
+```sql
+id UUID PRIMARY KEY
+code TEXT NOT NULL UNIQUE
+name TEXT NOT NULL
+description TEXT NOT NULL
+type TEXT CHECK (type IN ('percentage', 'fixed', 'buy_x_get_y'))
+value NUMERIC(10, 2) NOT NULL
+min_order_amount NUMERIC(10, 2)
+max_discount NUMERIC(10, 2)
+usage_limit INTEGER
+used_count INTEGER DEFAULT 0
+valid_from TIMESTAMP NOT NULL
+valid_to TIMESTAMP NOT NULL
+is_active BOOLEAN DEFAULT TRUE
+applicable_products UUID[]
+created_at TIMESTAMP
+updated_at TIMESTAMP
+```
+
+**reviews** - Customer reviews
+```sql
+id UUID PRIMARY KEY
+customer_name TEXT NOT NULL
+customer_image TEXT
+rating INTEGER CHECK (rating >= 1 AND rating <= 5)
+review_text TEXT NOT NULL
+date TIMESTAMP DEFAULT NOW()
+verified BOOLEAN DEFAULT FALSE
+source TEXT CHECK (source IN ('google', 'website', 'manual'))
+location TEXT
+is_active BOOLEAN DEFAULT TRUE
+created_at TIMESTAMP
+updated_at TIMESTAMP
+```
+
+**invoices** - Generated invoices
+```sql
+id UUID PRIMARY KEY
+invoice_number TEXT NOT NULL UNIQUE
+invoice_date TEXT NOT NULL
+due_date TEXT NOT NULL
+company_name TEXT NOT NULL
+customer_name TEXT NOT NULL
+items JSONB NOT NULL
+subtotal NUMERIC(10, 2) NOT NULL
+total_amount NUMERIC(10, 2) NOT NULL
+status TEXT CHECK (status IN ('draft', 'sent', 'paid', 'overdue', 'cancelled'))
+... (see supabase-setup.sql for full schema)
+created_at TIMESTAMP
+updated_at TIMESTAMP
+```
+
+**stock_entries** - Inventory tracking
+```sql
+id UUID PRIMARY KEY
+product_id UUID REFERENCES products(id)
+type TEXT CHECK (type IN ('in', 'out', 'adjustment'))
+quantity INTEGER NOT NULL
+reason TEXT NOT NULL
+reference TEXT
+notes TEXT
+date TIMESTAMP DEFAULT NOW()
+user_id UUID REFERENCES users(id)
+created_at TIMESTAMP
+```
+
+**chat_sessions** - Support chat sessions
+```sql
+id UUID PRIMARY KEY
+user_id UUID REFERENCES users(id)
+guest_email TEXT
+guest_name TEXT
+status TEXT CHECK (status IN ('active', 'closed', 'waiting'))
+priority TEXT CHECK (priority IN ('low', 'medium', 'high'))
+assigned_to UUID REFERENCES users(id)
+last_message TEXT
+unread_count INTEGER DEFAULT 0
+user_unread_count INTEGER DEFAULT 0
+created_at TIMESTAMP
+updated_at TIMESTAMP
+```
+
+**chat_messages** - Chat messages
+```sql
+id UUID PRIMARY KEY
+session_id UUID REFERENCES chat_sessions(id)
+sender_id TEXT NOT NULL
+sender_type TEXT CHECK (sender_type IN ('user', 'admin', 'system'))
+sender_name TEXT NOT NULL
+message TEXT NOT NULL
+message_type TEXT CHECK (message_type IN ('text', 'system', 'email_notification'))
+is_read BOOLEAN DEFAULT FALSE
+timestamp TIMESTAMP DEFAULT NOW()
+```
+
+**shipping_settings** - Shipping configuration
+```sql
+id UUID PRIMARY KEY
+cod_shipping_charge NUMERIC(10, 2) DEFAULT 50
+free_shipping_threshold NUMERIC(10, 2) DEFAULT 999
+standard_shipping_charge NUMERIC(10, 2) DEFAULT 0
+express_shipping_charge NUMERIC(10, 2) DEFAULT 100
+is_active BOOLEAN DEFAULT TRUE
+created_at TIMESTAMP
+updated_at TIMESTAMP
+```
+
+**Complete schema:** See `supabase-setup.sql` for full table definitions, indexes, RLS policies, and triggers.
+
 ---
 
 ## 🎨 KEY COMPONENTS
@@ -498,7 +657,7 @@ updated_at TIMESTAMP
 
 **AuthContext** (`lib/auth-context.tsx`)
 - Manages user authentication state
-- Handles dummy login and Firebase auth
+- Handles dummy login and Supabase auth
 - Provides `user`, `loading`, `login`, `logout` functions
 
 **CartContext** (`lib/cart-context.tsx`)
@@ -562,42 +721,61 @@ updated_at TIMESTAMP
    - Do NOT create new MD files
    - Keep this file as single source of truth
 
-2. **Excel Products:**
+2. **Database:**
+   - All data stored in Supabase PostgreSQL
+   - Use `lib/supabase-services.ts` for database operations
+   - Never use Firebase imports
+
+3. **Excel Products:**
    - Products loaded from `data/products.xlsx`
    - API route: `/api/customize-products`
    - Loader: `lib/excel-loader.ts`
    - Uses buffer reading to avoid file locks
 
-3. **Two Checkout Flows:**
-   - Standard: `/checkout` (Firebase DB + Auth required)
+4. **Two Checkout Flows:**
+   - Standard: `/checkout` (Supabase DB + Auth required)
    - Custom: `/customize-checkout` (Email only + No auth)
    - Do NOT mix these flows
 
-4. **Email Configuration:**
+5. **Email Configuration:**
    - Admin email: `lunarz.info@gmail.com`
    - Customer email: from form input
    - Service: Nodemailer with Gmail SMTP
 
-5. **Authentication:**
+6. **Authentication:**
    - Dummy login: 123456/123456 (check first)
    - Supabase login: fallback
    - Context: `lib/auth-context.tsx`
 
-6. **File Structure:**
+7. **File Structure:**
    - Follow Next.js App Router conventions
    - API routes in `app/api/`
    - Components in `components/`
    - Utilities in `lib/`
 
-7. **State Management:**
+8. **State Management:**
    - Auth: Context API (`lib/auth-context.tsx`)
    - Cart: Context API (`lib/cart-context.tsx`)
    - No Redux or external state library
 
-8. **Styling:**
+9. **Styling:**
    - Tailwind CSS only
    - No custom CSS files except `app/globals.css`
    - Use Tailwind utility classes
+
+10. **Supabase Integration:**
+    - Always use `lib/supabase.ts` client
+    - Use services from `lib/supabase-services.ts`
+    - Never import Firebase packages
+    - Follow RLS policies
+
+---
+
+## 🔄 Migration Status
+
+**✅ COMPLETE:** Firebase has been fully replaced with Supabase.
+
+See [MIGRATION_COMPLETE.md](./MIGRATION_COMPLETE.md) for details.
 
 ---
 
@@ -632,6 +810,6 @@ For issues or questions, refer to this README.md file first. All flows and confi
 
 ---
 
-**Last Updated:** May 31, 2026
-**Version:** 1.0.0
+**Last Updated:** June 1, 2026
+**Version:** 2.0.0 - Complete Supabase Migration
 **Maintained By:** AI Assistant (Update this file only, no new MD files)

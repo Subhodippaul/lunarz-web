@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Note: Password change should be handled on the client side with Firebase Auth
+    // Note: Password change should be handled on the client side with Supabase Auth
     // This API route is mainly for validation and logging
     return NextResponse.json({
       success: true,

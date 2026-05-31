@@ -1,29 +1,11 @@
-import {
-  collection,
-  doc,
-  addDoc,
-  updateDoc,
-  deleteDoc,
-  getDoc,
-  getDocs,
-  query,
-  where,
-  orderBy,
-  Timestamp,
-  writeBatch,
-} from "firebase/firestore";
-import { db } from "./firebase";
+/**
+ * Admin Services with Supabase
+ * Replaces Firebase admin services
+ */
+
+import { supabase } from "./supabase";
 import { Product } from "./data";
 import { Order } from "./profile-data";
-
-// Collections
-const COLLECTIONS = {
-  USERS: "users",
-  PRODUCTS: "products",
-  ORDERS: "orders",
-  ADDRESSES: "addresses",
-  PAYMENT_METHODS: "paymentMethods",
-} as const;
 
 // ============================================================================
 // ADMIN PRODUCT SERVICES
@@ -32,11 +14,13 @@ const COLLECTIONS = {
 export class AdminProductService {
   static async getAllProducts(): Promise<Product[]> {
     try {
-      const querySnapshot = await getDocs(collection(db, COLLECTIONS.PRODUCTS));
-      return querySnapshot.docs.map(doc => ({
-        id: doc.id, // Use string ID from Firestore
-        ...doc.data(),
-      })) as Product[];
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
     } catch (error) {
       console.error("Error fetching products:", error);
       return [];
@@ -45,12 +29,14 @@ export class AdminProductService {
 
   static async addProduct(product: Omit<Product, "id">): Promise<string> {
     try {
-      const docRef = await addDoc(collection(db, COLLECTIONS.PRODUCTS), {
-        ...product,
-        createdAt: Timestamp.now(),
-        updatedAt: Timestamp.now(),
-      });
-      return docRef.id;
+      const { data, error } = await supabase
+        .from('products')
+        .insert([product])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data.id;
     } catch (error: any) {
       throw new Error(error.message);
     }
@@ -58,11 +44,12 @@ export class AdminProductService {
 
   static async updateProduct(id: string, updates: Partial<Product>): Promise<void> {
     try {
-      const docRef = doc(db, COLLECTIONS.PRODUCTS, id);
-      await updateDoc(docRef, {
-        ...updates,
-        updatedAt: Timestamp.now(),
-      });
+      const { error } = await supabase
+        .from('products')
+        .update({ ...updates, updated_at: new Date().toISOString() })
+        .eq('id', id);
+
+      if (error) throw error;
     } catch (error: any) {
       throw new Error(error.message);
     }
@@ -70,8 +57,12 @@ export class AdminProductService {
 
   static async deleteProduct(id: string): Promise<void> {
     try {
-      const docRef = doc(db, COLLECTIONS.PRODUCTS, id);
-      await deleteDoc(docRef);
+      const { error } = await supabase
+        .from('products')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
     } catch (error: any) {
       throw new Error(error.message);
     }
@@ -83,16 +74,14 @@ export class AdminProductService {
 
   static async getTrendingProducts(): Promise<Product[]> {
     try {
-      const q = query(
-        collection(db, COLLECTIONS.PRODUCTS),
-        where("isTrending", "==", true),
-        orderBy("trendingOrder", "asc")
-      );
-      const querySnapshot = await getDocs(q);
-      return querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as Product[];
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .eq('is_trending', true)
+        .order('trending_order', { ascending: true });
+
+      if (error) throw error;
+      return data || [];
     } catch (error) {
       console.error("Error fetching trending products:", error);
       // Fallback to regular products if trending query fails
@@ -103,9 +92,9 @@ export class AdminProductService {
 
   static async setProductTrending(productId: string, isTrending: boolean, order?: number): Promise<void> {
     try {
-      const updates: Partial<Product> = { isTrending };
+      const updates: any = { is_trending: isTrending };
       if (isTrending && order !== undefined) {
-        updates.trendingOrder = order;
+        updates.trending_order = order;
       }
       await this.updateProduct(productId, updates);
     } catch (error: any) {
@@ -115,7 +104,7 @@ export class AdminProductService {
 
   static async updateTrendingOrder(productId: string, newOrder: number): Promise<void> {
     try {
-      await this.updateProduct(productId, { trendingOrder: newOrder });
+      await this.updateProduct(productId, { trending_order: newOrder });
     } catch (error: any) {
       throw new Error(error.message);
     }
@@ -127,29 +116,27 @@ export class AdminProductService {
 
   static async getLatestCollectionProducts(): Promise<Product[]> {
     try {
-      const q = query(
-        collection(db, COLLECTIONS.PRODUCTS),
-        where("isLatestCollection", "==", true),
-        orderBy("latestOrder", "asc")
-      );
-      const querySnapshot = await getDocs(q);
-      return querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as Product[];
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .eq('is_latest_collection', true)
+        .order('latest_order', { ascending: true });
+
+      if (error) throw error;
+      return data || [];
     } catch (error) {
       console.error("Error fetching latest collection products:", error);
       // Fallback to recent products if latest collection query fails
       const allProducts = await this.getAllProducts();
-      return allProducts.slice().reverse().slice(0, 12);
+      return allProducts.slice(0, 12);
     }
   }
 
   static async setProductLatestCollection(productId: string, isLatestCollection: boolean, order?: number): Promise<void> {
     try {
-      const updates: Partial<Product> = { isLatestCollection };
+      const updates: any = { is_latest_collection: isLatestCollection };
       if (isLatestCollection && order !== undefined) {
-        updates.latestOrder = order;
+        updates.latest_order = order;
       }
       await this.updateProduct(productId, updates);
     } catch (error: any) {
@@ -159,7 +146,7 @@ export class AdminProductService {
 
   static async updateLatestCollectionOrder(productId: string, newOrder: number): Promise<void> {
     try {
-      await this.updateProduct(productId, { latestOrder: newOrder });
+      await this.updateProduct(productId, { latest_order: newOrder });
     } catch (error: any) {
       throw new Error(error.message);
     }
@@ -171,21 +158,14 @@ export class AdminProductService {
 
   static async bulkUpdateTrendingProducts(productUpdates: Array<{ productId: string; isTrending: boolean; order?: number }>): Promise<void> {
     try {
-      const batch = writeBatch(db);
-      
-      productUpdates.forEach(({ productId, isTrending, order }) => {
-        const docRef = doc(db, COLLECTIONS.PRODUCTS, productId);
-        const updates: any = { 
-          isTrending,
-          updatedAt: Timestamp.now()
-        };
+      // Supabase doesn't have batch operations like Firestore, so we'll do sequential updates
+      for (const { productId, isTrending, order } of productUpdates) {
+        const updates: any = { is_trending: isTrending };
         if (isTrending && order !== undefined) {
-          updates.trendingOrder = order;
+          updates.trending_order = order;
         }
-        batch.update(docRef, updates);
-      });
-
-      await batch.commit();
+        await this.updateProduct(productId, updates);
+      }
     } catch (error: any) {
       throw new Error(error.message);
     }
@@ -193,21 +173,13 @@ export class AdminProductService {
 
   static async bulkUpdateLatestCollection(productUpdates: Array<{ productId: string; isLatestCollection: boolean; order?: number }>): Promise<void> {
     try {
-      const batch = writeBatch(db);
-      
-      productUpdates.forEach(({ productId, isLatestCollection, order }) => {
-        const docRef = doc(db, COLLECTIONS.PRODUCTS, productId);
-        const updates: any = { 
-          isLatestCollection,
-          updatedAt: Timestamp.now()
-        };
+      for (const { productId, isLatestCollection, order } of productUpdates) {
+        const updates: any = { is_latest_collection: isLatestCollection };
         if (isLatestCollection && order !== undefined) {
-          updates.latestOrder = order;
+          updates.latest_order = order;
         }
-        batch.update(docRef, updates);
-      });
-
-      await batch.commit();
+        await this.updateProduct(productId, updates);
+      }
     } catch (error: any) {
       throw new Error(error.message);
     }
@@ -219,17 +191,14 @@ export class AdminProductService {
 
   static async getUserOrders(userId: string): Promise<Order[]> {
     try {
-      const q = query(
-        collection(db, COLLECTIONS.ORDERS),
-        where("userId", "==", userId),
-        orderBy("createdAt", "desc")
-      );
-      const querySnapshot = await getDocs(q);
-      
-      return querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as Order[];
+      const { data, error } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
     } catch (error) {
       console.error("Error fetching user orders:", error);
       return [];
@@ -244,16 +213,13 @@ export class AdminProductService {
 export class AdminOrderService {
   static async getAllOrders(): Promise<(Order & { userId: string })[]> {
     try {
-      const q = query(
-        collection(db, COLLECTIONS.ORDERS),
-        orderBy("createdAt", "desc")
-      );
-      const querySnapshot = await getDocs(q);
-      
-      return querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as (Order & { userId: string })[];
+      const { data, error } = await supabase
+        .from('orders')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
     } catch (error) {
       console.error("Error fetching orders:", error);
       return [];
@@ -262,13 +228,17 @@ export class AdminOrderService {
 
   static async createOrder(userId: string, orderData: Omit<Order, "id">): Promise<string> {
     try {
-      const docRef = await addDoc(collection(db, COLLECTIONS.ORDERS), {
-        ...orderData,
-        userId,
-        createdAt: Timestamp.now(),
-        updatedAt: Timestamp.now(),
-      });
-      return docRef.id;
+      const { data, error } = await supabase
+        .from('orders')
+        .insert([{
+          ...orderData,
+          user_id: userId,
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data.id;
     } catch (error: any) {
       throw new Error(error.message);
     }
@@ -276,11 +246,15 @@ export class AdminOrderService {
 
   static async updateOrderStatus(orderId: string, status: Order["status"]): Promise<void> {
     try {
-      const docRef = doc(db, COLLECTIONS.ORDERS, orderId);
-      await updateDoc(docRef, {
-        status,
-        updatedAt: Timestamp.now(),
-      });
+      const { error } = await supabase
+        .from('orders')
+        .update({ 
+          order_status: status,
+          updated_at: new Date().toISOString()
+        })
+        .eq('order_id', orderId);
+
+      if (error) throw error;
     } catch (error: any) {
       throw new Error(error.message);
     }
@@ -288,16 +262,14 @@ export class AdminOrderService {
 
   static async getOrderById(orderId: string): Promise<(Order & { userId: string }) | null> {
     try {
-      const docRef = doc(db, COLLECTIONS.ORDERS, orderId);
-      const docSnap = await getDoc(docRef);
+      const { data, error } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('order_id', orderId)
+        .single();
 
-      if (docSnap.exists()) {
-        return {
-          id: docSnap.id,
-          ...docSnap.data(),
-        } as (Order & { userId: string });
-      }
-      return null;
+      if (error) throw error;
+      return data;
     } catch (error) {
       console.error("Error fetching order:", error);
       return null;
@@ -306,8 +278,12 @@ export class AdminOrderService {
 
   static async deleteOrder(orderId: string): Promise<void> {
     try {
-      const docRef = doc(db, COLLECTIONS.ORDERS, orderId);
-      await deleteDoc(docRef);
+      const { error } = await supabase
+        .from('orders')
+        .delete()
+        .eq('order_id', orderId);
+
+      if (error) throw error;
     } catch (error: any) {
       throw new Error(error.message);
     }
@@ -321,11 +297,13 @@ export class AdminOrderService {
 export class AdminUserService {
   static async getAllUsers(): Promise<any[]> {
     try {
-      const querySnapshot = await getDocs(collection(db, COLLECTIONS.USERS));
-      return querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
     } catch (error) {
       console.error("Error fetching users:", error);
       return [];
@@ -334,11 +312,15 @@ export class AdminUserService {
 
   static async updateUserRole(userId: string, isAdmin: boolean): Promise<void> {
     try {
-      const docRef = doc(db, COLLECTIONS.USERS, userId);
-      await updateDoc(docRef, {
-        isAdmin,
-        updatedAt: Timestamp.now(),
-      });
+      const { error } = await supabase
+        .from('users')
+        .update({ 
+          is_admin: isAdmin,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', userId);
+
+      if (error) throw error;
     } catch (error: any) {
       throw new Error(error.message);
     }
@@ -352,20 +334,20 @@ export class AdminUserService {
 export class AdminAnalyticsService {
   static async getDashboardStats() {
     try {
-      const [productsSnapshot, ordersSnapshot, usersSnapshot] = await Promise.all([
-        getDocs(collection(db, COLLECTIONS.PRODUCTS)),
-        getDocs(collection(db, COLLECTIONS.ORDERS)),
-        getDocs(collection(db, COLLECTIONS.USERS)),
+      const [productsResult, ordersResult, usersResult] = await Promise.all([
+        supabase.from('products').select('id', { count: 'exact', head: true }),
+        supabase.from('orders').select('*'),
+        supabase.from('users').select('id', { count: 'exact', head: true }),
       ]);
 
-      const orders = ordersSnapshot.docs.map(doc => doc.data());
-      const totalRevenue = orders.reduce((sum, order) => sum + (order.total || 0), 0);
-      const pendingOrders = orders.filter(order => order.status === 'pending').length;
+      const orders = ordersResult.data || [];
+      const totalRevenue = orders.reduce((sum, order) => sum + (order.total_amount || 0), 0);
+      const pendingOrders = orders.filter(order => order.order_status === 'pending').length;
 
       return {
-        totalProducts: productsSnapshot.size,
-        totalOrders: ordersSnapshot.size,
-        totalUsers: usersSnapshot.size,
+        totalProducts: productsResult.count || 0,
+        totalOrders: ordersResult.data?.length || 0,
+        totalUsers: usersResult.count || 0,
         totalRevenue,
         pendingOrders,
       };

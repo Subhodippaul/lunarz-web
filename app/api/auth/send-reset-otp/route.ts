@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { EmailService } from '@/lib/email-service';
-import { UserService } from '@/lib/firebase-services';
+import { UserService } from '@/lib/supabase-services';
 
 // Store OTPs temporarily (in production, use Redis or database)
 const otpStore = new Map<string, { otp: string; expires: number; attempts: number }>();

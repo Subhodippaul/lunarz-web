@@ -1,41 +1,29 @@
-import {
-  collection,
-  doc,
-  addDoc,
-  updateDoc,
-  getDoc,
-  getDocs,
-  query,
-  where,
-  Timestamp,
-  writeBatch,
-} from "firebase/firestore";
-import { db } from "./firebase";
-import { Product, StockEntry } from "./data";
-
-// Collections
-const COLLECTIONS = {
-  PRODUCTS: "products",
-  STOCK_ENTRIES: "stockEntries",
-} as const;
+import { supabase } from './supabase';
+import { Product, StockEntry } from './data';
 
 export class InventoryService {
   // Get stock entries for a product
   static async getStockHistory(productId: string): Promise<StockEntry[]> {
     try {
-      const q = query(
-        collection(db, COLLECTIONS.STOCK_ENTRIES),
-        where("productId", "==", productId)
-      );
-      const querySnapshot = await getDocs(q);
-      
-      const entries = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as StockEntry[];
+      const { data, error } = await supabase
+        .from('stock_entries')
+        .select('*')
+        .eq('product_id', productId)
+        .order('date', { ascending: false });
 
-      // Sort by date in JavaScript instead of Firestore
-      return entries.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      if (error) throw error;
+
+      return (data || []).map(row => ({
+        id: row.id,
+        productId: row.product_id,
+        type: row.type,
+        quantity: row.quantity,
+        reason: row.reason,
+        reference: row.reference,
+        notes: row.notes,
+        date: row.date,
+        userId: row.user_id,
+      }));
     } catch (error) {
       console.error("Error fetching stock history:", error);
       return [];
@@ -53,33 +41,6 @@ export class InventoryService {
     notes?: string
   ): Promise<void> {
     try {
-      const batch = writeBatch(db);
-
-      // Add stock entry
-      const stockEntryRef = doc(collection(db, COLLECTIONS.STOCK_ENTRIES));
-      const stockEntry: any = {
-        productId,
-        type,
-        quantity,
-        reason,
-        date: new Date().toISOString(),
-        userId,
-        createdAt: Timestamp.now(),
-      };
-
-      // Only add optional fields if they have values
-      if (reference) {
-        stockEntry.reference = reference;
-      }
-      if (notes) {
-        stockEntry.notes = notes;
-      }
-
-      batch.set(stockEntryRef, stockEntry);
-
-      // Update product stock
-      const productRef = doc(db, COLLECTIONS.PRODUCTS, productId);
-      
       // Get current stock
       const currentStock = await this.getCurrentStock(productId);
       let newStock = currentStock;
@@ -92,12 +53,31 @@ export class InventoryService {
         newStock = quantity; // For adjustments, quantity is the new total
       }
 
-      batch.update(productRef, {
-        stock: Math.max(0, newStock), // Ensure stock doesn't go negative
-        updatedAt: Timestamp.now(),
-      });
+      // Add stock entry
+      const stockEntryData: any = {
+        product_id: productId,
+        type,
+        quantity,
+        reason,
+        user_id: userId,
+      };
 
-      await batch.commit();
+      if (reference) stockEntryData.reference = reference;
+      if (notes) stockEntryData.notes = notes;
+
+      const { error: entryError } = await supabase
+        .from('stock_entries')
+        .insert(stockEntryData);
+
+      if (entryError) throw entryError;
+
+      // Update product stock
+      const { error: updateError } = await supabase
+        .from('products')
+        .update({ stock: Math.max(0, newStock) })
+        .eq('id', productId);
+
+      if (updateError) throw updateError;
     } catch (error: any) {
       throw new Error(`Failed to add stock entry: ${error.message}`);
     }
@@ -106,14 +86,14 @@ export class InventoryService {
   // Get current stock for a product
   static async getCurrentStock(productId: string): Promise<number> {
     try {
-      const productRef = doc(db, COLLECTIONS.PRODUCTS, productId);
-      const productDoc = await getDoc(productRef);
-      
-      if (productDoc.exists()) {
-        const data = productDoc.data();
-        return data.stock || 0;
-      }
-      return 0;
+      const { data, error } = await supabase
+        .from('products')
+        .select('stock')
+        .eq('id', productId)
+        .single();
+
+      if (error || !data) return 0;
+      return data.stock || 0;
     } catch (error) {
       console.error("Error getting current stock:", error);
       return 0;
@@ -123,15 +103,34 @@ export class InventoryService {
   // Get low stock products
   static async getLowStockProducts(): Promise<Product[]> {
     try {
-      const querySnapshot = await getDocs(collection(db, COLLECTIONS.PRODUCTS));
-      const products = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
+      const { data, error } = await supabase
+        .from('products')
+        .select('*');
+
+      if (error) throw error;
+
+      const products = (data || []).map(row => ({
+        id: row.id,
+        name: row.name,
+        price: row.price,
+        category: row.category,
+        images: row.images,
+        sizes: row.sizes,
+        description: row.description,
+        material: row.material,
+        care: row.care,
+        origin: row.origin,
+        manufacturer: row.manufacturer,
+        stock: row.stock,
+        isTrending: row.is_trending,
+        trendingOrder: row.trending_order,
+        isLatestCollection: row.is_latest_collection,
+        latestOrder: row.latest_order,
       })) as Product[];
 
       return products.filter(product => {
         const stock = product.stock || 0;
-        const threshold = product.lowStockThreshold || 10;
+        const threshold = 10; // Default threshold
         return stock <= threshold;
       });
     } catch (error) {
@@ -148,30 +147,28 @@ export class InventoryService {
     userId: string;
   }>): Promise<void> {
     try {
-      const batch = writeBatch(db);
-
       for (const update of updates) {
         // Add stock entry
-        const stockEntryRef = doc(collection(db, COLLECTIONS.STOCK_ENTRIES));
-        batch.set(stockEntryRef, {
-          productId: update.productId,
-          type: 'adjustment',
-          quantity: update.quantity,
-          reason: update.reason,
-          date: new Date().toISOString(),
-          userId: update.userId,
-          createdAt: Timestamp.now(),
-        });
+        const { error: entryError } = await supabase
+          .from('stock_entries')
+          .insert({
+            product_id: update.productId,
+            type: 'adjustment',
+            quantity: update.quantity,
+            reason: update.reason,
+            user_id: update.userId,
+          });
+
+        if (entryError) throw entryError;
 
         // Update product stock
-        const productRef = doc(db, COLLECTIONS.PRODUCTS, update.productId);
-        batch.update(productRef, {
-          stock: Math.max(0, update.quantity),
-          updatedAt: Timestamp.now(),
-        });
-      }
+        const { error: updateError } = await supabase
+          .from('products')
+          .update({ stock: Math.max(0, update.quantity) })
+          .eq('id', update.productId);
 
-      await batch.commit();
+        if (updateError) throw updateError;
+      }
     } catch (error: any) {
       throw new Error(`Failed to bulk update stock: ${error.message}`);
     }
@@ -213,7 +210,7 @@ export class ProductCSVService {
       product.sizes.join(';'),
       product.variants?.join(';') || '',
       product.stock || 0,
-      product.lowStockThreshold || 10,
+      10, // Default low stock threshold
       product.sku || '',
       product.barcode || ''
     ]);
@@ -245,7 +242,6 @@ export class ProductCSVService {
         sizes: values[9] ? values[9].split(';') : [],
         variants: values[10] ? values[10].split(';') : undefined,
         stock: parseInt(values[11]) || 0,
-        lowStockThreshold: parseInt(values[12]) || 10,
         sku: values[13] || undefined,
         barcode: values[14] || undefined,
       };

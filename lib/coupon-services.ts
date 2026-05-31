@@ -1,17 +1,4 @@
-import { db } from './firebase';
-import { 
-  collection, 
-  addDoc, 
-  getDocs, 
-  doc, 
-  updateDoc, 
-  deleteDoc, 
-  getDoc,
-  query,
-  where,
-  orderBy,
-  Timestamp 
-} from 'firebase/firestore';
+import { supabase } from './supabase';
 
 export interface Coupon {
   id?: string;
@@ -53,24 +40,33 @@ export interface DiscountCalculation {
   }>;
 }
 
-const COUPONS_COLLECTION = 'coupons';
-const COUPON_USAGE_COLLECTION = 'couponUsage';
-
 // Admin functions
 export const createCoupon = async (couponData: Omit<Coupon, 'id' | 'createdAt' | 'updatedAt' | 'usedCount'>): Promise<string> => {
   try {
-    // Clean the data to remove undefined values
-    const cleanedData = Object.fromEntries(
-      Object.entries({
-        ...couponData,
-        usedCount: 0,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      }).filter(([_, value]) => value !== undefined)
-    );
+    const { data, error } = await supabase
+      .from('coupons')
+      .insert({
+        code: couponData.code,
+        name: couponData.name,
+        description: couponData.description,
+        type: couponData.type,
+        value: couponData.value,
+        buy_quantity: couponData.buyQuantity,
+        get_quantity: couponData.getQuantity,
+        min_order_amount: couponData.minOrderAmount,
+        max_discount: couponData.maxDiscount,
+        usage_limit: couponData.usageLimit,
+        used_count: 0,
+        valid_from: couponData.validFrom.toISOString(),
+        valid_to: couponData.validTo.toISOString(),
+        is_active: couponData.isActive,
+        applicable_products: couponData.applicableProducts || [],
+      })
+      .select()
+      .single();
 
-    const docRef = await addDoc(collection(db, COUPONS_COLLECTION), cleanedData);
-    return docRef.id;
+    if (error) throw error;
+    return data.id;
   } catch (error) {
     console.error('Error creating coupon:', error);
     throw error;
@@ -79,16 +75,33 @@ export const createCoupon = async (couponData: Omit<Coupon, 'id' | 'createdAt' |
 
 export const getAllCoupons = async (): Promise<Coupon[]> => {
   try {
-    const q = query(collection(db, COUPONS_COLLECTION), orderBy('createdAt', 'desc'));
-    const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-      validFrom: doc.data().validFrom.toDate(),
-      validTo: doc.data().validTo.toDate(),
-      createdAt: doc.data().createdAt.toDate(),
-      updatedAt: doc.data().updatedAt.toDate(),
-    })) as Coupon[];
+    const { data, error } = await supabase
+      .from('coupons')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    return (data || []).map(row => ({
+      id: row.id,
+      code: row.code,
+      name: row.name,
+      description: row.description,
+      type: row.type,
+      value: row.value,
+      buyQuantity: row.buy_quantity,
+      getQuantity: row.get_quantity,
+      minOrderAmount: row.min_order_amount,
+      maxDiscount: row.max_discount,
+      usageLimit: row.usage_limit,
+      usedCount: row.used_count,
+      validFrom: new Date(row.valid_from),
+      validTo: new Date(row.valid_to),
+      isActive: row.is_active,
+      applicableProducts: row.applicable_products,
+      createdAt: new Date(row.created_at),
+      updatedAt: new Date(row.updated_at),
+    }));
   } catch (error) {
     console.error('Error fetching coupons:', error);
     throw error;
@@ -97,16 +110,30 @@ export const getAllCoupons = async (): Promise<Coupon[]> => {
 
 export const updateCoupon = async (id: string, updates: Partial<Coupon>): Promise<void> => {
   try {
-    // Clean the updates to remove undefined values
-    const cleanedUpdates = Object.fromEntries(
-      Object.entries({
-        ...updates,
-        updatedAt: new Date(),
-      }).filter(([_, value]) => value !== undefined)
-    );
+    const updateData: any = {};
+    
+    if (updates.code !== undefined) updateData.code = updates.code;
+    if (updates.name !== undefined) updateData.name = updates.name;
+    if (updates.description !== undefined) updateData.description = updates.description;
+    if (updates.type !== undefined) updateData.type = updates.type;
+    if (updates.value !== undefined) updateData.value = updates.value;
+    if (updates.buyQuantity !== undefined) updateData.buy_quantity = updates.buyQuantity;
+    if (updates.getQuantity !== undefined) updateData.get_quantity = updates.getQuantity;
+    if (updates.minOrderAmount !== undefined) updateData.min_order_amount = updates.minOrderAmount;
+    if (updates.maxDiscount !== undefined) updateData.max_discount = updates.maxDiscount;
+    if (updates.usageLimit !== undefined) updateData.usage_limit = updates.usageLimit;
+    if (updates.usedCount !== undefined) updateData.used_count = updates.usedCount;
+    if (updates.validFrom !== undefined) updateData.valid_from = updates.validFrom.toISOString();
+    if (updates.validTo !== undefined) updateData.valid_to = updates.validTo.toISOString();
+    if (updates.isActive !== undefined) updateData.is_active = updates.isActive;
+    if (updates.applicableProducts !== undefined) updateData.applicable_products = updates.applicableProducts;
 
-    const couponRef = doc(db, COUPONS_COLLECTION, id);
-    await updateDoc(couponRef, cleanedUpdates);
+    const { error } = await supabase
+      .from('coupons')
+      .update(updateData)
+      .eq('id', id);
+
+    if (error) throw error;
   } catch (error) {
     console.error('Error updating coupon:', error);
     throw error;
@@ -115,7 +142,12 @@ export const updateCoupon = async (id: string, updates: Partial<Coupon>): Promis
 
 export const deleteCoupon = async (id: string): Promise<void> => {
   try {
-    await deleteDoc(doc(db, COUPONS_COLLECTION, id));
+    const { error } = await supabase
+      .from('coupons')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
   } catch (error) {
     console.error('Error deleting coupon:', error);
     throw error;
@@ -125,27 +157,35 @@ export const deleteCoupon = async (id: string): Promise<void> => {
 // Customer functions
 export const validateCoupon = async (code: string, userId: string): Promise<Coupon | null> => {
   try {
-    const q = query(
-      collection(db, COUPONS_COLLECTION),
-      where('code', '==', code.toUpperCase()),
-      where('isActive', '==', true)
-    );
-    
-    const querySnapshot = await getDocs(q);
-    
-    if (querySnapshot.empty) {
-      return null;
-    }
+    const { data, error } = await supabase
+      .from('coupons')
+      .select('*')
+      .eq('code', code.toUpperCase())
+      .eq('is_active', true)
+      .single();
 
-    const couponDoc = querySnapshot.docs[0];
-    const coupon = {
-      id: couponDoc.id,
-      ...couponDoc.data(),
-      validFrom: couponDoc.data().validFrom.toDate(),
-      validTo: couponDoc.data().validTo.toDate(),
-      createdAt: couponDoc.data().createdAt.toDate(),
-      updatedAt: couponDoc.data().updatedAt.toDate(),
-    } as Coupon;
+    if (error || !data) return null;
+
+    const coupon: Coupon = {
+      id: data.id,
+      code: data.code,
+      name: data.name,
+      description: data.description,
+      type: data.type,
+      value: data.value,
+      buyQuantity: data.buy_quantity,
+      getQuantity: data.get_quantity,
+      minOrderAmount: data.min_order_amount,
+      maxDiscount: data.max_discount,
+      usageLimit: data.usage_limit,
+      usedCount: data.used_count,
+      validFrom: new Date(data.valid_from),
+      validTo: new Date(data.valid_to),
+      isActive: data.is_active,
+      applicableProducts: data.applicable_products,
+      createdAt: new Date(data.created_at),
+      updatedAt: new Date(data.updated_at),
+    };
 
     // Check if coupon is within valid date range
     const now = new Date();
@@ -251,24 +291,33 @@ export const applyCoupon = async (
 ): Promise<void> => {
   try {
     // Record coupon usage
-    await addDoc(collection(db, COUPON_USAGE_COLLECTION), {
-      couponId,
-      userId,
-      orderId,
-      discountAmount,
-      usedAt: new Date(),
-    });
+    const { error: usageError } = await supabase
+      .from('coupon_usage')
+      .insert({
+        coupon_id: couponId,
+        user_id: userId,
+        order_id: orderId,
+        discount_amount: discountAmount,
+      });
+
+    if (usageError) throw usageError;
+
+    // Get current used count
+    const { data: couponData, error: fetchError } = await supabase
+      .from('coupons')
+      .select('used_count')
+      .eq('id', couponId)
+      .single();
+
+    if (fetchError) throw fetchError;
 
     // Increment usage count
-    const couponRef = doc(db, COUPONS_COLLECTION, couponId);
-    const couponDoc = await getDoc(couponRef);
-    if (couponDoc.exists()) {
-      const currentUsedCount = couponDoc.data().usedCount || 0;
-      await updateDoc(couponRef, {
-        usedCount: currentUsedCount + 1,
-        updatedAt: new Date(),
-      });
-    }
+    const { error: updateError } = await supabase
+      .from('coupons')
+      .update({ used_count: (couponData.used_count || 0) + 1 })
+      .eq('id', couponId);
+
+    if (updateError) throw updateError;
   } catch (error) {
     console.error('Error applying coupon:', error);
     throw error;
@@ -281,18 +330,22 @@ export const getCouponUsageStats = async (couponId: string): Promise<{
   recentUsages: CouponUsage[];
 }> => {
   try {
-    const q = query(
-      collection(db, COUPON_USAGE_COLLECTION),
-      where('couponId', '==', couponId),
-      orderBy('usedAt', 'desc')
-    );
-    
-    const querySnapshot = await getDocs(q);
-    const usages = querySnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-      usedAt: doc.data().usedAt.toDate(),
-    })) as CouponUsage[];
+    const { data, error } = await supabase
+      .from('coupon_usage')
+      .select('*')
+      .eq('coupon_id', couponId)
+      .order('used_at', { ascending: false });
+
+    if (error) throw error;
+
+    const usages: CouponUsage[] = (data || []).map(row => ({
+      id: row.id,
+      couponId: row.coupon_id,
+      userId: row.user_id,
+      orderId: row.order_id,
+      discountAmount: row.discount_amount,
+      usedAt: new Date(row.used_at),
+    }));
 
     const totalUsage = usages.length;
     const totalDiscount = usages.reduce((sum, usage) => sum + usage.discountAmount, 0);

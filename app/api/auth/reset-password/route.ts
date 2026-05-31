@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { UserService } from '@/lib/firebase-services';
+import { UserService } from '@/lib/supabase-services';
 
 // Access the same OTP store
 declare global {

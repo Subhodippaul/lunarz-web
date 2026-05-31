@@ -1,17 +1,4 @@
-import {
-  collection,
-  getDocs,
-  query,
-  where,
-  Timestamp,
-} from "firebase/firestore";
-import { db } from "./firebase";
-
-// Collections
-const COLLECTIONS = {
-  ORDERS: "orders",
-  ORDER_ITEMS: "orderItems",
-} as const;
+import { supabase } from './supabase';
 
 export interface OrderAnalytics {
   totalOrders: number;
@@ -51,29 +38,23 @@ export class OrderAnalyticsService {
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - days);
       
-      const ordersQuery = query(
-        collection(db, COLLECTIONS.ORDERS),
-        where("createdAt", ">=", Timestamp.fromDate(startDate))
-      );
-      
-      const ordersSnapshot = await getDocs(ordersQuery);
-      const orders = ordersSnapshot.docs.map(doc => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          orderNumber: data.orderNumber || '',
-          total: data.total || 0,
-          status: data.status || 'pending',
-          paymentMethod: data.paymentMethod || 'cod',
-          shippingAddress: data.shippingAddress || {},
-          createdAt: data.createdAt?.toDate?.()?.toISOString() || data.createdAt,
-          ...data,
-        };
-      });
+      const { data: ordersData, error: ordersError } = await supabase
+        .from('orders')
+        .select('*')
+        .gte('created_at', startDate.toISOString());
 
-      // Get all order items for product analytics
-      const orderItemsSnapshot = await getDocs(collection(db, COLLECTIONS.ORDER_ITEMS));
-      const orderItems = orderItemsSnapshot.docs.map(doc => doc.data());
+      if (ordersError) throw ordersError;
+
+      const orders = (ordersData || []).map(row => ({
+        id: row.id,
+        orderNumber: row.order_id,
+        total: row.total_amount,
+        status: row.order_status,
+        paymentMethod: row.payment_method,
+        shippingAddress: row.shipping_address,
+        items: row.items,
+        createdAt: row.created_at,
+      }));
 
       // Calculate basic metrics
       const totalOrders = orders.length;
@@ -86,21 +67,25 @@ export class OrderAnalyticsService {
         return acc;
       }, {} as Record<string, number>);
 
-      // Calculate top selling products
-      const productSales = orderItems.reduce((acc, item) => {
-        const key = item.productId;
-        if (!acc[key]) {
-          acc[key] = {
-            productId: item.productId,
-            productName: item.productName,
-            totalQuantity: 0,
-            totalRevenue: 0,
-          };
+      // Calculate top selling products from order items
+      const productSales: Record<string, any> = {};
+      orders.forEach(order => {
+        if (order.items && Array.isArray(order.items)) {
+          order.items.forEach((item: any) => {
+            const key = item.productId || item.product_id || item.id;
+            if (!productSales[key]) {
+              productSales[key] = {
+                productId: key,
+                productName: item.productName || item.product_name || item.name || 'Unknown Product',
+                totalQuantity: 0,
+                totalRevenue: 0,
+              };
+            }
+            productSales[key].totalQuantity += item.quantity || 0;
+            productSales[key].totalRevenue += (item.price || 0) * (item.quantity || 0);
+          });
         }
-        acc[key].totalQuantity += item.quantity || 0;
-        acc[key].totalRevenue += item.total || 0;
-        return acc;
-      }, {} as Record<string, any>);
+      });
 
       const topSellingProducts = Object.values(productSales)
         .sort((a: any, b: any) => b.totalQuantity - a.totalQuantity)
@@ -113,7 +98,7 @@ export class OrderAnalyticsService {
         .map(order => ({
           id: order.id,
           orderNumber: order.orderNumber,
-          customerName: order.shippingAddress?.fullName || 'Customer',
+          customerName: order.shippingAddress?.fullName || order.shippingAddress?.name || 'Customer',
           total: order.total,
           status: order.status,
           date: order.createdAt,
@@ -172,11 +157,14 @@ export class OrderAnalyticsService {
   // Get order status distribution
   static async getOrderStatusDistribution(): Promise<Record<string, number>> {
     try {
-      const ordersSnapshot = await getDocs(collection(db, COLLECTIONS.ORDERS));
-      const orders = ordersSnapshot.docs.map(doc => doc.data());
+      const { data, error } = await supabase
+        .from('orders')
+        .select('order_status');
 
-      return orders.reduce((acc, order) => {
-        acc[order.status] = (acc[order.status] || 0) + 1;
+      if (error) throw error;
+
+      return (data || []).reduce((acc, order) => {
+        acc[order.order_status] = (acc[order.order_status] || 0) + 1;
         return acc;
       }, {} as Record<string, number>);
     } catch (error) {
@@ -188,12 +176,15 @@ export class OrderAnalyticsService {
   // Get revenue by payment method
   static async getRevenueByPaymentMethod(): Promise<Record<string, number>> {
     try {
-      const ordersSnapshot = await getDocs(collection(db, COLLECTIONS.ORDERS));
-      const orders = ordersSnapshot.docs.map(doc => doc.data());
+      const { data, error } = await supabase
+        .from('orders')
+        .select('payment_method, total_amount');
 
-      return orders.reduce((acc, order) => {
-        const method = order.paymentMethod || 'unknown';
-        acc[method] = (acc[method] || 0) + (order.total || 0);
+      if (error) throw error;
+
+      return (data || []).reduce((acc, order) => {
+        const method = order.payment_method || 'unknown';
+        acc[method] = (acc[method] || 0) + (order.total_amount || 0);
         return acc;
       }, {} as Record<string, number>);
     } catch (error) {
@@ -212,22 +203,17 @@ export class OrderAnalyticsService {
       const startDate = new Date();
       startDate.setMonth(startDate.getMonth() - months);
       
-      const ordersQuery = query(
-        collection(db, COLLECTIONS.ORDERS),
-        where("createdAt", ">=", Timestamp.fromDate(startDate))
-      );
-      
-      const ordersSnapshot = await getDocs(ordersQuery);
-      const orders = ordersSnapshot.docs.map(doc => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          total: data.total || 0,
-          paymentMethod: data.paymentMethod || 'cod',
-          createdAt: data.createdAt?.toDate?.()?.toISOString() || data.createdAt,
-          ...data,
-        };
-      });
+      const { data, error } = await supabase
+        .from('orders')
+        .select('created_at, total_amount')
+        .gte('created_at', startDate.toISOString());
+
+      if (error) throw error;
+
+      const orders = (data || []).map(row => ({
+        total: row.total_amount,
+        createdAt: row.created_at,
+      }));
 
       const monthlyData = orders.reduce((acc, order) => {
         const date = new Date(order.createdAt);

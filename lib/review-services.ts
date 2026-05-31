@@ -1,22 +1,4 @@
-import {
-  collection,
-  doc,
-  addDoc,
-  getDocs,
-  getDoc,
-  updateDoc,
-  deleteDoc,
-  query,
-  orderBy,
-  limit,
-  Timestamp,
-} from "firebase/firestore";
-import { db } from "./firebase";
-
-// Collections
-const COLLECTIONS = {
-  REVIEWS: "reviews",
-} as const;
+import { supabase } from './supabase';
 
 export interface CustomerReview {
   id: string;
@@ -36,21 +18,28 @@ export class ReviewService {
   // Get all reviews for display (only active ones)
   static async getReviews(limitCount: number = 10): Promise<CustomerReview[]> {
     try {
-      const q = query(
-        collection(db, COLLECTIONS.REVIEWS),
-        orderBy("date", "desc"),
-        limit(limitCount)
-      );
-      const querySnapshot = await getDocs(q);
-      
-      const reviews = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        date: doc.data().date?.toDate?.()?.toISOString() || doc.data().date,
-      })) as CustomerReview[];
+      const { data, error } = await supabase
+        .from('reviews')
+        .select('*')
+        .eq('is_active', true)
+        .order('date', { ascending: false })
+        .limit(limitCount);
 
-      // Filter only active reviews for public display
-      return reviews.filter(review => review.isActive !== false);
+      if (error) throw error;
+
+      return (data || []).map(row => ({
+        id: row.id,
+        customerName: row.customer_name,
+        customerImage: row.customer_image,
+        rating: row.rating,
+        reviewText: row.review_text,
+        date: row.date,
+        verified: row.verified,
+        source: row.source,
+        googleReviewId: row.google_review_id,
+        location: row.location,
+        isActive: row.is_active,
+      }));
     } catch (error) {
       console.error("Error fetching reviews:", error);
       return this.getMockReviews(); // Fallback to mock data
@@ -60,17 +49,26 @@ export class ReviewService {
   // Get all reviews for admin (including inactive ones)
   static async getAllReviewsForAdmin(): Promise<CustomerReview[]> {
     try {
-      const q = query(
-        collection(db, COLLECTIONS.REVIEWS),
-        orderBy("date", "desc")
-      );
-      const querySnapshot = await getDocs(q);
-      
-      return querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        date: doc.data().date?.toDate?.()?.toISOString() || doc.data().date,
-      })) as CustomerReview[];
+      const { data, error } = await supabase
+        .from('reviews')
+        .select('*')
+        .order('date', { ascending: false });
+
+      if (error) throw error;
+
+      return (data || []).map(row => ({
+        id: row.id,
+        customerName: row.customer_name,
+        customerImage: row.customer_image,
+        rating: row.rating,
+        reviewText: row.review_text,
+        date: row.date,
+        verified: row.verified,
+        source: row.source,
+        googleReviewId: row.google_review_id,
+        location: row.location,
+        isActive: row.is_active,
+      }));
     } catch (error) {
       console.error("Error fetching admin reviews:", error);
       return [];
@@ -80,13 +78,24 @@ export class ReviewService {
   // Add a new review (for manual entry or website reviews)
   static async addReview(review: Omit<CustomerReview, "id">): Promise<string> {
     try {
-      const docRef = await addDoc(collection(db, COLLECTIONS.REVIEWS), {
-        ...review,
-        date: Timestamp.now(),
-        createdAt: Timestamp.now(),
-        isActive: true, // Default to active
-      });
-      return docRef.id;
+      const { data, error } = await supabase
+        .from('reviews')
+        .insert({
+          customer_name: review.customerName,
+          customer_image: review.customerImage,
+          rating: review.rating,
+          review_text: review.reviewText,
+          verified: review.verified,
+          source: review.source,
+          google_review_id: review.googleReviewId,
+          location: review.location,
+          is_active: true,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data.id;
     } catch (error: any) {
       throw new Error(`Failed to add review: ${error.message}`);
     }
@@ -95,11 +104,24 @@ export class ReviewService {
   // Update a review
   static async updateReview(reviewId: string, updates: Partial<CustomerReview>): Promise<void> {
     try {
-      const reviewRef = doc(db, COLLECTIONS.REVIEWS, reviewId);
-      await updateDoc(reviewRef, {
-        ...updates,
-        updatedAt: Timestamp.now(),
-      });
+      const updateData: any = {};
+      
+      if (updates.customerName !== undefined) updateData.customer_name = updates.customerName;
+      if (updates.customerImage !== undefined) updateData.customer_image = updates.customerImage;
+      if (updates.rating !== undefined) updateData.rating = updates.rating;
+      if (updates.reviewText !== undefined) updateData.review_text = updates.reviewText;
+      if (updates.verified !== undefined) updateData.verified = updates.verified;
+      if (updates.source !== undefined) updateData.source = updates.source;
+      if (updates.googleReviewId !== undefined) updateData.google_review_id = updates.googleReviewId;
+      if (updates.location !== undefined) updateData.location = updates.location;
+      if (updates.isActive !== undefined) updateData.is_active = updates.isActive;
+
+      const { error } = await supabase
+        .from('reviews')
+        .update(updateData)
+        .eq('id', reviewId);
+
+      if (error) throw error;
     } catch (error: any) {
       throw new Error(`Failed to update review: ${error.message}`);
     }
@@ -108,8 +130,12 @@ export class ReviewService {
   // Delete a review
   static async deleteReview(reviewId: string): Promise<void> {
     try {
-      const reviewRef = doc(db, COLLECTIONS.REVIEWS, reviewId);
-      await deleteDoc(reviewRef);
+      const { error } = await supabase
+        .from('reviews')
+        .delete()
+        .eq('id', reviewId);
+
+      if (error) throw error;
     } catch (error: any) {
       throw new Error(`Failed to delete review: ${error.message}`);
     }
@@ -118,11 +144,12 @@ export class ReviewService {
   // Toggle review active status
   static async toggleReviewStatus(reviewId: string, isActive: boolean): Promise<void> {
     try {
-      const reviewRef = doc(db, COLLECTIONS.REVIEWS, reviewId);
-      await updateDoc(reviewRef, {
-        isActive,
-        updatedAt: Timestamp.now(),
-      });
+      const { error } = await supabase
+        .from('reviews')
+        .update({ is_active: isActive })
+        .eq('id', reviewId);
+
+      if (error) throw error;
     } catch (error: any) {
       throw new Error(`Failed to toggle review status: ${error.message}`);
     }
@@ -131,18 +158,27 @@ export class ReviewService {
   // Get review by ID
   static async getReviewById(reviewId: string): Promise<CustomerReview | null> {
     try {
-      const reviewRef = doc(db, COLLECTIONS.REVIEWS, reviewId);
-      const reviewDoc = await getDoc(reviewRef);
-      
-      if (!reviewDoc.exists()) {
-        return null;
-      }
+      const { data, error } = await supabase
+        .from('reviews')
+        .select('*')
+        .eq('id', reviewId)
+        .single();
+
+      if (error || !data) return null;
 
       return {
-        id: reviewDoc.id,
-        ...reviewDoc.data(),
-        date: reviewDoc.data().date?.toDate?.()?.toISOString() || reviewDoc.data().date,
-      } as CustomerReview;
+        id: data.id,
+        customerName: data.customer_name,
+        customerImage: data.customer_image,
+        rating: data.rating,
+        reviewText: data.review_text,
+        date: data.date,
+        verified: data.verified,
+        source: data.source,
+        googleReviewId: data.google_review_id,
+        location: data.location,
+        isActive: data.is_active,
+      };
     } catch (error) {
       console.error("Error fetching review:", error);
       return null;
@@ -155,23 +191,6 @@ export class ReviewService {
       // This would integrate with Google My Business API
       // For now, we'll use mock data
       console.log("Google Reviews sync would happen here");
-      
-      // Example of how Google Reviews would be processed:
-      // const googleReviews = await fetchGoogleReviews();
-      // for (const review of googleReviews) {
-      //   await this.addReview({
-      //     customerName: review.author_name,
-      //     customerImage: review.profile_photo_url,
-      //     rating: review.rating,
-      //     reviewText: review.text,
-      //     date: review.time,
-      //     verified: true,
-      //     source: 'google',
-      //     googleReviewId: review.id,
-      //     location: 'India',
-      //     isActive: true,
-      //   });
-      // }
     } catch (error) {
       console.error("Error syncing Google Reviews:", error);
     }
