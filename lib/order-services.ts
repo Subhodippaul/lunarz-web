@@ -47,16 +47,71 @@ export async function createOrder(orderData: CreateOrderData): Promise<string> {
   }
 }
 
-export async function getOrderById(orderId: string): Promise<Order | null> {
+export async function getOrderById(orderId: string): Promise<OrderReceipt | null> {
   try {
     const { data, error } = await supabase
       .from('orders')
       .select('*')
       .eq('order_id', orderId)
-      .single();
+      .maybeSingle();
 
-    if (error) throw error;
-    return data;
+    if (error || !data) return null;
+
+    // Normalize items — handle both CartItem and flat structures
+    const rawItems: any[] = data.items || [];
+    const items: OrderReceiptItem[] = rawItems.map((item: any) => {
+      const name = item.name || item.product?.name || 'Unknown Item';
+      const price = item.price ?? item.product?.price ?? 0;
+      const quantity = item.quantity ?? 1;
+      const size = item.size || item.selectedSize || '—';
+      const variant = item.variant || item.selectedVariant || item.color;
+      return {
+        name,
+        size,
+        variant,
+        quantity,
+        price: Number(price),
+        total: Number(price) * quantity,
+      };
+    });
+
+    const subtotal = items.reduce((sum, i) => sum + i.total, 0);
+    const totalAmount = data.total_amount || subtotal;
+    const shippingAddress = data.shipping_address || {};
+
+    return {
+      id: data.id,
+      orderId: data.order_id,
+      orderNumber: data.order_id,
+      date: data.created_at,
+      status: data.order_status || 'pending',
+      items,
+      subtotal,
+      discountAmount: 0,
+      couponCode: undefined,
+      shippingCost: 0,
+      total: totalAmount,
+      totalAmount,
+      shippingAddress: {
+        fullName: shippingAddress.fullName || shippingAddress.full_name || '',
+        phone: shippingAddress.phone || '',
+        addressLine1: shippingAddress.addressLine1 || shippingAddress.address_line1 || '',
+        addressLine2: shippingAddress.addressLine2 || shippingAddress.address_line2,
+        city: shippingAddress.city || '',
+        state: shippingAddress.state || '',
+        pincode: shippingAddress.pincode || '',
+        country: shippingAddress.country || 'India',
+      },
+      paymentMethod: data.payment_method || 'N/A',
+      paymentStatus: data.payment_status || 'pending',
+      orderStatus: data.order_status || 'pending',
+      customerInfo: {
+        name: shippingAddress.fullName || shippingAddress.full_name || '',
+        email: '',
+        phone: shippingAddress.phone || '',
+      },
+      createdAt: data.created_at,
+    };
   } catch (error) {
     console.error("Error fetching order:", error);
     return null;
@@ -163,7 +218,7 @@ export class OrderService {
     return createOrder(orderData);
   }
 
-  static async getOrderById(orderId: string): Promise<Order | null> {
+  static async getOrderById(orderId: string): Promise<OrderReceipt | null> {
     return getOrderById(orderId);
   }
 
@@ -189,14 +244,45 @@ export class OrderService {
 }
 
 // OrderReceipt interface for thank-you page
+export interface OrderReceiptItem {
+  name: string;
+  size: string;
+  variant?: string;
+  quantity: number;
+  price: number;
+  total: number;
+}
+
 export interface OrderReceipt {
   id: string;
   orderId: string;
-  items: CartItem[];
+  orderNumber: string;
+  date: string;
+  status: string;
+  items: OrderReceiptItem[];
+  subtotal: number;
+  discountAmount: number;
+  couponCode?: string;
+  shippingCost: number;
+  total: number;
   totalAmount: number;
-  shippingAddress: any;
+  shippingAddress: {
+    fullName: string;
+    phone: string;
+    addressLine1: string;
+    addressLine2?: string;
+    city: string;
+    state: string;
+    pincode: string;
+    country: string;
+  };
   paymentMethod: string;
   paymentStatus: string;
   orderStatus: string;
+  customerInfo: {
+    name: string;
+    email: string;
+    phone: string;
+  };
   createdAt: string;
 }

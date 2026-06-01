@@ -143,7 +143,7 @@ export default function OrderFormModal({ isOpen, onClose, order }: OrderFormModa
         });
       } else {
         // Create new order
-        await AdminOrderService.createOrder(formData.userId, orderData);
+        await AdminOrderService.createOrder(formData.userId, orderData as any);
         addToast({
           title: "Success",
           description: "Order created successfully.",

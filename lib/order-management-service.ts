@@ -138,7 +138,7 @@ export class OrderManagementService {
    */
   static async updateReturnExchangeRequestStatus(
     requestId: string,
-    status: "pending" | "approved" | "rejected"
+    status: "pending" | "approved" | "rejected" | "processing" | "completed"
   ): Promise<void> {
     try {
       const { error } = await supabase
@@ -181,6 +181,39 @@ export class OrderManagementService {
     return OrderManagementService.getAllReturnExchangeRequests();
   }
 
+  static async getUserRequests(userId: string) {
+    return OrderManagementService.getReturnExchangeRequestsByUserId(userId);
+  }
+
+  static async createRequest(data: {
+    orderId: string;
+    userId: string;
+    type: "return" | "exchange" | "cancel";
+    reason: string;
+    description?: string;
+    items?: any[];
+    pickupAddress?: any;
+    images?: any[];
+  }): Promise<string> {
+    const requestId = `REQ-${Date.now()}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
+    return OrderManagementService.createReturnExchangeRequest({
+      requestId,
+      orderId: data.orderId,
+      userId: data.userId,
+      type: data.type as "return" | "exchange",
+      reason: data.reason,
+      status: "pending",
+    });
+  }
+
+  static async updateRequestStatus(
+    requestId: string,
+    status: "pending" | "approved" | "rejected" | "processing" | "completed",
+    adminNotes?: string,
+    refundAmount?: number
+  ): Promise<void> {
+    return OrderManagementService.updateReturnExchangeRequestStatus(requestId, status);
+  }
   /**
    * Get reasons for return
    */

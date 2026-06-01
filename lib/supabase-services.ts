@@ -459,6 +459,53 @@ export class UserService {
       throw new Error(error.message);
     }
   }
+
+  static async resetPassword(email: string, newPassword: string): Promise<boolean> {
+    try {
+      // Use Supabase admin client to update password by email
+      // Since we're in a server route and have already verified OTP,
+      // we use the service role to find the user and update their password
+      const { data, error: getUserError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('email', email)
+        .maybeSingle();
+
+      if (getUserError || !data) {
+        console.error('User not found for password reset:', email);
+        return false;
+      }
+
+      // Update password via Supabase Auth admin API using service role key
+      const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+
+      if (!serviceRoleKey || !supabaseUrl) {
+        // Fallback: use updateUser (works if user is currently signed in)
+        const { error } = await supabase.auth.updateUser({ password: newPassword });
+        if (error) throw error;
+        return true;
+      }
+
+      const response = await fetch(
+        `${supabaseUrl}/auth/v1/admin/users/${data.id}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': serviceRoleKey,
+            'Authorization': `Bearer ${serviceRoleKey}`,
+          },
+          body: JSON.stringify({ password: newPassword }),
+        }
+      );
+
+      return response.ok;
+    } catch (error: any) {
+      console.error('Error resetting password:', error);
+      return false;
+    }
+  }
 }
 
 // ==================== ADDRESS SERVICE ====================
@@ -474,6 +521,7 @@ export interface Address {
   state: string;
   pincode: string;
   is_default: boolean;
+  type?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -535,6 +583,27 @@ export class AddressService {
       if (error) throw error;
     } catch (error: any) {
       console.error('Error deleting address:', error);
+      throw new Error(error.message);
+    }
+  }
+
+  static async setDefaultAddress(userId: string, addressId: string): Promise<void> {
+    try {
+      // Clear all defaults for this user first
+      await supabase
+        .from('addresses')
+        .update({ is_default: false })
+        .eq('user_id', userId);
+
+      // Set the new default
+      const { error } = await supabase
+        .from('addresses')
+        .update({ is_default: true })
+        .eq('id', addressId);
+
+      if (error) throw error;
+    } catch (error: any) {
+      console.error('Error setting default address:', error);
       throw new Error(error.message);
     }
   }

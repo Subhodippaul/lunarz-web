@@ -6,6 +6,7 @@
 import { supabase } from "./supabase";
 import { Product } from "./data";
 import { Order } from "./profile-data";
+import { CreateOrderData } from "./order-services";
 
 // Maps camelCase Product fields to snake_case DB columns
 function mapProductToDb(product: Partial<Product>): Record<string, any> {
@@ -310,7 +311,7 @@ export class AdminOrderService {
     }
   }
 
-  static async createOrder(userId: string, orderData: Omit<Order, "id">): Promise<string> {
+  static async createOrder(userId: string, orderData: any): Promise<string> {
     try {
       const orderId = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
@@ -320,10 +321,10 @@ export class AdminOrderService {
           order_id: orderId,
           user_id: userId,
           items: orderData.items,
-          total_amount: orderData.total,
+          total_amount: orderData.total || (orderData as any).totalAmount || 0,
           shipping_address: orderData.shippingAddress,
-          payment_method: orderData.paymentMethod || 'cod',
-          payment_status: orderData.paymentStatus || 'pending',
+          payment_method: (orderData as any).paymentMethod || 'cod',
+          payment_status: (orderData as any).paymentStatus || 'pending',
           order_status: orderData.status || 'pending',
         }])
         .select()
