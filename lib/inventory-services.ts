@@ -180,21 +180,21 @@ export class ProductCSVService {
   // Export products to CSV
   static exportToCSV(products: Product[]): string {
     const headers = [
-      'ID',
-      'Name',
-      'Price',
-      'Category',
-      'Description',
-      'Material',
-      'Care',
-      'Origin',
-      'Manufacturer',
-      'Sizes',
-      'Variants',
-      'Stock',
-      'Low Stock Threshold',
-      'SKU',
-      'Barcode'
+      'id',
+      'name',
+      'price',
+      'category',
+      'description',
+      'material',
+      'care',
+      'origin',
+      'manufacturer',
+      'sizes',
+      'variants',
+      'stock',
+      'low_stock_threshold',
+      'sku',
+      'barcode'
     ];
 
     const rows = products.map(product => [
@@ -225,27 +225,69 @@ export class ProductCSVService {
   // Parse CSV content to products
   static parseCSV(csvContent: string): Omit<Product, 'id' | 'images'>[] {
     const lines = csvContent.trim().split('\n');
-    const headers = lines[0].split(',').map(h => h.replace(/"/g, ''));
-    
-    return lines.slice(1).map(line => {
-      const values = line.split(',').map(v => v.replace(/"/g, ''));
-      
-      return {
-        name: values[1] || '',
-        price: parseFloat(values[2]) || 0,
-        category: values[3] || '',
-        description: values[4] || '',
-        material: values[5] || '',
-        care: values[6] || '',
-        origin: values[7] || '',
-        manufacturer: values[8] || '',
-        sizes: values[9] ? values[9].split(';') : [],
-        variants: values[10] ? values[10].split(';') : undefined,
-        stock: parseInt(values[11]) || 0,
-        sku: values[13] || undefined,
-        barcode: values[14] || undefined,
-      };
-    });
+    if (lines.length < 2) return [];
+
+    // Proper CSV line parser that handles quoted fields with commas
+    const parseLine = (line: string): string[] => {
+      const result: string[] = [];
+      let current = '';
+      let inQuotes = false;
+
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        if (char === '"') {
+          if (inQuotes && line[i + 1] === '"') {
+            current += '"';
+            i++; // skip escaped quote
+          } else {
+            inQuotes = !inQuotes;
+          }
+        } else if (char === ',' && !inQuotes) {
+          result.push(current.trim());
+          current = '';
+        } else {
+          current += char;
+        }
+      }
+      result.push(current.trim());
+      return result;
+    };
+
+    const headers = parseLine(lines[0]).map(h => h.toLowerCase().replace(/\s+/g, '_'));
+
+    const get = (values: string[], ...keys: string[]): string => {
+      for (const key of keys) {
+        const idx = headers.indexOf(key);
+        if (idx !== -1 && values[idx]) return values[idx];
+      }
+      return '';
+    };
+
+    return lines.slice(1)
+      .filter(line => line.trim())
+      .map(line => {
+        const values = parseLine(line);
+
+        const sizesRaw = get(values, 'sizes');
+        const variantsRaw = get(values, 'variants');
+
+        return {
+          name: get(values, 'name') || '',
+          price: parseFloat(get(values, 'price')) || 0,
+          category: get(values, 'category') || '',
+          description: get(values, 'description') || '',
+          material: get(values, 'material') || '',
+          care: get(values, 'care') || '',
+          origin: get(values, 'origin') || '',
+          manufacturer: get(values, 'manufacturer') || '',
+          sizes: sizesRaw ? sizesRaw.split(';').map(s => s.trim()).filter(Boolean) : [],
+          variants: variantsRaw ? variantsRaw.split(';').map(s => s.trim()).filter(Boolean) : undefined,
+          stock: parseInt(get(values, 'stock')) || 0,
+          lowStockThreshold: parseInt(get(values, 'low_stock_threshold', 'lowstockthreshold')) || 10,
+          sku: get(values, 'sku') || undefined,
+          barcode: get(values, 'barcode') || undefined,
+        };
+      });
   }
 
   // Download CSV file
