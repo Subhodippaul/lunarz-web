@@ -7,6 +7,46 @@ import { supabase } from "./supabase";
 import { Product } from "./data";
 import { Order } from "./profile-data";
 
+// Maps camelCase Product fields to snake_case DB columns
+function mapProductToDb(product: Partial<Product>): Record<string, any> {
+  const mapped: Record<string, any> = { ...product };
+
+  // Rename camelCase keys to snake_case for Supabase
+  if ('lowStockThreshold' in mapped) {
+    mapped.low_stock_threshold = mapped.lowStockThreshold;
+    delete mapped.lowStockThreshold;
+  }
+  if ('colorImages' in mapped) {
+    mapped.color_images = mapped.colorImages;
+    delete mapped.colorImages;
+  }
+  if ('relatedProducts' in mapped) {
+    mapped.related_products = mapped.relatedProducts;
+    delete mapped.relatedProducts;
+  }
+  if ('isTrending' in mapped) {
+    mapped.is_trending = mapped.isTrending;
+    delete mapped.isTrending;
+  }
+  if ('isLatestCollection' in mapped) {
+    mapped.is_latest_collection = mapped.isLatestCollection;
+    delete mapped.isLatestCollection;
+  }
+  if ('trendingOrder' in mapped) {
+    mapped.trending_order = mapped.trendingOrder;
+    delete mapped.trendingOrder;
+  }
+  if ('latestOrder' in mapped) {
+    mapped.latest_order = mapped.latestOrder;
+    delete mapped.latestOrder;
+  }
+
+  // Remove fields that don't exist in DB
+  delete mapped.stockHistory;
+
+  return mapped;
+}
+
 // ============================================================================
 // ADMIN PRODUCT SERVICES
 // ============================================================================
@@ -31,7 +71,7 @@ export class AdminProductService {
     try {
       const { data, error } = await supabase
         .from('products')
-        .insert([product])
+        .insert([mapProductToDb(product)])
         .select()
         .single();
 
@@ -46,7 +86,7 @@ export class AdminProductService {
     try {
       const { error } = await supabase
         .from('products')
-        .update({ ...updates, updated_at: new Date().toISOString() })
+        .update({ ...mapProductToDb(updates), updated_at: new Date().toISOString() })
         .eq('id', id);
 
       if (error) throw error;
@@ -92,9 +132,9 @@ export class AdminProductService {
 
   static async setProductTrending(productId: string, isTrending: boolean, order?: number): Promise<void> {
     try {
-      const updates: any = { is_trending: isTrending };
+      const updates: Partial<Product> = { isTrending };
       if (isTrending && order !== undefined) {
-        updates.trending_order = order;
+        updates.trendingOrder = order;
       }
       await this.updateProduct(productId, updates);
     } catch (error: any) {
@@ -104,7 +144,7 @@ export class AdminProductService {
 
   static async updateTrendingOrder(productId: string, newOrder: number): Promise<void> {
     try {
-      await this.updateProduct(productId, { trending_order: newOrder });
+      await this.updateProduct(productId, { trendingOrder: newOrder });
     } catch (error: any) {
       throw new Error(error.message);
     }
@@ -134,9 +174,9 @@ export class AdminProductService {
 
   static async setProductLatestCollection(productId: string, isLatestCollection: boolean, order?: number): Promise<void> {
     try {
-      const updates: any = { is_latest_collection: isLatestCollection };
+      const updates: Partial<Product> = { isLatestCollection };
       if (isLatestCollection && order !== undefined) {
-        updates.latest_order = order;
+        updates.latestOrder = order;
       }
       await this.updateProduct(productId, updates);
     } catch (error: any) {
@@ -146,7 +186,7 @@ export class AdminProductService {
 
   static async updateLatestCollectionOrder(productId: string, newOrder: number): Promise<void> {
     try {
-      await this.updateProduct(productId, { latest_order: newOrder });
+      await this.updateProduct(productId, { latestOrder: newOrder });
     } catch (error: any) {
       throw new Error(error.message);
     }
@@ -158,11 +198,10 @@ export class AdminProductService {
 
   static async bulkUpdateTrendingProducts(productUpdates: Array<{ productId: string; isTrending: boolean; order?: number }>): Promise<void> {
     try {
-      // Supabase doesn't have batch operations like Firestore, so we'll do sequential updates
       for (const { productId, isTrending, order } of productUpdates) {
-        const updates: any = { is_trending: isTrending };
+        const updates: Partial<Product> = { isTrending };
         if (isTrending && order !== undefined) {
-          updates.trending_order = order;
+          updates.trendingOrder = order;
         }
         await this.updateProduct(productId, updates);
       }
@@ -174,9 +213,9 @@ export class AdminProductService {
   static async bulkUpdateLatestCollection(productUpdates: Array<{ productId: string; isLatestCollection: boolean; order?: number }>): Promise<void> {
     try {
       for (const { productId, isLatestCollection, order } of productUpdates) {
-        const updates: any = { is_latest_collection: isLatestCollection };
+        const updates: Partial<Product> = { isLatestCollection };
         if (isLatestCollection && order !== undefined) {
-          updates.latest_order = order;
+          updates.latestOrder = order;
         }
         await this.updateProduct(productId, updates);
       }
@@ -198,7 +237,27 @@ export class AdminProductService {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data || [];
+
+      return (data || []).map((row) => ({
+        id: row.order_id || row.id,
+        orderNumber: row.order_id || row.id,
+        date: row.created_at,
+        status: row.order_status || 'pending',
+        items: row.items || [],
+        total: row.total_amount || 0,
+        shippingAddress: row.shipping_address || {
+          id: '',
+          type: 'home',
+          isDefault: false,
+          fullName: '',
+          phone: '',
+          addressLine1: '',
+          city: '',
+          state: '',
+          pincode: '',
+          country: 'India',
+        },
+      }));
     } catch (error) {
       console.error("Error fetching user orders:", error);
       return [];
@@ -219,7 +278,32 @@ export class AdminOrderService {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data || [];
+
+      return (data || []).map((row) => ({
+        id: row.order_id || row.id,
+        orderNumber: row.order_id || row.id,
+        date: row.created_at,
+        status: row.order_status || 'pending',
+        items: row.items || [],
+        total: row.total_amount || 0,
+        shippingAddress: row.shipping_address || {
+          id: '',
+          type: 'home',
+          isDefault: false,
+          fullName: '',
+          phone: '',
+          addressLine1: '',
+          city: '',
+          state: '',
+          pincode: '',
+          country: 'India',
+        },
+        userId: row.user_id || '',
+        paymentMethod: row.payment_method,
+        paymentStatus: row.payment_status,
+        razorpayOrderId: row.razorpay_order_id,
+        razorpayPaymentId: row.razorpay_payment_id,
+      }));
     } catch (error) {
       console.error("Error fetching orders:", error);
       return [];
@@ -228,17 +312,25 @@ export class AdminOrderService {
 
   static async createOrder(userId: string, orderData: Omit<Order, "id">): Promise<string> {
     try {
+      const orderId = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
       const { data, error } = await supabase
         .from('orders')
         .insert([{
-          ...orderData,
+          order_id: orderId,
           user_id: userId,
+          items: orderData.items,
+          total_amount: orderData.total,
+          shipping_address: orderData.shippingAddress,
+          payment_method: orderData.paymentMethod || 'cod',
+          payment_status: orderData.paymentStatus || 'pending',
+          order_status: orderData.status || 'pending',
         }])
         .select()
         .single();
 
       if (error) throw error;
-      return data.id;
+      return orderId;
     } catch (error: any) {
       throw new Error(error.message);
     }
@@ -303,7 +395,18 @@ export class AdminUserService {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data || [];
+
+      // Map Supabase snake_case columns to camelCase for the UI
+      return (data || []).map((user) => ({
+        id: user.id,
+        uid: user.id,
+        email: user.email,
+        name: user.display_name || user.email?.split('@')[0] || 'Unknown',
+        provider: user.provider || 'email',
+        isAdmin: user.is_admin || false,
+        createdAt: user.created_at,
+        updatedAt: user.updated_at,
+      }));
     } catch (error) {
       console.error("Error fetching users:", error);
       return [];

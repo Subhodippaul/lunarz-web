@@ -72,7 +72,22 @@ export async function getOrdersByUserId(userId: string): Promise<Order[]> {
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    return data || [];
+
+    return (data || []).map((row) => ({
+      id: row.order_id || row.id,
+      orderNumber: row.order_id || row.id,
+      date: row.created_at,
+      status: row.order_status || 'pending',
+      items: row.items || [],
+      total: row.total_amount || 0,
+      shippingAddress: row.shipping_address || {},
+      paymentMethod: row.payment_method,
+      paymentStatus: row.payment_status,
+      razorpayOrderId: row.razorpay_order_id,
+      razorpayPaymentId: row.razorpay_payment_id,
+      createdAt: row.created_at,
+      userId: row.user_id,
+    })) as any[];
   } catch (error) {
     console.error("Error fetching user orders:", error);
     return [];

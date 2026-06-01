@@ -115,7 +115,13 @@ export const updateCoupon = async (id: string, updates: Partial<Coupon>): Promis
     if (updates.code !== undefined) updateData.code = updates.code;
     if (updates.name !== undefined) updateData.name = updates.name;
     if (updates.description !== undefined) updateData.description = updates.description;
-    if (updates.type !== undefined) updateData.type = updates.type;
+    if (updates.type !== undefined) {
+      const validTypes = ['percentage', 'fixed', 'buy_x_get_y'];
+      if (!validTypes.includes(updates.type)) {
+        throw new Error(`Invalid coupon type: ${updates.type}`);
+      }
+      updateData.type = updates.type;
+    }
     if (updates.value !== undefined) updateData.value = updates.value;
     if (updates.buyQuantity !== undefined) updateData.buy_quantity = updates.buyQuantity;
     if (updates.getQuantity !== undefined) updateData.get_quantity = updates.getQuantity;

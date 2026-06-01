@@ -48,7 +48,11 @@ export default function OrdersWithActions() {
   };
 
   const calculateTotal = (items: any[]) => {
-    return items?.reduce((total, item) => total + (item.price * item.quantity), 0) || 0;
+    return items?.reduce((total, item) => {
+      const price = item.price ?? item.product?.price ?? 0;
+      const quantity = item.quantity ?? 1;
+      return total + (Number(price) * quantity);
+    }, 0) || 0;
   };
 
   if (loading) {
@@ -99,22 +103,22 @@ export default function OrdersWithActions() {
   return (
     <div className="space-y-6">
       {orders.map((order) => (
-        <div key={order.id} className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div key={order.id || order.order_id} className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
           {/* Order Header */}
           <div className="p-6 border-b border-gray-200">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
               <div className="flex items-center gap-4">
                 <Package className="w-8 h-8 text-blue-600" />
                 <div>
-                  <h3 className="font-semibold text-lg">Order #{order.id}</h3>
+                  <h3 className="font-semibold text-lg">Order #{order.id || order.order_id}</h3>
                   <div className="flex items-center gap-4 text-sm text-gray-600 mt-1">
                     <div className="flex items-center gap-1">
                       <Calendar className="w-4 h-4" />
-                      {formatDate(order.createdAt)}
+                      {formatDate(order.createdAt || order.date)}
                     </div>
                     <div className="flex items-center gap-1">
                       <CreditCard className="w-4 h-4" />
-                      ₹{calculateTotal(order.items).toLocaleString()}
+                      ₹{(order.total || calculateTotal(order.items)).toLocaleString()}
                     </div>
                   </div>
                 </div>
@@ -148,27 +152,38 @@ export default function OrdersWithActions() {
               <div>
                 <h4 className="font-medium mb-4">Order Items</h4>
                 <div className="space-y-3">
-                  {order.items?.map((item: any, index: number) => (
-                    <div key={index} className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
-                      <img
-                        src={item.image || '/placeholder.jpg'}
-                        alt={item.name}
-                        className="w-16 h-16 object-cover rounded"
-                      />
-                      <div className="flex-1">
-                        <h5 className="font-medium">{item.name}</h5>
-                        <p className="text-sm text-gray-600">
-                          Size: {item.size} | Color: {item.color}
-                        </p>
-                        <p className="text-sm text-gray-600">
-                          Quantity: {item.quantity} × ₹{item.price.toLocaleString()}
-                        </p>
+                  {order.items?.map((item: any, index: number) => {
+                    // Handle both flat items and nested CartItem structure
+                    const name = item.name || item.product?.name || 'Unknown Item';
+                    const price = item.price ?? item.product?.price ?? 0;
+                    const quantity = item.quantity ?? 1;
+                    const size = item.size || item.selectedSize || '—';
+                    const color = item.color || item.selectedVariant || item.variant || '—';
+                    const image = item.image || item.product?.images?.[0] || '/placeholder.jpg';
+
+                    return (
+                      <div key={index} className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
+                        <img
+                          src={image}
+                          alt={name}
+                          className="w-16 h-16 object-cover rounded"
+                          onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.jpg'; }}
+                        />
+                        <div className="flex-1">
+                          <h5 className="font-medium">{name}</h5>
+                          <p className="text-sm text-gray-600">
+                            Size: {size} | Color: {color}
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            Quantity: {quantity} × ₹{Number(price).toLocaleString()}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-medium">₹{(Number(price) * quantity).toLocaleString()}</p>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <p className="font-medium">₹{(item.price * item.quantity).toLocaleString()}</p>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 

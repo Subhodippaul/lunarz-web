@@ -21,8 +21,7 @@ import {
   PaymentMethod
 } from "@/lib/profile-data";
 import { 
-  AddressService,
-  PaymentMethodService
+  AddressService
 } from "@/lib/supabase-services";
 import { supabase } from "@/lib/supabase";
 import AddressModal from "@/components/address-modal";
@@ -109,13 +108,8 @@ export default function ProfilePage() {
     
     setLoading(true);
     try {
-      const [userAddresses, userPaymentMethods] = await Promise.all([
-        AddressService.getUserAddresses(authState.user.id),
-        PaymentMethodService.getUserPaymentMethods(authState.user.id),
-      ]);
-
+      const userAddresses = await AddressService.getUserAddresses(authState.user.id);
       setAddresses(userAddresses);
-      setPaymentMethods(userPaymentMethods);
     } catch (error) {
       console.error("Error loading user data:", error);
       addToast({

@@ -4,8 +4,7 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { AdminAnalyticsService } from "@/lib/admin-services";
 import { OrderAnalyticsService } from "@/lib/order-analytics";
-import { ChatService } from "@/lib/chat-services";
-import { Package, ShoppingCart, Users, DollarSign, Clock, MessageCircle, TrendingUp, BarChart3 } from "lucide-react";
+import { Package, ShoppingCart, Users, DollarSign, Clock, TrendingUp, BarChart3 } from "lucide-react";
 
 interface DashboardStats {
   totalProducts: number;
@@ -13,8 +12,6 @@ interface DashboardStats {
   totalUsers: number;
   totalRevenue: number;
   pendingOrders: number;
-  activeChatSessions: number;
-  totalChatSessions: number;
   averageOrderValue: number;
   confirmedOrders: number;
   shippedOrders: number;
@@ -33,8 +30,6 @@ function AdminDashboardContent() {
     totalUsers: 0,
     totalRevenue: 0,
     pendingOrders: 0,
-    activeChatSessions: 0,
-    totalChatSessions: 0,
     averageOrderValue: 0,
     confirmedOrders: 0,
     shippedOrders: 0,
@@ -63,20 +58,13 @@ function AdminDashboardContent() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const [dashboardStats, orderAnalytics, chatSessions] = await Promise.all([
+        const [dashboardStats, orderAnalytics] = await Promise.all([
           AdminAnalyticsService.getDashboardStats(),
           OrderAnalyticsService.getOrderAnalytics(30),
-          ChatService.getAdminChatSessions(),
         ]);
-        
-        const activeChatSessions = chatSessions.filter(session => 
-          session.status === 'active' || session.status === 'waiting'
-        ).length;
         
         setStats({
           ...dashboardStats,
-          activeChatSessions,
-          totalChatSessions: chatSessions.length,
           averageOrderValue: orderAnalytics.averageOrderValue,
           confirmedOrders: orderAnalytics.confirmedOrders,
           shippedOrders: orderAnalytics.shippedOrders,
@@ -113,12 +101,6 @@ function AdminDashboardContent() {
       value: stats.totalUsers,
       icon: Users,
       color: "bg-purple-500",
-    },
-    {
-      title: "Active Chats",
-      value: stats.activeChatSessions,
-      icon: MessageCircle,
-      color: "bg-orange-500",
     },
     {
       title: "Total Revenue",

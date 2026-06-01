@@ -3,7 +3,6 @@ import { usePathname } from "next/navigation";
 import { ReactNode } from "react";
 import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
-import ChatWidget from "@/components/chat-widget";
 
 interface ConditionalLayoutProps {
   children: ReactNode;
@@ -12,22 +11,19 @@ interface ConditionalLayoutProps {
 export default function ConditionalLayout({ children }: ConditionalLayoutProps) {
   const pathname = usePathname();
   
-  // Check if current path is admin route or invoice-maker route
   const isAdminRoute = pathname?.startsWith('/admin');
   const isInvoiceMakerRoute = pathname === '/invoice-maker';
+  const isAuthRoute = pathname === '/login' || pathname === '/signup' || pathname === '/forgot-password';
 
-  if (isAdminRoute || isInvoiceMakerRoute) {
-    // For admin and invoice-maker routes, render children without navbar, footer, and chat widget
+  if (isAdminRoute || isInvoiceMakerRoute || isAuthRoute) {
     return <>{children}</>;
   }
 
-  // For non-admin routes, render with navbar, footer, and chat widget
   return (
     <>
       <Navbar />
-      <main className="flex-1">{children}</main>
+      <main className="flex-1" key={pathname}>{children}</main>
       <Footer />
-      <ChatWidget />
     </>
   );
 }

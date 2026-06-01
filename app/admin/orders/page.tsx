@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { AdminOrderService } from "@/lib/admin-services";
-import { Order, mockOrders } from "@/lib/profile-data";
+import { Order } from "@/lib/profile-data";
 import { Search, Eye, Package, Truck, CheckCircle, XCircle, Clock, Plus } from "lucide-react";
 import { OrderTableSkeleton } from "@/components/admin/skeleton-loaders";
 import OrderModal from "@/components/admin/order-modal";
@@ -28,27 +28,14 @@ export default function AdminOrders() {
   const fetchOrders = async () => {
     try {
       const fetchedOrders = await AdminOrderService.getAllOrders();
-      console.log("Fetched orders:", fetchedOrders);
-      
-      // If no orders found, use mock data for testing
-      if (fetchedOrders.length === 0) {
-        console.log("No orders found, using mock data");
-        const mockOrdersWithUserId = mockOrders.map(order => ({
-          ...order,
-          userId: "mock-user-id"
-        }));
-        setOrders(mockOrdersWithUserId);
-      } else {
-        setOrders(fetchedOrders);
-      }
+      setOrders(fetchedOrders);
     } catch (error) {
       console.error("Error fetching orders:", error);
-      // Fallback to mock data on error
-      const mockOrdersWithUserId = mockOrders.map(order => ({
-        ...order,
-        userId: "mock-user-id"
-      }));
-      setOrders(mockOrdersWithUserId);
+      addToast({
+        title: "Error",
+        description: "Failed to fetch orders.",
+        type: "error",
+      });
     } finally {
       setLoading(false);
     }
@@ -133,9 +120,9 @@ export default function AdminOrders() {
 
   const filteredOrders = orders.filter(order => {
     const matchesSearch = 
-      order.orderNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.shippingAddress.fullName.toLowerCase().includes(searchTerm.toLowerCase());
+      (order.orderNumber || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (order.id || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (order.shippingAddress?.fullName || '').toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = statusFilter === "all" || order.status === statusFilter;
     
@@ -233,14 +220,14 @@ export default function AdminOrders() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">
-                      {order.shippingAddress.fullName}
+                      {order.shippingAddress?.fullName || '—'}
                     </div>
                     <div className="text-sm text-gray-500">
-                      {order.shippingAddress.phone}
+                      {order.shippingAddress?.phone || '—'}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {new Date(order.date).toLocaleDateString()}
+                    {order.date ? new Date(order.date).toLocaleDateString() : '—'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>

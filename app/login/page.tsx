@@ -195,41 +195,7 @@ function LoginPageContent() {
   </CardContent>
 </Card>
 
-        {/* Demo Credentials Info */}
-        <Card className="rounded-2xl shadow-lg bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
-          <CardContent className="pr-4 pl-4">
-            <div className="flex items-start gap-3">
-              <div className="bg-green-100 p-2 rounded-full shrink-0">
-                <svg
-                  className="w-5 h-5 text-green-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
-                  />
-                </svg>
-              </div>
-              <div>
-                <p className="text-gray-700 text-sm font-medium mb-2">
-                  🎉 Demo Access Available
-                </p>
-                <div className="bg-white/70 rounded-lg p-3 space-y-1">
-                  <p className="text-xs text-gray-600">
-                    <span className="font-semibold">Username:</span> 123456
-                  </p>
-                  <p className="text-xs text-gray-600">
-                    <span className="font-semibold">Password:</span> 123456
-                  </p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Demo Credentials Info - removed */}
 
 
         {/* Login Form */}
@@ -242,11 +208,11 @@ function LoginPageContent() {
         <CardContent className="space-y-4">
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="email">Email or Username</Label>
+              <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
                 type="text"
-                placeholder="Enter email or username (123456)"
+                placeholder="Enter your email"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               />

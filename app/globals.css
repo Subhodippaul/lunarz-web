@@ -122,6 +122,12 @@
   body {
     @apply bg-background text-foreground;
   }
+  button, a, [role="button"], select, label[for], input[type="submit"], input[type="button"], input[type="reset"] {
+    cursor: pointer;
+  }
+  button:disabled, input:disabled, select:disabled {
+    cursor: not-allowed;
+  }
 }
 
 @layer utilities {

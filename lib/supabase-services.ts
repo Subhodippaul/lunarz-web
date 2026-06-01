@@ -124,11 +124,12 @@ export interface User {
 }
 
 export async function getUserById(id: string): Promise<User | null> {
+  // Use maybeSingle() to avoid throwing on no rows
   const { data, error } = await supabase
     .from('users')
     .select('*')
     .eq('id', id)
-    .single();
+    .maybeSingle();
 
   if (error) {
     console.error('Error fetching user:', error);
@@ -365,7 +366,7 @@ export async function updateOrderRequest(requestId: string, updates: Partial<Ord
 export async function updateOrderRequestStatus(
   requestId: string,
   status: 'pending' | 'approved' | 'rejected'
-): Promise<void> {
+): Promise<any> {
   return updateOrderRequest(requestId, { status });
 }
 

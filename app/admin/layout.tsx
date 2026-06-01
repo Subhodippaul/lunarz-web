@@ -1,6 +1,6 @@
 "use client";
 import { useAuth } from "@/lib/auth-context";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { 
@@ -15,7 +15,6 @@ import {
   Menu,
   X,
   BarChart3,
-  MessageCircle,
   Star,
   FileText,
   RotateCcw
@@ -32,6 +31,7 @@ function AdminLayoutContent({
 }) {
   const { state, logout } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [uniqueId, setUniqueId] = useState<string | null>(null);
@@ -74,7 +74,6 @@ function AdminLayoutContent({
     { name: "Invoices", href: "/admin/invoices", icon: FileText },
     { name: "Users", href: "/admin/users", icon: Users },
     { name: "Reviews", href: "/admin/reviews", icon: Star },
-    { name: "Support", href: "/admin/support", icon: MessageCircle },
     { name: "Coupons", href: "/admin/coupons", icon: Ticket },
     { name: "Settings", href: "/admin/settings", icon: Settings },
   ];
@@ -238,10 +237,12 @@ function AdminLayoutContent({
             </div>
           </div>
 
-          {/* Main content */}
+          {/* Main content — key forces remount on every route change */}
           <div className="lg:pl-64">
             <main className="py-4 px-4 sm:py-6 sm:px-6 lg:py-8 lg:px-8">
-              {children}
+              <div key={pathname}>
+                {children}
+              </div>
             </main>
           </div>
         </div>

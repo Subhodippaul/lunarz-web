@@ -141,7 +141,14 @@ export default function CheckoutPage() {
 
       if (paymentMethod === 'cod') {
         // Handle COD order
-        const orderId = await OrderService.createOrder(orderData);
+        const orderId = await OrderService.createOrder({
+          userId: authState.user?.id || '',
+          items: state.items,
+          totalAmount: finalTotal,
+          shippingAddress: shippingAddress,
+          paymentMethod: 'cod',
+          paymentStatus: 'pending',
+        });
         
         // Send email notifications
         await sendOrderEmails(orderData, orderId);
@@ -189,25 +196,26 @@ export default function CheckoutPage() {
                 );
 
                 if (isVerified) {
-                  // Update order data with payment info
-                  const updatedOrderData = {
-                    ...orderData,
-                    paymentId: response.razorpay_payment_id,
-                    razorpayOrderId: response.razorpay_order_id,
-                    status: 'confirmed' as const,
-                  };
-
                   // Create order in database
-                  const orderId = await OrderService.createOrder(updatedOrderData);
+                  const orderId = await OrderService.createOrder({
+                    userId: authState.user?.id || '',
+                    items: state.items,
+                    totalAmount: finalTotal,
+                    shippingAddress: shippingAddress,
+                    paymentMethod: 'online',
+                    paymentStatus: 'paid',
+                    razorpayOrderId: response.razorpay_order_id,
+                    razorpayPaymentId: response.razorpay_payment_id,
+                  });
                   
                   // Send email notifications
-                  await sendOrderEmails(updatedOrderData, orderId);
+                  await sendOrderEmails(orderData, orderId);
                   
                   // Upload custom designs to Google Drive
-                  await uploadCustomDesigns(updatedOrderData, orderId);
+                  await uploadCustomDesigns(orderData, orderId);
                   
                   // Create Shiprocket order
-                  await createShiprocketOrder(updatedOrderData, orderId);
+                  await createShiprocketOrder(orderData, orderId);
                   
                   addToast({
                     type: "success",

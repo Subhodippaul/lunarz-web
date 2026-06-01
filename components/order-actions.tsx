@@ -91,15 +91,17 @@ export default function OrderActions({ order, onOrderUpdate }: OrderActionsProps
       {/* Order Status */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          {getStatusIcon(order.status)}
-          <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(order.status)}`}>
+          {getStatusIcon(order.status || '')}
+          <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(order.status || '')}`}>
             {order.status === 'return-requested' ? 'Return Requested' :
              order.status === 'exchange-requested' ? 'Exchange Requested' :
-             order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+             order.status
+               ? order.status.charAt(0).toUpperCase() + order.status.slice(1)
+               : 'Pending'}
           </span>
         </div>
         <div className="text-sm text-gray-500">
-          Order #{order.id}
+          Order #{order.id || order.order_id || '—'}
         </div>
       </div>
 
