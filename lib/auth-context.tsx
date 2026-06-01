@@ -72,48 +72,58 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Listen to Supabase auth state changes
   useEffect(() => {
+    let initialLoad = true;
+
     // Check for dummy user in localStorage first
     const dummyUserStr = localStorage.getItem("dummyUser");
     if (dummyUserStr) {
       try {
         const dummyUser = JSON.parse(dummyUserStr);
         dispatch({ type: "SET_USER", payload: dummyUser });
-        return;
+        initialLoad = false;
       } catch (error) {
         console.error("Error parsing dummy user:", error);
         localStorage.removeItem("dummyUser");
       }
     }
-    
-    // Get initial session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (session?.user) {
-        const user = await convertSupabaseUserToUser(session.user);
-        dispatch({ type: "SET_USER", payload: user });
-      } else {
-        dispatch({ type: "SET_USER", payload: null });
-      }
-    });
 
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      if (session?.user) {
-        const user = await convertSupabaseUserToUser(session.user);
-        dispatch({ type: "SET_USER", payload: user });
-      } else {
-        // Check for dummy user
-        const dummyUserStr = localStorage.getItem("dummyUser");
-        if (dummyUserStr) {
-          try {
-            const dummyUser = JSON.parse(dummyUserStr);
-            dispatch({ type: "SET_USER", payload: dummyUser });
-          } catch (error) {
-            dispatch({ type: "SET_USER", payload: null });
-          }
+    // Get initial session (only runs once on mount)
+    if (initialLoad) {
+      supabase.auth.getSession().then(async ({ data: { session } }) => {
+        if (session?.user) {
+          const user = await convertSupabaseUserToUser(session.user);
+          dispatch({ type: "SET_USER", payload: user });
         } else {
           dispatch({ type: "SET_USER", payload: null });
+        }
+      });
+    }
+
+    // Listen for real auth events (sign-in, sign-out, token refresh)
+    // We deliberately do NOT set isLoading here so navigating between pages
+    // doesn't flash the loading spinner.
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      // Only handle actual sign-in / sign-out events, not TOKEN_REFRESHED
+      // which fires on every page focus and causes spurious loading states.
+      if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") {
+        if (session?.user) {
+          const user = await convertSupabaseUserToUser(session.user);
+          dispatch({ type: "SET_USER", payload: user });
+        } else {
+          // Check for dummy user before clearing
+          const dummyUserStr = localStorage.getItem("dummyUser");
+          if (dummyUserStr) {
+            try {
+              const dummyUser = JSON.parse(dummyUserStr);
+              dispatch({ type: "SET_USER", payload: dummyUser });
+            } catch {
+              dispatch({ type: "SET_USER", payload: null });
+            }
+          } else {
+            dispatch({ type: "SET_USER", payload: null });
+          }
         }
       }
     });

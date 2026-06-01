@@ -1,7 +1,7 @@
 "use client";
 import { useAuth } from "@/lib/auth-context";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, Suspense } from "react";
 import { useToast } from "@/components/ui/toast";
 import { CenteredLoader } from "@/components/ui/loader";
 
@@ -9,60 +9,47 @@ interface AdminGuardProps {
   children: React.ReactNode;
 }
 
-// Separate component that uses useSearchParams
 function AdminGuardContent({ children }: AdminGuardProps) {
   const { state } = useAuth();
   const router = useRouter();
   const { addToast } = useToast();
-  const [isValidating, setIsValidating] = useState(true);
 
   useEffect(() => {
-    if (!state.isLoading) {
-      // Check authentication
-      if (!state.isAuthenticated) {
-        router.push("/login");
-        return;
-      }
+    // Only act once auth has finished loading
+    if (state.isLoading) return;
 
-      // Check admin privileges
-      if (!state.user?.isAdmin) {
-        router.push("/");
-        addToast({
-          title: "Access Denied",
-          description: "Admin privileges required.",
-          type: "error",
-        });
-        return;
-      }
+    if (!state.isAuthenticated) {
+      router.push("/login");
+      return;
+    }
 
-      // All validations passed
-      setIsValidating(false);
+    if (!state.user?.isAdmin) {
+      router.push("/");
+      addToast({
+        title: "Access Denied",
+        description: "Admin privileges required.",
+        type: "error",
+      });
     }
   }, [state.isLoading, state.isAuthenticated, state.user?.isAdmin, router, addToast]);
 
-  // Show loading while validating
-  if (state.isLoading || isValidating) {
-    return (
-      <CenteredLoader 
-        text={state.isLoading ? "Loading..." : "Validating admin access..."}
-        size="lg"
-      />
-    );
+  // Still resolving auth — show spinner
+  if (state.isLoading) {
+    return <CenteredLoader text="Loading..." size="lg" />;
   }
 
+  // Auth resolved but not an admin — render nothing while redirect happens
   if (!state.isAuthenticated || !state.user?.isAdmin) {
     return null;
   }
 
+  // Authenticated admin — render children immediately, no extra validation state
   return <>{children}</>;
 }
 
-// Main AdminGuard component with Suspense boundary
 export default function AdminGuard({ children }: AdminGuardProps) {
   return (
-    <Suspense fallback={
-      <CenteredLoader text="Loading admin..." size="lg" />
-    }>
+    <Suspense fallback={<CenteredLoader text="Loading admin..." size="lg" />}>
       <AdminGuardContent>{children}</AdminGuardContent>
     </Suspense>
   );
