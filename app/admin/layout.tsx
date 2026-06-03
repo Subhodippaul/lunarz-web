@@ -16,7 +16,8 @@ import {
   X,
   BarChart3,
   Star,
-  FileText
+  FileText,
+  ImageIcon
 } from "lucide-react";
 import AdminGuard from "@/components/admin/admin-guard";
 import { ToastProvider } from "@/components/ui/toast";
@@ -70,6 +71,7 @@ function AdminLayoutContent({
     { name: "Inventory", href: "/admin/inventory", icon: BarChart3 },
     { name: "Orders", href: "/admin/orders", icon: ShoppingCart },
     { name: "Invoices", href: "/admin/invoices", icon: FileText },
+    { name: "Banners", href: "/admin/banners", icon: ImageIcon },
     { name: "Users", href: "/admin/users", icon: Users },
     { name: "Reviews", href: "/admin/reviews", icon: Star },
     { name: "Coupons", href: "/admin/coupons", icon: Ticket },
