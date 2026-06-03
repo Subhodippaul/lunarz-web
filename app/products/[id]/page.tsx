@@ -85,18 +85,6 @@ export default function ProductDetailsPage() {
 
   return (
     <div>
-      {/* Back Button */}
-      <div className="max-w-7xl mx-auto px-6 pt-8">
-        <Button
-          variant="ghost"
-          onClick={() => router.back()}
-          className="mb-6"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back
-        </Button>
-      </div>
-
       {/* Product Details Component */}
       <ProductDetails product={product} />
     </div>

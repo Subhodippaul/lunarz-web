@@ -167,7 +167,11 @@ export default function OrdersWithActions() {
                           src={image}
                           alt={name}
                           className="w-16 h-16 object-cover rounded"
-                          onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.jpg'; }}
+                          onError={(e) => {
+                            const t = e.target as HTMLImageElement;
+                            t.onerror = null;
+                            t.src = '/placeholder.jpg';
+                          }}
                         />
                         <div className="flex-1">
                           <h5 className="font-medium">{name}</h5>

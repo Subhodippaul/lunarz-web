@@ -44,6 +44,7 @@ export const PRODUCTS = {
 
 // Product Details
 export const PRODUCT_DETAILS = {
+  brand_name: "Lunarz India",
   newCollection: "New Collection",
   priceIncludesTax: "Price incl. of all taxes",
   shopByVariant: "Shop by Variant/Look:",
@@ -57,7 +58,7 @@ export const PRODUCT_DETAILS = {
   enterPincode: "Enter Pincode",
   check: "CHECK",
   returnPolicy: "This product is eligible for return & exchange under our 30-day return and exchange policy",
-  earnPoints: "🎯 Earn ₹ 149.50 as TSS Points on this purchase",
+  earnPoints: "🎯 Unlock ₹200 OFF instantly! Use code SAVE200 at checkout.",
   productDetails: "Product Details",
   materialCare: "Material & Care:",
   countryOrigin: "Country of Origin:",

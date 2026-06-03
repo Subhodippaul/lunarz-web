@@ -148,6 +148,7 @@ export default function LatestCollectionSlider() {
                               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                               onError={(e) => {
                                 const target = e.target as HTMLImageElement;
+                                target.onerror = null;
                                 target.src = "/placeholder.jpg";
                               }}
                             />
@@ -289,6 +290,7 @@ export default function LatestCollectionSlider() {
                               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                               onError={(e) => {
                                 const target = e.target as HTMLImageElement;
+                                target.onerror = null;
                                 target.src = "/placeholder.jpg";
                               }}
                             />

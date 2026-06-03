@@ -25,11 +25,11 @@ export default function ProductCard({ product }: any) {
   const showSecondary = secondaryImage && !secondaryError;
 
   return (
-    <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300 group">
-      <Link href={`/products/${product.id}`}>
+    <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300 group flex flex-col h-[330px] py-0 gap-3">
+      <Link href={`/products/${product.id}`} className="flex-1 min-h-0">
         {/* Image Box */}
         <div
-          className="aspect-square bg-gray-100 relative overflow-hidden cursor-pointer"
+          className="h-full bg-gray-100 relative overflow-hidden cursor-pointer"
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
         >
@@ -79,19 +79,19 @@ export default function ProductCard({ product }: any) {
         </div>
       </Link>
 
-      <CardContent className="p-3 space-y-2">
+      <CardContent className="p-3 shrink-0">
         {/* Product Name */}
         <Link href={`/products/${product.id}`}>
-          <h3 className="font-medium text-sm text-gray-900 hover:text-blue-600 transition-colors cursor-pointer">
+          <h3 className="font-medium text-md text-gray-900 hover:text-blue-600 transition-colors cursor-pointer mb-2 truncate">
             {product.name}
           </h3>
         </Link>
 
         {/* Divider */}
-        <hr className="border-gray-200" />
+        <hr className="border-gray-200 mb-2" />
 
         {/* Category */}
-        <div className="flex flex-wrap gap-1">
+        <div className="flex flex-wrap gap-1 mb-2">
           <span className="inline-block px-1.5 py-0.5 text-xs font-medium text-gray-600 bg-gray-100 rounded">
             {product.category}
           </span>
