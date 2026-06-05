@@ -1,7 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { AdminUserService } from "@/lib/admin-services";
-import { Search, Shield, User, Mail, Calendar } from "lucide-react";
+import { Search, Shield, User, Mail, Calendar, Loader2 } from "lucide-react";
 import { UserTableSkeleton } from "@/components/admin/skeleton-loaders";
 
 interface UserData {
@@ -19,6 +18,8 @@ export default function AdminUsers() {
   const [users, setUsers] = useState<UserData[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
   useEffect(() => {
     fetchUsers();
@@ -26,9 +27,13 @@ export default function AdminUsers() {
 
   const fetchUsers = async () => {
     try {
-      const fetchedUsers = await AdminUserService.getAllUsers();
-      console.log('fetchedUsers........',fetchedUsers);
-      setUsers(fetchedUsers);
+      const res = await fetch("/api/auth/get-all-users");
+      if (!res.ok) {
+        const json = await res.json();
+        throw new Error(json.error || "Failed to fetch users");
+      }
+      const json = await res.json();
+      setUsers(json.users || []);
     } catch (error) {
       console.error("Error fetching users:", error);
     } finally {
@@ -36,21 +41,48 @@ export default function AdminUsers() {
     }
   };
 
+  const showToast = (message: string, type: "success" | "error") => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
   const handleToggleAdmin = async (userId: string, currentAdminStatus: boolean) => {
+    const action = currentAdminStatus ? "remove admin from" : "make admin";
+    const user = users.find((u) => u.id === userId);
+    if (!confirm(`Are you sure you want to ${action} "${user?.name || user?.email}"?`)) return;
+
+    setUpdatingId(userId);
     try {
-      await AdminUserService.updateUserRole(userId, !currentAdminStatus);
-      setUsers(users.map(user => 
-        user.id === userId ? { ...user, isAdmin: !currentAdminStatus } : user
-      ));
-    } catch (error) {
+      const res = await fetch("/api/auth/update-role", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: userId, is_admin: !currentAdminStatus }),
+      });
+
+      if (!res.ok) {
+        const json = await res.json();
+        throw new Error(json.error || "Failed to update role");
+      }
+
+      setUsers((prev) =>
+        prev.map((u) => (u.id === userId ? { ...u, isAdmin: !currentAdminStatus } : u))
+      );
+      showToast(
+        currentAdminStatus ? "Admin role removed." : "User is now an admin.",
+        "success"
+      );
+    } catch (error: any) {
       console.error("Error updating user role:", error);
-      alert("Failed to update user role");
+      showToast(error.message || "Failed to update user role.", "error");
+    } finally {
+      setUpdatingId(null);
     }
   };
 
-  const filteredUsers = users.filter(user =>
-    user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredUsers = users.filter(
+    (user) =>
+      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   if (loading) {
@@ -59,6 +91,17 @@ export default function AdminUsers() {
 
   return (
     <div>
+      {/* Toast */}
+      {toast && (
+        <div
+          className={`fixed top-6 right-6 z-50 px-5 py-3 rounded-lg shadow-lg text-white text-sm font-medium transition-all ${
+            toast.type === "success" ? "bg-green-600" : "bg-red-600"
+          }`}
+        >
+          {toast.message}
+        </div>
+      )}
+
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Users</h1>
         <p className="text-gray-600 mt-2">Manage user accounts and permissions</p>
@@ -107,14 +150,14 @@ export default function AdminUsers() {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <div className="flex-shrink-0 h-10 w-10">
-                        <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
-                          <User className="h-5 w-5 text-gray-600" />
+                        <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
+                          <span className="text-sm font-semibold text-gray-600 uppercase">
+                            {user.name?.[0] || user.email?.[0] || "?"}
+                          </span>
                         </div>
                       </div>
                       <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">
-                          {user.name}
-                        </div>
+                        <div className="text-sm font-medium text-gray-900">{user.name}</div>
                         <div className="text-sm text-gray-500 flex items-center">
                           <Mail className="h-3 w-3 mr-1" />
                           {user.email}
@@ -123,20 +166,24 @@ export default function AdminUsers() {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      user.provider === "google" 
-                        ? "bg-red-100 text-red-800" 
-                        : "bg-blue-100 text-blue-800"
-                    }`}>
+                    <span
+                      className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                        user.provider === "google"
+                          ? "bg-red-100 text-red-800"
+                          : "bg-blue-100 text-blue-800"
+                      }`}
+                    >
                       {user.provider === "google" ? "Google" : "Email"}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      user.isAdmin 
-                        ? "bg-purple-100 text-purple-800" 
-                        : "bg-gray-100 text-gray-800"
-                    }`}>
+                    <span
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        user.isAdmin
+                          ? "bg-purple-100 text-purple-800"
+                          : "bg-gray-100 text-gray-800"
+                      }`}
+                    >
                       {user.isAdmin ? (
                         <>
                           <Shield className="h-3 w-3 mr-1" />
@@ -159,13 +206,25 @@ export default function AdminUsers() {
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <button
                       onClick={() => handleToggleAdmin(user.id, user.isAdmin || false)}
-                      className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
+                      disabled={updatingId === user.id}
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${
                         user.isAdmin
                           ? "bg-red-100 text-red-700 hover:bg-red-200"
                           : "bg-green-100 text-green-700 hover:bg-green-200"
                       }`}
                     >
-                      {user.isAdmin ? "Remove Admin" : "Make Admin"}
+                      {updatingId === user.id ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : user.isAdmin ? (
+                        <Shield className="h-3 w-3" />
+                      ) : (
+                        <Shield className="h-3 w-3" />
+                      )}
+                      {updatingId === user.id
+                        ? "Updating..."
+                        : user.isAdmin
+                        ? "Remove Admin"
+                        : "Make Admin"}
                     </button>
                   </td>
                 </tr>
@@ -180,7 +239,9 @@ export default function AdminUsers() {
           <User className="mx-auto h-12 w-12 text-gray-400" />
           <h3 className="mt-2 text-sm font-medium text-gray-900">No users found</h3>
           <p className="mt-1 text-sm text-gray-500">
-            {searchTerm ? "Try adjusting your search terms." : "Users will appear here once they register."}
+            {searchTerm
+              ? "Try adjusting your search terms."
+              : "Users will appear here once they register."}
           </p>
         </div>
       )}
@@ -207,7 +268,7 @@ export default function AdminUsers() {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Admin Users</p>
               <p className="text-2xl font-bold text-gray-900">
-                {users.filter(user => user.isAdmin).length}
+                {users.filter((u) => u.isAdmin).length}
               </p>
             </div>
           </div>
@@ -221,7 +282,7 @@ export default function AdminUsers() {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Google Users</p>
               <p className="text-2xl font-bold text-gray-900">
-                {users.filter(user => user.provider === "google").length}
+                {users.filter((u) => u.provider === "google").length}
               </p>
             </div>
           </div>

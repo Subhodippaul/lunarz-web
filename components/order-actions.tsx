@@ -2,13 +2,13 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { 
-  RotateCcw, 
-  RefreshCw, 
   X, 
   Package, 
   AlertCircle,
   CheckCircle,
-  Clock
+  Clock,
+  RotateCcw,
+  RefreshCw
 } from "lucide-react";
 import { OrderManagementService } from "@/lib/order-management-service";
 import { useAuth } from "@/lib/auth-context";
@@ -119,32 +119,7 @@ export default function OrderActions({ order, onOrderUpdate }: OrderActionsProps
             Cancel Order
           </Button>
         )}
-
-        {orderEligibility.canReturn && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleAction('return')}
-            className="text-orange-600 border-orange-200 hover:bg-orange-50"
-            disabled={loading}
-          >
-            <RotateCcw className="w-4 h-4 mr-2" />
-            Return
-          </Button>
-        )}
-
-        {orderEligibility.canExchange && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleAction('exchange')}
-            className="text-blue-600 border-blue-200 hover:bg-blue-50"
-            disabled={loading}
-          >
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Exchange
-          </Button>
-        )}
+        {/* Return and Exchange hidden — coming soon */}
       </div>
 
       {/* Eligibility Info */}

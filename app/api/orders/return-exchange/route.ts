@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { OrderManagementService, ReturnExchangeRequest } from "@/lib/order-management-service";
+import { createClient } from "@supabase/supabase-js";
 import nodemailer from 'nodemailer';
+
+// Service-role client — bypasses RLS
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 // Email sending function
 const sendEmail = async (to: string, subject: string, html: string) => {
@@ -74,24 +80,50 @@ export async function POST(request: NextRequest) {
     } = body;
 
     // Validate required fields
-    if (!orderId || !userId || !type || !reason || !items || items.length === 0) {
+    if (!orderId || !userId || !type || !reason) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
       );
     }
 
-    // Create the request
-    const requestId = await OrderManagementService.createRequest({
-      orderId,
-      userId,
-      type,
-      reason,
-      description,
-      items,
-      pickupAddress,
-      images
-    });
+    const requestId = `REQ-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+
+    // Cancellations just update the order status — no order_requests row needed
+    // (the DB type check constraint only allows 'return' | 'exchange')
+    if (type === "cancel") {
+      const { error: cancelError } = await supabaseAdmin
+        .from("orders")
+        .update({ order_status: "cancelled", updated_at: new Date().toISOString() })
+        .eq("order_id", orderId);
+
+      if (cancelError) {
+        return NextResponse.json({ error: cancelError.message }, { status: 500 });
+      }
+
+      return NextResponse.json({
+        success: true,
+        requestId,
+        message: "Order cancelled successfully",
+      });
+    }
+
+    // For return / exchange — insert into order_requests
+    const { error: insertError } = await supabaseAdmin
+      .from("order_requests")
+      .insert([{
+        request_id: requestId,
+        order_id: orderId,
+        user_id: userId,
+        type,           // only 'return' | 'exchange' reach here
+        reason,
+        status: "pending",
+      }]);
+
+    if (insertError) {
+      console.error("Error inserting order request:", insertError);
+      return NextResponse.json({ error: insertError.message }, { status: 500 });
+    }
 
     // Send email notification to admin
     const emailSubject = `New ${type.charAt(0).toUpperCase() + type.slice(1)} Request - Order #${orderId}`;
@@ -219,19 +251,17 @@ export async function GET(request: NextRequest) {
     const userId = searchParams.get('userId');
     const isAdmin = searchParams.get('admin') === 'true';
 
-    let requests;
-    if (isAdmin) {
-      requests = await OrderManagementService.getAllRequests();
-    } else if (userId) {
-      requests = await OrderManagementService.getUserRequests(userId);
-    } else {
-      return NextResponse.json(
-        { error: "Missing userId parameter" },
-        { status: 400 }
-      );
+    let query = supabaseAdmin.from("order_requests").select("*").order("created_at", { ascending: false });
+    if (!isAdmin && userId) {
+      query = query.eq("user_id", userId);
+    } else if (!isAdmin && !userId) {
+      return NextResponse.json({ error: "Missing userId parameter" }, { status: 400 });
     }
 
-    return NextResponse.json({ requests });
+    const { data, error } = await query;
+    if (error) throw error;
+
+    return NextResponse.json({ requests: data ?? [] });
 
   } catch (error) {
     console.error("Error fetching requests:", error);

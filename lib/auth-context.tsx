@@ -109,25 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // which fires on every page focus and causes spurious loading states.
       if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") {
         if (session?.user) {
-          // For OAuth signups (Google), create profile if it doesn't exist yet
-          if (event === "SIGNED_IN") {
-            try {
-              await fetch("/api/auth/create-profile", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  id: session.user.id,
-                  email: session.user.email,
-                  display_name:
-                    session.user.user_metadata?.display_name ||
-                    session.user.user_metadata?.full_name ||
-                    session.user.email?.split("@")[0],
-                }),
-              });
-            } catch {
-              // Non-fatal
-            }
-          }
+          // Just read the user — never write on sign-in to avoid overwriting is_admin
           const user = await convertSupabaseUserToUser(session.user);
           dispatch({ type: "SET_USER", payload: user });
         } else {
@@ -316,14 +298,37 @@ export function useAuth() {
 
 // Helper function to convert Supabase user to our User type
 async function convertSupabaseUserToUser(supabaseUser: SupabaseUser): Promise<User> {
-  const dbUser = await getUserById(supabaseUser.id);
-  
+  let isAdmin = false;
+  let displayName =
+    supabaseUser.user_metadata?.display_name ||
+    supabaseUser.user_metadata?.full_name ||
+    supabaseUser.email?.split('@')[0] ||
+    'User';
+
+  try {
+    // Always use the server-side API with service role — bypasses RLS completely
+    const res = await fetch(`/api/auth/get-user?id=${supabaseUser.id}`, {
+      cache: 'no-store',
+    });
+    if (res.ok) {
+      const json = await res.json();
+      if (json.user) {
+        isAdmin = json.user.is_admin === true;
+        if (json.user.display_name) displayName = json.user.display_name;
+      }
+    } else {
+      console.error('[Auth] get-user API returned', res.status);
+    }
+  } catch (err) {
+    console.error('[Auth] get-user fetch failed:', err);
+  }
+
   return {
     id: supabaseUser.id,
     email: supabaseUser.email!,
-    name: dbUser?.display_name || supabaseUser.user_metadata?.display_name || supabaseUser.email?.split('@')[0] || 'User',
+    name: displayName,
     avatar: supabaseUser.user_metadata?.avatar_url,
     provider: supabaseUser.app_metadata?.provider === 'google' ? 'google' : 'email',
-    isAdmin: dbUser?.is_admin || false,
+    isAdmin,
   };
 }
