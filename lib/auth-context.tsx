@@ -8,7 +8,7 @@
 import { createContext, useContext, useReducer, useEffect, ReactNode } from "react";
 import { supabase } from "./supabase";
 import { User as SupabaseUser } from "@supabase/supabase-js";
-import { getUserById, createUser } from "./supabase-services";
+import { getUserById } from "./supabase-services";
 
 export interface User {
   id: string;
@@ -109,6 +109,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // which fires on every page focus and causes spurious loading states.
       if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") {
         if (session?.user) {
+          // For OAuth signups (Google), create profile if it doesn't exist yet
+          if (event === "SIGNED_IN") {
+            try {
+              await fetch("/api/auth/create-profile", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  id: session.user.id,
+                  email: session.user.email,
+                  display_name:
+                    session.user.user_metadata?.display_name ||
+                    session.user.user_metadata?.full_name ||
+                    session.user.email?.split("@")[0],
+                }),
+              });
+            } catch {
+              // Non-fatal
+            }
+          }
           const user = await convertSupabaseUserToUser(session.user);
           dispatch({ type: "SET_USER", payload: user });
         } else {
@@ -210,12 +229,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (error) throw error;
 
       if (data.user) {
-        // Create user profile in database
-        await createUser({
-          id: data.user.id,
-          email: data.user.email!,
-          display_name: name,
-        });
+        // Create profile via server-side API (uses service role — bypasses RLS)
+        try {
+          await fetch("/api/auth/create-profile", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              id: data.user.id,
+              email: data.user.email,
+              display_name: name,
+            }),
+          });
+        } catch (profileError) {
+          console.warn("Profile creation failed:", profileError);
+        }
 
         const user: User = {
           id: data.user.id,
@@ -230,8 +257,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       return false;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Registration error:", error);
+      // Expose error code so the UI can show a specific message
+      if (typeof window !== "undefined") {
+        (window as any).__lastAuthError = error?.message ?? "";
+      }
       dispatch({ type: "SET_LOADING", payload: false });
       return false;
     }

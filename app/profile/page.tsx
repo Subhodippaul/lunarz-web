@@ -163,27 +163,42 @@ export default function ProfilePage() {
     }
   };
 
-  const handleSaveAddress = async (addressData: Omit<SupabaseAddress, "id" | "user_id" | "created_at" | "updated_at">) => {
+  const handleSaveAddress = async (addressData: Omit<any, "id">) => {
     if (!authState.user) return;
     
+    const supabaseData: Omit<SupabaseAddress, "id" | "user_id" | "created_at" | "updated_at"> = {
+      name: addressData.fullName,
+      phone: addressData.phone,
+      address_line1: addressData.addressLine1,
+      address_line2: addressData.addressLine2,
+      city: addressData.city,
+      state: addressData.state,
+      pincode: addressData.pincode,
+      type: addressData.type || "home",
+      is_default: addressData.isDefault || false,
+    };
+
     try {
       if (addressModal.mode === "add") {
         const newAddressId = await AddressService.createAddress({
-          ...addressData,
+          ...supabaseData,
           user_id: authState.user.id,
         });
-        const newAddress: SupabaseAddress = { ...addressData, id: newAddressId, user_id: authState.user.id };
+        const newAddress: SupabaseAddress = { ...supabaseData, id: newAddressId, user_id: authState.user.id };
         setAddresses([newAddress, ...addresses]);
-        addToast({ title: "Address added", description: "New address has been saved to your account.", type: "success" });
+        addToast({ title: "Address added", description: "New address saved.", type: "success" });
       } else if (addressModal.address) {
-        await AddressService.updateAddress(addressModal.address.id!, addressData);
+        await AddressService.updateAddress(addressModal.address.id!, supabaseData);
         setAddresses(addresses.map(addr =>
-          addr.id === addressModal.address!.id ? { ...addressData, id: addressModal.address!.id, user_id: authState.user!.id } : addr
+          addr.id === addressModal.address!.id
+            ? { ...supabaseData, id: addressModal.address!.id, user_id: authState.user!.id }
+            : addr
         ));
-        addToast({ title: "Address updated", description: "Your address has been updated successfully.", type: "success" });
+        addToast({ title: "Address updated", description: "Address updated successfully.", type: "success" });
       }
+      setAddressModal({ isOpen: false, mode: "add" });
     } catch (error) {
-      addToast({ title: "Error", description: "Failed to save address. Please try again.", type: "error" });
+      addToast({ title: "Error", description: "Failed to save address.", type: "error" });
     }
   };
 
@@ -401,8 +416,7 @@ export default function ProfilePage() {
 
   const tabs = [
     { id: "orders" as TabType, label: PROFILE.myOrders, icon: Package },
-    // { id: "addresses" as TabType, label: PROFILE.addresses, icon: MapPin },
-    // { id: "payments" as TabType, label: PROFILE.paymentMethods, icon: CreditCard },
+    { id: "addresses" as TabType, label: PROFILE.addresses, icon: User },
     { id: "settings" as TabType, label: PROFILE.accountSettings, icon: Settings },
   ];
 
@@ -755,13 +769,25 @@ export default function ProfilePage() {
       </div>
 
       {/* Modals */}
-      {/* <AddressModal
+      <AddressModal
         isOpen={addressModal.isOpen}
         onClose={() => setAddressModal({ isOpen: false, mode: "add" })}
         onSave={handleSaveAddress}
-        address={addressModal.address}
+        address={addressModal.address ? {
+          id: addressModal.address.id ?? "",
+          type: (addressModal.address.type as any) || "home",
+          isDefault: addressModal.address.is_default,
+          fullName: addressModal.address.name,
+          phone: addressModal.address.phone,
+          addressLine1: addressModal.address.address_line1,
+          addressLine2: addressModal.address.address_line2,
+          city: addressModal.address.city,
+          state: addressModal.address.state,
+          pincode: addressModal.address.pincode,
+          country: "India",
+        } : undefined}
         mode={addressModal.mode}
-      /> */}
+      />
 {/* 
       <PaymentModal
         isOpen={paymentModal.isOpen}

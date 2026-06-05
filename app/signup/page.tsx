@@ -10,7 +10,7 @@ import { InlineLoader } from "@/components/ui/loader";
 import { useAuth } from "@/lib/auth-context";
 import Link from "next/link";
 import { SIGNUP, NAV_LINKS } from "@/lib/constants";
-import { Check, X } from "lucide-react";
+import { Check, X, Eye, EyeOff } from "lucide-react";
 
 // Password strength helpers
 function getPasswordStrength(password: string): {
@@ -57,6 +57,8 @@ function SignupPageContent() {
   });
   const [isValidating, setIsValidating] = useState(true);
   const [showPasswordCriteria, setShowPasswordCriteria] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const strength = getPasswordStrength(formData.password);
   const criteria = getPasswordCriteria(formData.password);
@@ -137,7 +139,15 @@ function SignupPageContent() {
         router.push(NAV_LINKS.home);
       }
     } else {
-      addToast({ title: "Signup failed", description: SIGNUP.emailExists, type: "error" });
+      const lastError = (window as any).__lastAuthError as string | undefined;
+      const isRateLimit = lastError?.includes("rate_limit") || lastError?.includes("rate limit");
+      addToast({
+        title: isRateLimit ? "Too many attempts" : "Signup failed",
+        description: isRateLimit
+          ? "Email sending limit reached. Please wait a few minutes and try again, or contact support."
+          : SIGNUP.emailExists,
+        type: "error",
+      });
     }
   };
 
@@ -192,14 +202,25 @@ function SignupPageContent() {
             {/* Password */}
             <div className="space-y-2">
               <Label htmlFor="password">{SIGNUP.passwordLabel}</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="e.g. Abcs@6788"
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                onFocus={() => setShowPasswordCriteria(true)}
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="e.g. Abcs@6788"
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  onFocus={() => setShowPasswordCriteria(true)}
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
 
               {/* Strength meter */}
               {formData.password.length > 0 && (
@@ -244,13 +265,24 @@ function SignupPageContent() {
             {/* Confirm Password */}
             <div className="space-y-2">
               <Label htmlFor="confirmPassword">{SIGNUP.confirmPasswordLabel}</Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                placeholder={SIGNUP.confirmPasswordPlaceholder}
-                value={formData.confirmPassword}
-                onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-              />
+              <div className="relative">
+                <Input
+                  id="confirmPassword"
+                  type={showConfirmPassword ? "text" : "password"}
+                  placeholder={SIGNUP.confirmPasswordPlaceholder}
+                  value={formData.confirmPassword}
+                  onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword((v) => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  tabIndex={-1}
+                >
+                  {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
               {formData.confirmPassword && formData.password !== formData.confirmPassword && (
                 <p className="text-xs text-red-500">Passwords do not match</p>
               )}
