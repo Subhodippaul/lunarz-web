@@ -188,10 +188,20 @@ export default function TrendingProductsSlider() {
                             </h3>
                             
                             <div className="flex items-center justify-between">
-                              <div className="flex items-center space-x-2">
+                              <div className="flex items-center gap-1.5 flex-wrap">
                                 <span className="text-sm font-bold text-gray-900">
                                   ₹{product.price.toLocaleString()}
                                 </span>
+                                {product.originalPrice && product.originalPrice > product.price && (
+                                  <>
+                                    <span className="text-xs text-gray-400 line-through">
+                                      ₹{product.originalPrice.toLocaleString()}
+                                    </span>
+                                    <span className="text-xs font-semibold text-green-700 bg-green-100 px-1 py-0.5 rounded-full">
+                                      {Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% off
+                                    </span>
+                                  </>
+                                )}
                               </div>
                               
                               {product.variants && product.variants.length > 0 && (
@@ -335,10 +345,20 @@ export default function TrendingProductsSlider() {
                             
                             
                             <div className="flex items-center justify-between">
-                              <div className="flex items-center space-x-2">
+                              <div className="flex items-center gap-2 flex-wrap">
                                 <span className="text-lg font-bold text-gray-900">
                                   ₹{product.price.toLocaleString()}
                                 </span>
+                                {product.originalPrice && product.originalPrice > product.price && (
+                                  <>
+                                    <span className="text-sm text-gray-400 line-through">
+                                      ₹{product.originalPrice.toLocaleString()}
+                                    </span>
+                                    <span className="text-xs font-semibold text-green-700 bg-green-100 px-1.5 py-0.5 rounded-full">
+                                      {Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% off
+                                    </span>
+                                  </>
+                                )}
                               </div>
                               
                               {product.variants && product.variants.length > 0 && (

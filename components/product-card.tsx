@@ -69,13 +69,6 @@ export default function ProductCard({ product }: any) {
 
           {/* Hover overlay */}
           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-all duration-300" />
-
-          {/* Sale Badge */}
-          {product.originalPrice && product.originalPrice > product.price && (
-            <div className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded">
-              SALE
-            </div>
-          )}
         </div>
       </Link>
 

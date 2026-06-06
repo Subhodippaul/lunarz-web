@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
 import { Product } from "@/lib/data";
+import { getAllProducts } from "@/lib/supabase-services";
 import { ChevronLeft, ChevronRight, Sparkles, ImageOff } from "lucide-react";
 import Link from "next/link";
 import { Separator } from "@/components/ui/separator";
@@ -56,14 +56,10 @@ export default function NewArrivalsSlider() {
 
   const fetchNewArrivals = async () => {
     try {
-      const { data, error } = await supabase
-        .from("products")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(12);
-
-      if (error) throw error;
-      setProducts((data ?? []) as Product[]);
+      // getAllProducts uses mapRow to convert snake_case DB fields (e.g. original_price)
+      // to camelCase (e.g. originalPrice) so the price display works correctly
+      const data = await getAllProducts();
+      setProducts(data.slice(0, 12));
     } catch (err) {
       console.error("Error fetching new arrivals:", err);
     } finally {
@@ -158,9 +154,21 @@ export default function NewArrivalsSlider() {
                             <h3 className="truncate font-semibold text-gray-900 text-sm group-hover:text-purple-600 transition-colors">
                               {product.name}
                             </h3>
-                            <p className="text-sm font-bold text-gray-900 mt-1">
-                              ₹{product.price.toLocaleString()}
-                            </p>
+                            <div className="flex items-center gap-1.5 flex-wrap mt-1">
+                              <span className="text-sm font-bold text-gray-900">
+                                ₹{product.price.toLocaleString()}
+                              </span>
+                              {product.originalPrice && product.originalPrice > product.price && (
+                                <>
+                                  <span className="text-xs text-gray-400 line-through">
+                                    ₹{product.originalPrice.toLocaleString()}
+                                  </span>
+                                  <span className="text-xs font-semibold text-green-700 bg-green-100 px-1 py-0.5 rounded-full">
+                                    {Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% off
+                                  </span>
+                                </>
+                              )}
+                            </div>
                           </div>
                         </Link>
                       ))}
@@ -230,9 +238,21 @@ export default function NewArrivalsSlider() {
                               {product.name}
                             </h3>
                             <div className="flex items-center justify-between">
-                              <span className="text-lg font-bold text-gray-900">
-                                ₹{product.price.toLocaleString()}
-                              </span>
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-lg font-bold text-gray-900">
+                                  ₹{product.price.toLocaleString()}
+                                </span>
+                                {product.originalPrice && product.originalPrice > product.price && (
+                                  <>
+                                    <span className="text-sm text-gray-400 line-through">
+                                      ₹{product.originalPrice.toLocaleString()}
+                                    </span>
+                                    <span className="text-xs font-semibold text-green-700 bg-green-100 px-1.5 py-0.5 rounded-full">
+                                      {Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% off
+                                    </span>
+                                  </>
+                                )}
+                              </div>
                               {product.variants && product.variants.length > 0 && (
                                 <div className="flex items-center gap-1">
                                   {product.variants.slice(0, 3).map((v, i) => (
