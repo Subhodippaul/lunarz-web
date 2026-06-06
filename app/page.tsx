@@ -7,11 +7,13 @@ import LatestCollectionSlider from "@/components/latest-collection-slider";
 import AdvertisementSection from "@/components/advertisement-section";
 import CustomerReviewSection from "@/components/customer-review-section";
 import UniqueIdGenerator from "@/components/unique-id-generator";
+import PromoMarquee from "@/components/promo-marquee";
 
 export default function HomePage() {
   return (
     <>
       <UniqueIdGenerator />
+      <PromoMarquee />
       <HeroWorking />
       <CategoryCarousel />
       <NewArrivalsSlider />

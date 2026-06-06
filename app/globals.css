@@ -131,6 +131,11 @@
 }
 
 @layer utilities {
+  .animate-marquee {
+    animation: marquee 30s linear infinite;
+    will-change: transform;
+  }
+
   .animate-in {
     animation: animate-in 0.2s ease-out;
   }
@@ -162,6 +167,11 @@
     flex: 0 0 100%;
     width: 100%;
   }
+}
+
+@keyframes marquee {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
 }
 
 @keyframes animate-in {
