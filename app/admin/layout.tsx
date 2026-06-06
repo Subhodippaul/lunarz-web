@@ -112,7 +112,7 @@ function AdminLayoutContent({
           {/* Mobile Sidebar Overlay */}
           {sidebarOpen && (
             <div className="fixed inset-0 z-50 lg:hidden">
-              <div className="fixed inset-0 bg-black bg-opacity-50" onClick={() => setSidebarOpen(false)} />
+              <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />
               <div className="fixed inset-y-0 left-0 w-64 bg-white shadow-xl">
                 <div className="flex items-center justify-between p-4 border-b border-gray-200">
                   <Link href="/" className="text-lg font-bold text-blue-600">

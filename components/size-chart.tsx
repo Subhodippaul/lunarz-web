@@ -60,9 +60,9 @@ export default function SizeChart({ isOpen, onClose, productType = "t-shirt" }: 
 
   return (
     <>
-      {/* Backdrop */}
+      {/* Backdrop — semi-transparent so page content stays visible */}
       <div 
-        className="fixed inset-0 bg-black bg-opacity-50 z-50 transition-opacity"
+        className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 transition-opacity"
         onClick={onClose}
       />
       

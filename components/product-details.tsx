@@ -1,13 +1,12 @@
 "use client";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Share2, ChevronDown, ChevronUp, ShoppingCart } from "lucide-react";
+import { ChevronDown, ChevronUp, ShoppingCart, AlertCircle } from "lucide-react";
 import { Product } from "@/lib/data";
 import { useCart } from "@/lib/cart-context";
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/components/ui/toast";
-import { PRODUCT_DETAILS, CURRENCY, DEFAULTS, NAV_LINKS } from "@/lib/constants";
+import { PRODUCT_DETAILS, CURRENCY, NAV_LINKS } from "@/lib/constants";
 import RelatedProducts from "./related-products";
 import SizeChart from "./size-chart";
 import { useRouter } from "next/navigation";
@@ -30,6 +29,14 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
   const [showDescription, setShowDescription] = useState(false);
   const [isInCart, setIsInCart] = useState(false);
   const [showSizeChart, setShowSizeChart] = useState(false);
+
+  // Stock status
+  const isOutOfStock = product.stock !== undefined && product.stock <= 0;
+  const isLowStock =
+    !isOutOfStock &&
+    product.stock !== undefined &&
+    product.lowStockThreshold !== undefined &&
+    product.stock <= product.lowStockThreshold;
 
   // Get current images based on selected variant
   const getCurrentImages = () => {
@@ -57,6 +64,8 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
   }, [selectedVariant]);
 
   const handleAddToCart = () => {
+    if (isOutOfStock) return;
+
     // Check if user is authenticated
     if (!authState.isAuthenticated) {
       // Store current page URL for redirect after login
@@ -108,6 +117,8 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
   };
 
   const handleBuyNow = () => {
+    if (isOutOfStock) return;
+
     // Check if user is authenticated
     if (!authState.isAuthenticated) {
       // Store current page URL for redirect after login
@@ -209,7 +220,21 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
             <div>
               <h1 className="text-3xl font-bold mb-2">{product.name}</h1>
               <p className="text-gray-600 mb-4">{PRODUCT_DETAILS.brand_name}</p>
-              <div className="text-2xl font-bold">{CURRENCY.symbol} {product.price.toLocaleString()}</div>
+              <div className="flex items-center gap-3 mb-1">
+                <div className="text-2xl font-bold">{CURRENCY.symbol} {product.price.toLocaleString()}</div>
+                {isOutOfStock && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">
+                    <AlertCircle className="h-3 w-3" />
+                    Out of Stock
+                  </span>
+                )}
+                {isLowStock && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-700">
+                    <AlertCircle className="h-3 w-3" />
+                    Only {product.stock} left
+                  </span>
+                )}
+              </div>
               <p className="text-sm text-gray-500">{PRODUCT_DETAILS.priceIncludesTax}</p>
             </div>
 
@@ -287,10 +312,11 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
             {/* Quantity + Cart — same row */}
             <div className="flex items-center gap-3">
               {/* +/- quantity control */}
-              <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden shrink-0">
+              <div className={`flex items-center border rounded-lg overflow-hidden shrink-0 ${isOutOfStock ? "border-gray-200 opacity-40" : "border-gray-300"}`}>
                 <button
                   onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                  className="w-9 h-10 flex items-center justify-center text-gray-600 hover:bg-gray-100 transition-colors text-lg font-medium"
+                  disabled={isOutOfStock}
+                  className="w-9 h-10 flex items-center justify-center text-gray-600 hover:bg-gray-100 transition-colors text-lg font-medium disabled:cursor-not-allowed"
                 >
                   −
                 </button>
@@ -299,14 +325,19 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
                 </span>
                 <button
                   onClick={() => setQuantity((q) => Math.min(10, q + 1))}
-                  className="w-9 h-10 flex items-center justify-center text-gray-600 hover:bg-gray-100 transition-colors text-lg font-medium"
+                  disabled={isOutOfStock}
+                  className="w-9 h-10 flex items-center justify-center text-gray-600 hover:bg-gray-100 transition-colors text-lg font-medium disabled:cursor-not-allowed"
                 >
                   +
                 </button>
               </div>
 
-              {/* Add to Cart / Go to Cart */}
-              {isInCart ? (
+              {/* Add to Cart / Go to Cart / Out of Stock */}
+              {isOutOfStock ? (
+                <Button className="flex-1 bg-gray-200 text-gray-500 py-3 cursor-not-allowed" disabled>
+                  Out of Stock
+                </Button>
+              ) : isInCart ? (
                 <Button
                   className="flex-1 bg-green-600 hover:bg-green-700 text-white py-3"
                   onClick={handleGoToCart}
@@ -327,14 +358,29 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
 
             {/* Buy Now */}
             <Button
-              className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3"
-              disabled={!selectedSize}
+              className={`w-full py-3 text-white ${
+                isOutOfStock
+                  ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                  : "bg-orange-500 hover:bg-orange-600"
+              }`}
+              disabled={isOutOfStock || !selectedSize}
               onClick={handleBuyNow}
             >
-              {PRODUCT_DETAILS.buyNow}
+              {isOutOfStock ? "Currently Unavailable" : PRODUCT_DETAILS.buyNow}
             </Button>
 
-            {/* Info Banner */}
+            {/* Out of stock notice */}
+            {isOutOfStock && (
+              <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <AlertCircle className="h-4 w-4 text-red-500 mt-0.5 shrink-0" />
+                <p className="text-sm text-red-700">
+                  This product is currently out of stock. Please check back later or explore similar products below.
+                </p>
+              </div>
+            )}
+
+            {/* Info Banner — only shown when product is available */}
+            {!isOutOfStock && (
             <div className="bg-teal-50 border border-teal-200 rounded-lg p-3 space-y-2">
               <div className="flex items-start gap-2">
                 <span className="text-teal-600 mt-0.5 shrink-0">🚚</span>
@@ -357,6 +403,7 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
                 </p>
               </div>
             </div>
+            )}
 
             {/* Product Details Accordion */}
             <div className="space-y-2">
