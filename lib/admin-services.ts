@@ -87,6 +87,24 @@ function mapProductFromDb(row: Record<string, any>): Product {
     product.latestOrder = product.latest_order;
     delete product.latest_order;
   }
+
+  // Ensure images is always a non-empty array so the table never crashes on images[0]
+  if (!Array.isArray(product.images) || product.images.length === 0) {
+    product.images = ['/placeholder.jpg'];
+  }
+
+  // Ensure sizes is always an array
+  if (!Array.isArray(product.sizes)) {
+    product.sizes = product.sizes
+      ? String(product.sizes).split(';').map((s: string) => s.trim()).filter(Boolean)
+      : [];
+  }
+
+  // Ensure variants is an array or undefined
+  if (product.variants !== undefined && !Array.isArray(product.variants)) {
+    product.variants = String(product.variants).split(';').map((s: string) => s.trim()).filter(Boolean);
+  }
+
   return product as Product;
 }
 
@@ -96,18 +114,14 @@ function mapProductFromDb(row: Record<string, any>): Product {
 
 export class AdminProductService {
   static async getAllProducts(): Promise<Product[]> {
-    try {
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return (data || []).map(mapProductFromDb);
-    } catch (error) {
-      console.error("Error fetching products:", error);
-      return [];
+    // Use the server-side API route so the service role key is used and RLS is bypassed.
+    const res = await fetch('/api/admin/products', { cache: 'no-store' });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body.error || `Failed to fetch products (${res.status})`);
     }
+    const { products } = await res.json();
+    return (products as Record<string, any>[]).map(mapProductFromDb);
   }
 
   static async addProduct(product: Omit<Product, "id">): Promise<string> {
@@ -126,50 +140,70 @@ export class AdminProductService {
   }
 
   /**
-   * Bulk insert products from CSV import.
-   * Uses upsert on SKU to avoid duplicates when re-importing.
-   * Returns counts of inserted, updated, and failed rows.
+   * Bulk import products from a CSV upload.
+   *
+   * Priority for conflict resolution:
+   *   1. If the row has an `id`  → upsert on `id`  (existing product gets updated)
+   *   2. Else if the row has a `sku` → upsert on `sku`
+   *   3. Otherwise → plain insert (new product every time)
+   *
+   * Returns counts of inserted/updated rows and any individual failures.
    */
   static async bulkImportProducts(
-    products: Omit<Product, "id">[]
+    products: (Omit<Product, "id"> & { id?: string })[]
   ): Promise<{ inserted: number; updated: number; failed: Array<{ index: number; name: string; error: string }> }> {
     const failed: Array<{ index: number; name: string; error: string }> = [];
     let inserted = 0;
     let updated = 0;
 
-    // Split into products with SKU (can upsert) and without (always insert)
-    const withSku = products
-      .map((p, i) => ({ product: p, originalIndex: i }))
-      .filter(({ product }) => product.sku && product.sku.trim() !== '');
+    const withId    = products.map((p, i) => ({ product: p, originalIndex: i })).filter(({ product }) => !!product.id?.trim());
+    const withSku   = products.map((p, i) => ({ product: p, originalIndex: i })).filter(({ product }) => !product.id?.trim() && !!product.sku?.trim());
+    const noConflict = products.map((p, i) => ({ product: p, originalIndex: i })).filter(({ product }) => !product.id?.trim() && !product.sku?.trim());
 
-    const withoutSku = products
-      .map((p, i) => ({ product: p, originalIndex: i }))
-      .filter(({ product }) => !product.sku || product.sku.trim() === '');
+    const buildRow = (product: Omit<Product, "id"> & { id?: string }) => ({
+      ...mapProductToDb({ ...product, images: (product as any).images ?? ['/placeholder.jpg'] }),
+    });
 
-    // Upsert products that have a SKU (conflict on sku column)
+    // ── 1. Upsert by id ──────────────────────────────────────────────────────
+    if (withId.length > 0) {
+      const rows = withId.map(({ product }) => buildRow(product));
+      const { data, error } = await supabase
+        .from('products')
+        .upsert(rows, { onConflict: 'id', ignoreDuplicates: false })
+        .select('id');
+
+      if (error) {
+        // Fall back row-by-row to collect individual errors
+        for (const { product, originalIndex } of withId) {
+          try {
+            const { error: singleErr } = await supabase
+              .from('products')
+              .upsert([buildRow(product)], { onConflict: 'id', ignoreDuplicates: false });
+            if (singleErr) throw singleErr;
+            updated++;
+          } catch (err: any) {
+            failed.push({ index: originalIndex + 2, name: product.name, error: err.message });
+          }
+        }
+      } else {
+        updated += (data ?? []).length;
+      }
+    }
+
+    // ── 2. Upsert by SKU ─────────────────────────────────────────────────────
     if (withSku.length > 0) {
-      const rows = withSku.map(({ product }) => ({
-        ...mapProductToDb({ ...product, images: product.images ?? ['/placeholder.jpg'] }),
-      }));
-
+      const rows = withSku.map(({ product }) => buildRow(product));
       const { data, error } = await supabase
         .from('products')
         .upsert(rows, { onConflict: 'sku', ignoreDuplicates: false })
         .select('id');
 
       if (error) {
-        // Fall back to row-by-row so we can report individual failures
         for (const { product, originalIndex } of withSku) {
           try {
-            const { data: single, error: singleErr } = await supabase
+            const { error: singleErr } = await supabase
               .from('products')
-              .upsert([mapProductToDb({ ...product, images: ['/placeholder.jpg'] })], {
-                onConflict: 'sku',
-                ignoreDuplicates: false,
-              })
-              .select('id')
-              .single();
-
+              .upsert([buildRow(product)], { onConflict: 'sku', ignoreDuplicates: false });
             if (singleErr) throw singleErr;
             inserted++;
           } catch (err: any) {
@@ -181,13 +215,12 @@ export class AdminProductService {
       }
     }
 
-    // Insert products without SKU one-by-one (no conflict key available)
-    for (const { product, originalIndex } of withoutSku) {
+    // ── 3. Plain insert (no id, no SKU) ──────────────────────────────────────
+    for (const { product, originalIndex } of noConflict) {
       try {
         const { error } = await supabase
           .from('products')
-          .insert([mapProductToDb({ ...product, images: ['/placeholder.jpg'] })]);
-
+          .insert([buildRow(product)]);
         if (error) throw error;
         inserted++;
       } catch (err: any) {

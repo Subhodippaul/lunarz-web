@@ -24,6 +24,7 @@ import { useToast } from "@/components/ui/toast";
 export default function AdminProducts() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isStockModalOpen, setIsStockModalOpen] = useState(false);
@@ -40,10 +41,12 @@ export default function AdminProducts() {
 
   const fetchProducts = async () => {
     try {
+      setFetchError(null);
       const fetchedProducts = await AdminProductService.getAllProducts();
       setProducts(fetchedProducts);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching products:", error);
+      setFetchError(error?.message || "Failed to load products");
     } finally {
       setLoading(false);
     }
@@ -151,10 +154,29 @@ export default function AdminProducts() {
 
   return (
     <div>
+      {/* Fetch Error Banner */}
+      {fetchError && (
+        <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-2">
+          <AlertTriangle className="h-5 w-5 text-red-600 mt-0.5 shrink-0" />
+          <div>
+            <p className="text-sm font-medium text-red-800">Failed to load products</p>
+            <p className="text-sm text-red-700 mt-1">{fetchError}</p>
+            <button
+              onClick={() => { setLoading(true); fetchProducts(); }}
+              className="mt-2 text-sm text-red-700 underline hover:no-underline"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      )}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Products</h1>
-          <p className="text-gray-600 mt-1">Manage your product catalog and inventory</p>
+          <p className="text-gray-600 mt-1">
+            Manage your product catalog and inventory
+            {products.length > 0 && <span className="ml-2 text-sm font-medium text-blue-600">({products.length} total)</span>}
+          </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-2">
           <button

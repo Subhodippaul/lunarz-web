@@ -351,7 +351,7 @@ export default function ProductModal({ isOpen, onClose, product }: ProductModalP
                 <p className="text-xs text-gray-400 mb-2">Pre-filled. Edit if needed.</p>
                 <input
                   type="text"
-                  required
+          
                   value={formData.care}
                   onChange={(e) => setFormData((p) => ({ ...p, care: e.target.value }))}
                   className={inputCls}

@@ -113,6 +113,7 @@ export class InventoryService {
         id: row.id,
         name: row.name,
         price: row.price,
+        originalPrice: row.original_price,
         category: row.category,
         images: row.images,
         sizes: row.sizes,
@@ -183,6 +184,7 @@ export class ProductCSVService {
       'id',
       'name',
       'price',
+      'originalPrice',
       'category',
       'description',
       'material',
@@ -201,6 +203,7 @@ export class ProductCSVService {
       product.id,
       product.name,
       product.price,
+      product.originalPrice,
       product.category,
       product.description,
       product.material,
@@ -223,71 +226,98 @@ export class ProductCSVService {
   }
 
   // Parse CSV content to products
-  static parseCSV(csvContent: string): Omit<Product, 'id' | 'images'>[] {
-    const lines = csvContent.trim().split('\n');
-    if (lines.length < 2) return [];
-
-    // Proper CSV line parser that handles quoted fields with commas
-    const parseLine = (line: string): string[] => {
-      const result: string[] = [];
+  // Returns objects that include the optional `id` from the CSV so bulkImport can upsert by id.
+  static parseCSV(csvContent: string): (Omit<Product, 'id' | 'images'> & { id?: string })[] {
+    // -----------------------------------------------------------------------
+    // Tokenise the entire CSV character-by-character so that newlines inside
+    // double-quoted fields are treated as part of the field value rather than
+    // as record separators.  This fixes the "562 rows instead of 79" bug that
+    // occurred because multiline description fields were being split on \n.
+    // -----------------------------------------------------------------------
+    const tokenise = (content: string): string[][] => {
+      const records: string[][] = [];
+      let fields: string[] = [];
       let current = '';
       let inQuotes = false;
 
-      for (let i = 0; i < line.length; i++) {
-        const char = line[i];
-        if (char === '"') {
-          if (inQuotes && line[i + 1] === '"') {
+      for (let i = 0; i < content.length; i++) {
+        const ch = content[i];
+        const next = content[i + 1];
+
+        if (ch === '"') {
+          if (inQuotes && next === '"') {
+            // Escaped double-quote inside a quoted field
             current += '"';
-            i++; // skip escaped quote
+            i++;
           } else {
             inQuotes = !inQuotes;
           }
-        } else if (char === ',' && !inQuotes) {
-          result.push(current.trim());
+        } else if (ch === ',' && !inQuotes) {
+          fields.push(current.trim());
           current = '';
+        } else if ((ch === '\r' || ch === '\n') && !inQuotes) {
+          // Skip \r in \r\n sequences
+          if (ch === '\r' && next === '\n') i++;
+          fields.push(current.trim());
+          current = '';
+          // Only push non-empty records
+          if (fields.some(f => f !== '')) records.push(fields);
+          fields = [];
         } else {
-          current += char;
+          current += ch;
         }
       }
-      result.push(current.trim());
-      return result;
+
+      // Flush the last field / record
+      fields.push(current.trim());
+      if (fields.some(f => f !== '')) records.push(fields);
+
+      return records;
     };
 
-    const headers = parseLine(lines[0]).map(h => h.toLowerCase().replace(/\s+/g, '_'));
+    const records = tokenise(csvContent.trim());
+    if (records.length < 2) return [];
+
+    const headers = records[0].map(h => h.toLowerCase().replace(/\s+/g, '_'));
 
     const get = (values: string[], ...keys: string[]): string => {
       for (const key of keys) {
         const idx = headers.indexOf(key);
-        if (idx !== -1 && values[idx]) return values[idx];
+        if (idx !== -1 && values[idx] !== undefined && values[idx] !== '') return values[idx];
       }
       return '';
     };
 
-    return lines.slice(1)
-      .filter(line => line.trim())
-      .map(line => {
-        const values = parseLine(line);
+    type CSVProduct = Omit<Product, 'id' | 'images'> & { id?: string };
 
-        const sizesRaw = get(values, 'sizes');
-        const variantsRaw = get(values, 'variants');
+    return records.slice(1).map((values): CSVProduct => {
+      const sizesRaw = get(values, 'sizes');
+      const variantsRaw = get(values, 'variants');
+      const idRaw = get(values, 'id');
 
-        return {
-          name: get(values, 'name') || '',
-          price: parseFloat(get(values, 'price')) || 0,
-          category: get(values, 'category') || '',
-          description: get(values, 'description') || '',
-          material: get(values, 'material') || '',
-          care: get(values, 'care') || '',
-          origin: get(values, 'origin') || '',
-          manufacturer: get(values, 'manufacturer') || '',
-          sizes: sizesRaw ? sizesRaw.split(';').map(s => s.trim()).filter(Boolean) : [],
-          variants: variantsRaw ? variantsRaw.split(';').map(s => s.trim()).filter(Boolean) : undefined,
-          stock: parseInt(get(values, 'stock')) || 0,
-          lowStockThreshold: parseInt(get(values, 'low_stock_threshold', 'lowstockthreshold')) || 10,
-          sku: get(values, 'sku') || undefined,
-          barcode: get(values, 'barcode') || undefined,
-        };
-      });
+      const product: CSVProduct = {
+        name: get(values, 'name') || '',
+        price: parseFloat(get(values, 'price')) || 0,
+        originalPrice: parseFloat(get(values, 'original_price','originalprice')) || 0,
+        category: get(values, 'category') || '',
+        description: get(values, 'description') || '',
+        material: get(values, 'material') || '',
+        care: get(values, 'care') || '',
+        origin: get(values, 'origin') || '',
+        manufacturer: get(values, 'manufacturer') || '',
+        sizes: sizesRaw ? sizesRaw.split(';').map(s => s.trim()).filter(Boolean) : [],
+        variants: variantsRaw ? variantsRaw.split(';').map(s => s.trim()).filter(Boolean) : undefined,
+        stock: parseInt(get(values, 'stock')) || 0,
+        lowStockThreshold: parseInt(get(values, 'low_stock_threshold', 'lowstockthreshold')) || 10,
+        sku: get(values, 'sku') || undefined,
+        barcode: get(values, 'barcode') || undefined,
+      };
+
+      // Preserve the id from the CSV so existing products can be updated by id
+      if (idRaw) product.id = idRaw;
+
+      return product;
+    });
   }
 
   // Download CSV file

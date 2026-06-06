@@ -50,6 +50,7 @@ export default function CSVImportModal({ isOpen, onClose, onImportComplete }: CS
       const row = index + 2; // +2 because row 1 is header
       if (!product.name?.trim()) errors.push(`Row ${row}: Name is required`);
       if (!product.price || product.price <= 0) errors.push(`Row ${row}: Valid price is required`);
+      if (!product.originalPrice || product.originalPrice <= 0) errors.push(`Row ${row}: Valid original price is required`);
       if (!product.category?.trim()) errors.push(`Row ${row}: Category is required`);
       if (!product.sizes || product.sizes.length === 0) errors.push(`Row ${row}: At least one size is required`);
     });
@@ -99,17 +100,21 @@ export default function CSVImportModal({ isOpen, onClose, onImportComplete }: CS
       }, 300);
 
       const result = await AdminProductService.bulkImportProducts(
-        parsed as Omit<Product, "id">[]
+        parsed as (Omit<Product, "id"> & { id?: string })[]
       );
 
       clearInterval(progressInterval);
       setProgress(100);
       setImportResult(result);
 
-      if (result.inserted > 0 || result.updated > 0) {
+      const total = result.inserted + result.updated;
+      if (total > 0) {
+        const parts = [];
+        if (result.inserted > 0) parts.push(`${result.inserted} added`);
+        if (result.updated > 0) parts.push(`${result.updated} updated`);
         addToast({
           title: "Import Complete",
-          description: `${result.inserted} product${result.inserted !== 1 ? "s" : ""} imported successfully.${result.failed.length > 0 ? ` ${result.failed.length} failed.` : ""}`,
+          description: `${parts.join(", ")}.${result.failed.length > 0 ? ` ${result.failed.length} failed.` : ""}`,
           type: result.failed.length === 0 ? "success" : "error",
         });
         onImportComplete();
@@ -133,7 +138,7 @@ export default function CSVImportModal({ isOpen, onClose, onImportComplete }: CS
 
   const downloadTemplate = () => {
     const headers =
-      "id,name,price,category,description,material,care,origin,manufacturer,sizes,variants,stock,low_stock_threshold,sku,barcode";
+      "id,name,price,originalPrice,category,description,material,care,origin,manufacturer,sizes,variants,stock,low_stock_threshold,sku,barcode";
     const sampleRow =
       ',"Anime Oversized Tee",999,"T-Shirts","Premium quality oversized tee","100% Cotton","Machine wash cold","India","Sample Manufacturer","S;M;L;XL","Black;White;Grey",50,10,"SKU001","1234567890"';
     ProductCSVService.downloadCSV(`${headers}\n${sampleRow}`, "product-template.csv");
@@ -243,7 +248,7 @@ export default function CSVImportModal({ isOpen, onClose, onImportComplete }: CS
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                       <tr>
-                        {["Name", "Price", "Category", "Sizes", "Stock", "SKU"].map(col => (
+                        {["Name", "Price","Original Price", "Category", "Sizes", "Stock", "SKU"].map(col => (
                           <th
                             key={col}
                             className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase"
@@ -258,6 +263,7 @@ export default function CSVImportModal({ isOpen, onClose, onImportComplete }: CS
                         <tr key={index} className="hover:bg-gray-50">
                           <td className="px-4 py-2 text-sm text-gray-900">{product.name || "—"}</td>
                           <td className="px-4 py-2 text-sm text-gray-900">₹{product.price}</td>
+                          <td className="px-4 py-2 text-sm text-gray-900">₹{product.originalPrice}</td>
                           <td className="px-4 py-2 text-sm text-gray-900">{product.category || "—"}</td>
                           <td className="px-4 py-2 text-sm text-gray-900">
                             {product.sizes?.join(", ") || "—"}
@@ -315,7 +321,8 @@ export default function CSVImportModal({ isOpen, onClose, onImportComplete }: CS
                       Import complete
                     </h4>
                     <p className="text-sm mt-1 text-gray-700">
-                      {importResult.inserted} product{importResult.inserted !== 1 ? "s" : ""} added to database.
+                      {importResult.inserted > 0 && `${importResult.inserted} product${importResult.inserted !== 1 ? "s" : ""} added.`}
+                      {importResult.updated > 0 && ` ${importResult.updated} product${importResult.updated !== 1 ? "s" : ""} updated.`}
                       {importResult.failed.length > 0 &&
                         ` ${importResult.failed.length} row${importResult.failed.length !== 1 ? "s" : ""} failed.`}
                     </p>
