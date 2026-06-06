@@ -220,8 +220,22 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
             <div>
               <h1 className="text-3xl font-bold mb-2">{product.name}</h1>
               <p className="text-gray-600 mb-4">{PRODUCT_DETAILS.brand_name}</p>
-              <div className="flex items-center gap-3 mb-1">
-                <div className="text-2xl font-bold">{CURRENCY.symbol} {product.price.toLocaleString()}</div>
+              <div className="flex items-center gap-3 flex-wrap mb-1">
+                {/* Sale price */}
+                <div className="text-2xl font-bold text-gray-900">
+                  {CURRENCY.symbol} {product.price.toLocaleString()}
+                </div>
+                {/* MRP strikethrough */}
+                {product.originalPrice && product.originalPrice > product.price && (
+                  <>
+                    <div className="text-lg text-gray-400 line-through">
+                      {CURRENCY.symbol} {product.originalPrice.toLocaleString()}
+                    </div>
+                    <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-sm font-semibold">
+                      {Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% off
+                    </span>
+                  </>
+                )}
                 {isOutOfStock && (
                   <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">
                     <AlertCircle className="h-3 w-3" />

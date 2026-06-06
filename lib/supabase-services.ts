@@ -11,6 +11,7 @@ export interface Product {
   id: string;
   name: string;
   price: number;
+  originalPrice?: number;
   category: string;
   images: string[];
   sizes: string[];
@@ -24,6 +25,24 @@ export interface Product {
   updated_at?: string;
 }
 
+/**
+ * Maps a raw Supabase row (snake_case) to the Product shape (camelCase).
+ * Only fields that differ between DB and TS are remapped; everything else
+ * passes through unchanged.
+ */
+function mapRow(row: Record<string, any>): Product {
+  const p: any = { ...row };
+  if ('original_price' in p) { p.originalPrice = p.original_price; delete p.original_price; }
+  if ('low_stock_threshold' in p) { p.lowStockThreshold = p.low_stock_threshold; delete p.low_stock_threshold; }
+  if ('color_images' in p) { p.colorImages = p.color_images; delete p.color_images; }
+  if ('related_products' in p) { p.relatedProducts = p.related_products; delete p.related_products; }
+  if ('is_trending' in p) { p.isTrending = p.is_trending; delete p.is_trending; }
+  if ('is_latest_collection' in p) { p.isLatestCollection = p.is_latest_collection; delete p.is_latest_collection; }
+  if ('trending_order' in p) { p.trendingOrder = p.trending_order; delete p.trending_order; }
+  if ('latest_order' in p) { p.latestOrder = p.latest_order; delete p.latest_order; }
+  return p as Product;
+}
+
 export async function getAllProducts(): Promise<Product[]> {
   const { data, error } = await supabase
     .from('products')
@@ -35,7 +54,7 @@ export async function getAllProducts(): Promise<Product[]> {
     throw error;
   }
 
-  return data || [];
+  return (data || []).map(mapRow);
 }
 
 export async function getProductById(id: string): Promise<Product | null> {
@@ -50,7 +69,7 @@ export async function getProductById(id: string): Promise<Product | null> {
     return null;
   }
 
-  return data;
+  return data ? mapRow(data) : null;
 }
 
 export async function getProductsByCategory(category: string): Promise<Product[]> {
@@ -65,7 +84,7 @@ export async function getProductsByCategory(category: string): Promise<Product[]
     throw error;
   }
 
-  return data || [];
+  return (data || []).map(mapRow);
 }
 
 export async function createProduct(product: Omit<Product, 'id' | 'created_at' | 'updated_at'>): Promise<Product> {
@@ -80,7 +99,7 @@ export async function createProduct(product: Omit<Product, 'id' | 'created_at' |
     throw error;
   }
 
-  return data;
+  return mapRow(data);
 }
 
 export async function updateProduct(id: string, updates: Partial<Product>): Promise<Product> {
@@ -96,7 +115,7 @@ export async function updateProduct(id: string, updates: Partial<Product>): Prom
     throw error;
   }
 
-  return data;
+  return mapRow(data);
 }
 
 export async function deleteProduct(id: string): Promise<void> {
@@ -112,7 +131,6 @@ export async function deleteProduct(id: string): Promise<void> {
 }
 
 // ==================== USERS ====================
-
 export interface User {
   id: string;
   email: string;
@@ -406,7 +424,7 @@ export class ProductService {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data || [];
+      return (data || []).map(mapRow);
     } catch (error) {
       console.error('Error searching products:', error);
       return [];

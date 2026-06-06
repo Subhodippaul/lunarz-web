@@ -99,14 +99,19 @@ export default function ProductCard({ product }: any) {
 
         {/* Price */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <p className="text-lg font-bold text-gray-900">
-              {CURRENCY.symbol}{product.price?.toLocaleString() || product.price}
+              {CURRENCY.symbol}{product.price?.toLocaleString() ?? product.price}
             </p>
             {product.originalPrice && product.originalPrice > product.price && (
-              <p className="text-sm text-gray-500 line-through">
-                {CURRENCY.symbol}{product.originalPrice.toLocaleString()}
-              </p>
+              <>
+                <p className="text-sm text-gray-400 line-through">
+                  {CURRENCY.symbol}{product.originalPrice.toLocaleString()}
+                </p>
+                <span className="text-xs font-semibold text-green-700 bg-green-100 px-1.5 py-0.5 rounded-full">
+                  {Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% off
+                </span>
+              </>
             )}
           </div>
         </div>

@@ -1,7 +1,8 @@
 export interface Product {
   id: string; // Changed from number to string for Firestore compatibility
   name: string;
-  price: number;
+  price: number;           // The selling price (what customer pays)
+  originalPrice?: number;  // MRP / crossed-out price shown to customer
   category: string;
   images: string[];
   // Color-wise images mapping

@@ -13,6 +13,10 @@ function mapProductToDb(product: Partial<Product>): Record<string, any> {
   const mapped: Record<string, any> = { ...product };
 
   // Rename camelCase keys to snake_case for Supabase
+  if ('originalPrice' in mapped) {
+    mapped.original_price = mapped.originalPrice;
+    delete mapped.originalPrice;
+  }
   if ('lowStockThreshold' in mapped) {
     mapped.low_stock_threshold = mapped.lowStockThreshold;
     delete mapped.lowStockThreshold;
@@ -48,6 +52,44 @@ function mapProductToDb(product: Partial<Product>): Record<string, any> {
   return mapped;
 }
 
+// Maps snake_case DB columns back to camelCase Product fields
+function mapProductFromDb(row: Record<string, any>): Product {
+  const product: any = { ...row };
+  if ('original_price' in product) {
+    product.originalPrice = product.original_price;
+    delete product.original_price;
+  }
+  if ('low_stock_threshold' in product) {
+    product.lowStockThreshold = product.low_stock_threshold;
+    delete product.low_stock_threshold;
+  }
+  if ('color_images' in product) {
+    product.colorImages = product.color_images;
+    delete product.color_images;
+  }
+  if ('related_products' in product) {
+    product.relatedProducts = product.related_products;
+    delete product.related_products;
+  }
+  if ('is_trending' in product) {
+    product.isTrending = product.is_trending;
+    delete product.is_trending;
+  }
+  if ('is_latest_collection' in product) {
+    product.isLatestCollection = product.is_latest_collection;
+    delete product.is_latest_collection;
+  }
+  if ('trending_order' in product) {
+    product.trendingOrder = product.trending_order;
+    delete product.trending_order;
+  }
+  if ('latest_order' in product) {
+    product.latestOrder = product.latest_order;
+    delete product.latest_order;
+  }
+  return product as Product;
+}
+
 // ============================================================================
 // ADMIN PRODUCT SERVICES
 // ============================================================================
@@ -61,7 +103,7 @@ export class AdminProductService {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data || [];
+      return (data || []).map(mapProductFromDb);
     } catch (error) {
       console.error("Error fetching products:", error);
       return [];
@@ -195,7 +237,7 @@ export class AdminProductService {
         .order('trending_order', { ascending: true });
 
       if (error) throw error;
-      return data || [];
+      return (data || []).map(mapProductFromDb);
     } catch (error) {
       console.error("Error fetching trending products:", error);
       // Fallback to regular products if trending query fails
@@ -237,7 +279,7 @@ export class AdminProductService {
         .order('latest_order', { ascending: true });
 
       if (error) throw error;
-      return data || [];
+      return (data || []).map(mapProductFromDb);
     } catch (error) {
       console.error("Error fetching latest collection products:", error);
       // Fallback to recent products if latest collection query fails
