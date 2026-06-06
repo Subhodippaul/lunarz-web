@@ -171,7 +171,7 @@ export default function ContactPage() {
                         required
                         value={formData.name}
                         onChange={handleChange}
-                        placeholder="Your full name"
+                        placeholder="Enter your name"
                         className="mt-2"
                       />
                     </div>
@@ -184,7 +184,7 @@ export default function ContactPage() {
                         required
                         value={formData.email}
                         onChange={handleChange}
-                        placeholder="your.email@example.com"
+                        placeholder="Enter your email"
                         className="mt-2"
                       />
                     </div>
@@ -199,7 +199,7 @@ export default function ContactPage() {
                         type="tel"
                         value={formData.phone}
                         onChange={handleChange}
-                        placeholder="+91 12345 67890"
+                        placeholder="Enter your phone number"
                         className="mt-2"
                       />
                     </div>
@@ -212,7 +212,7 @@ export default function ContactPage() {
                         required
                         value={formData.subject}
                         onChange={handleChange}
-                        placeholder="What is this about?"
+                        placeholder="Enter subject"
                         className="mt-2"
                       />
                     </div>
@@ -226,7 +226,7 @@ export default function ContactPage() {
                       required
                       value={formData.message}
                       onChange={handleChange}
-                      placeholder="Tell us more about your inquiry..."
+                      placeholder="Enter your message"
                       rows={6}
                       className="mt-2"
                     />
@@ -235,6 +235,7 @@ export default function ContactPage() {
                   <Button
                     type="submit"
                     disabled={loading}
+                    loading={loading}
                     className="w-full bg-blue-600 hover:bg-blue-700"
                   >
                     {loading ? (

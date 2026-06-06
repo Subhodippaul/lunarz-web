@@ -338,6 +338,7 @@ export default function ReturnExchangeModal({
                 {type === 'cancel' ? (
                   <Button
                     onClick={handleSubmit}
+                    loading={loading}
                     disabled={loading || !formData.reason || formData.selectedItems.filter(item => item.selected).length === 0}
                     className="bg-red-600 hover:bg-red-700"
                   >
@@ -371,7 +372,7 @@ export default function ReturnExchangeModal({
                         ...prev,
                         pickupAddress: { ...prev.pickupAddress, fullName: e.target.value }
                       }))}
-                      placeholder="Enter full name"
+                      placeholder="Enter your full name"
                     />
                   </div>
 
@@ -458,6 +459,7 @@ export default function ReturnExchangeModal({
                 </Button>
                 <Button
                   onClick={handleSubmit}
+                  loading={loading}
                   disabled={loading || !formData.pickupAddress.fullName || !formData.pickupAddress.phone || !formData.pickupAddress.address}
                 >
                   {loading ? 'Submitting...' : 'Submit Request'}

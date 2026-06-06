@@ -121,7 +121,7 @@ export default function PaymentModal({
                 id="cardNumber"
                 value={formData.cardNumber}
                 onChange={(e) => setFormData({...formData, cardNumber: formatCardNumber(e.target.value)})}
-                placeholder="1234 5678 9012 3456"
+                placeholder="Enter your card number"
                 maxLength={19}
                 required
               />
@@ -134,7 +134,7 @@ export default function PaymentModal({
                 id="cardholderName"
                 value={formData.cardholderName}
                 onChange={(e) => setFormData({...formData, cardholderName: e.target.value})}
-                placeholder="John Doe"
+                placeholder="Enter cardholder name"
                 required
               />
             </div>
@@ -191,7 +191,7 @@ export default function PaymentModal({
                 type="password"
                 value={formData.cvv}
                 onChange={(e) => setFormData({...formData, cvv: e.target.value})}
-                placeholder="123"
+                placeholder="Enter CVV"
                 maxLength={4}
                 required
               />

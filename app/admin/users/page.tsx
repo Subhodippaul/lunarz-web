@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Search, Shield, User, Mail, Calendar, Loader2 } from "lucide-react";
+import { Search, Shield, User, Mail, Calendar, Loader2, AlertTriangle, X } from "lucide-react";
 import { UserTableSkeleton } from "@/components/admin/skeleton-loaders";
 
 interface UserData {
@@ -10,8 +10,15 @@ interface UserData {
   name: string;
   provider: "email" | "google";
   isAdmin?: boolean;
+  hasProfile: boolean;
   createdAt: any;
-  updatedAt: any;
+  lastSignIn: string | null;
+}
+
+interface ConfirmModal {
+  userId: string;
+  userName: string;
+  currentAdminStatus: boolean;
 }
 
 export default function AdminUsers() {
@@ -20,6 +27,7 @@ export default function AdminUsers() {
   const [searchTerm, setSearchTerm] = useState("");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+  const [confirmModal, setConfirmModal] = useState<ConfirmModal | null>(null);
 
   useEffect(() => {
     fetchUsers();
@@ -46,12 +54,21 @@ export default function AdminUsers() {
     setTimeout(() => setToast(null), 3000);
   };
 
-  const handleToggleAdmin = async (userId: string, currentAdminStatus: boolean) => {
-    const action = currentAdminStatus ? "remove admin from" : "make admin";
+  const openConfirmModal = (userId: string, currentAdminStatus: boolean) => {
     const user = users.find((u) => u.id === userId);
-    if (!confirm(`Are you sure you want to ${action} "${user?.name || user?.email}"?`)) return;
+    setConfirmModal({
+      userId,
+      userName: user?.name || user?.email || "this user",
+      currentAdminStatus,
+    });
+  };
 
+  const handleConfirm = async () => {
+    if (!confirmModal) return;
+    const { userId, currentAdminStatus } = confirmModal;
+    setConfirmModal(null);
     setUpdatingId(userId);
+
     try {
       const res = await fetch("/api/auth/update-role", {
         method: "POST",
@@ -68,7 +85,7 @@ export default function AdminUsers() {
         prev.map((u) => (u.id === userId ? { ...u, isAdmin: !currentAdminStatus } : u))
       );
       showToast(
-        currentAdminStatus ? "Admin role removed." : "User is now an admin.",
+        currentAdminStatus ? "Admin role removed successfully." : "User is now an admin.",
         "success"
       );
     } catch (error: any) {
@@ -99,6 +116,81 @@ export default function AdminUsers() {
           }`}
         >
           {toast.message}
+        </div>
+      )}
+
+      {/* Confirm Modal */}
+      {confirmModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={() => setConfirmModal(null)}
+          />
+
+          {/* Modal */}
+          <div className="relative bg-white rounded-xl shadow-xl w-full max-w-md mx-4 p-6">
+            {/* Close button */}
+            <button
+              onClick={() => setConfirmModal(null)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            {/* Icon */}
+            <div className={`flex items-center justify-center h-12 w-12 rounded-full mx-auto mb-4 ${
+              confirmModal.currentAdminStatus ? "bg-red-100" : "bg-purple-100"
+            }`}>
+              {confirmModal.currentAdminStatus ? (
+                <AlertTriangle className="h-6 w-6 text-red-600" />
+              ) : (
+                <Shield className="h-6 w-6 text-purple-600" />
+              )}
+            </div>
+
+            {/* Title */}
+            <h3 className="text-lg font-semibold text-gray-900 text-center mb-2">
+              {confirmModal.currentAdminStatus ? "Remove Admin Access" : "Grant Admin Access"}
+            </h3>
+
+            {/* Description */}
+            <p className="text-sm text-gray-500 text-center mb-6">
+              {confirmModal.currentAdminStatus ? (
+                <>
+                  Are you sure you want to remove admin access from{" "}
+                  <span className="font-medium text-gray-700">{confirmModal.userName}</span>?
+                  They will lose all admin privileges.
+                </>
+              ) : (
+                <>
+                  Are you sure you want to grant admin access to{" "}
+                  <span className="font-medium text-gray-700">{confirmModal.userName}</span>?
+                  They will have full access to the admin panel.
+                </>
+              )}
+            </p>
+
+            {/* Actions */}
+            <div className="flex gap-3">
+              <button
+                onClick={() => setConfirmModal(null)}
+                className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirm}
+                className={`flex-1 px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors ${
+                  confirmModal.currentAdminStatus
+                    ? "bg-red-600 hover:bg-red-700"
+                    : "bg-purple-600 hover:bg-purple-700"
+                }`}
+              >
+                {confirmModal.currentAdminStatus ? "Remove Admin" : "Make Admin"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -140,6 +232,9 @@ export default function AdminUsers() {
                   Joined
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Last Sign In
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
@@ -149,7 +244,7 @@ export default function AdminUsers() {
                 <tr key={user.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
-                      <div className="flex-shrink-0 h-10 w-10">
+                      <div className="shrink-0 h-10 w-10">
                         <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
                           <span className="text-sm font-semibold text-gray-600 uppercase">
                             {user.name?.[0] || user.email?.[0] || "?"}
@@ -157,7 +252,14 @@ export default function AdminUsers() {
                         </div>
                       </div>
                       <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">{user.name}</div>
+                        <div className="flex items-center gap-2">
+                          <div className="text-sm font-medium text-gray-900">{user.name}</div>
+                          {!user.hasProfile && (
+                            <span className="text-xs bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded font-medium">
+                              Auth only
+                            </span>
+                          )}
+                        </div>
                         <div className="text-sm text-gray-500 flex items-center">
                           <Mail className="h-3 w-3 mr-1" />
                           {user.email}
@@ -203,9 +305,14 @@ export default function AdminUsers() {
                       {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : "N/A"}
                     </div>
                   </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {user.lastSignIn
+                      ? new Date(user.lastSignIn).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })
+                      : <span className="text-gray-300">—</span>}
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <button
-                      onClick={() => handleToggleAdmin(user.id, user.isAdmin || false)}
+                      onClick={() => openConfirmModal(user.id, user.isAdmin || false)}
                       disabled={updatingId === user.id}
                       className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${
                         user.isAdmin
@@ -215,8 +322,6 @@ export default function AdminUsers() {
                     >
                       {updatingId === user.id ? (
                         <Loader2 className="h-3 w-3 animate-spin" />
-                      ) : user.isAdmin ? (
-                        <Shield className="h-3 w-3" />
                       ) : (
                         <Shield className="h-3 w-3" />
                       )}
@@ -250,7 +355,7 @@ export default function AdminUsers() {
       <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center">
-            <div className="flex-shrink-0">
+            <div className="shrink-0">
               <User className="h-8 w-8 text-blue-600" />
             </div>
             <div className="ml-4">
@@ -262,7 +367,7 @@ export default function AdminUsers() {
 
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center">
-            <div className="flex-shrink-0">
+            <div className="shrink-0">
               <Shield className="h-8 w-8 text-purple-600" />
             </div>
             <div className="ml-4">
@@ -276,7 +381,7 @@ export default function AdminUsers() {
 
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center">
-            <div className="flex-shrink-0">
+            <div className="shrink-0">
               <Mail className="h-8 w-8 text-green-600" />
             </div>
             <div className="ml-4">

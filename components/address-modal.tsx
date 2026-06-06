@@ -98,6 +98,7 @@ export default function AddressModal({
                   id="fullName"
                   value={formData.fullName}
                   onChange={(e) => setFormData({...formData, fullName: e.target.value})}
+                  placeholder="Enter your full name"
                   required
                 />
               </div>
@@ -107,6 +108,7 @@ export default function AddressModal({
                   id="phone"
                   value={formData.phone}
                   onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                  placeholder="Enter your phone number"
                   required
                 />
               </div>
@@ -119,7 +121,7 @@ export default function AddressModal({
                 id="addressLine1"
                 value={formData.addressLine1}
                 onChange={(e) => setFormData({...formData, addressLine1: e.target.value})}
-                placeholder="Street address"
+                placeholder="Enter your street address"
                 required
               />
             </div>
@@ -129,7 +131,7 @@ export default function AddressModal({
                 id="addressLine2"
                 value={formData.addressLine2}
                 onChange={(e) => setFormData({...formData, addressLine2: e.target.value})}
-                placeholder="Apartment, suite, etc."
+                placeholder="Enter apartment, suite, floor, etc. (optional)"
               />
             </div>
 
@@ -141,6 +143,7 @@ export default function AddressModal({
                   id="city"
                   value={formData.city}
                   onChange={(e) => setFormData({...formData, city: e.target.value})}
+                  placeholder="Enter your city"
                   required
                 />
               </div>
@@ -150,6 +153,7 @@ export default function AddressModal({
                   id="state"
                   value={formData.state}
                   onChange={(e) => setFormData({...formData, state: e.target.value})}
+                  placeholder="Enter your state"
                   required
                 />
               </div>
@@ -159,6 +163,7 @@ export default function AddressModal({
                   id="pincode"
                   value={formData.pincode}
                   onChange={(e) => setFormData({...formData, pincode: e.target.value})}
+                  placeholder="Enter your pincode"
                   required
                 />
               </div>
@@ -171,6 +176,7 @@ export default function AddressModal({
                 id="country"
                 value={formData.country}
                 onChange={(e) => setFormData({...formData, country: e.target.value})}
+                placeholder="Enter your country"
                 required
               />
             </div>

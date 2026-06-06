@@ -332,7 +332,7 @@ export default function CustomizeCheckoutPage() {
                     id="firstName"
                     value={formData.firstName}
                     onChange={(e) => handleInputChange("firstName", e.target.value)}
-                    placeholder="John"
+                    placeholder="Enter your first name"
                   />
                 </div>
                 <div>
@@ -341,7 +341,7 @@ export default function CustomizeCheckoutPage() {
                     id="lastName"
                     value={formData.lastName}
                     onChange={(e) => handleInputChange("lastName", e.target.value)}
-                    placeholder="Doe"
+                    placeholder="Enter your last name"
                   />
                 </div>
               </div>
@@ -352,7 +352,7 @@ export default function CustomizeCheckoutPage() {
                   type="email"
                   value={formData.email}
                   onChange={(e) => handleInputChange("email", e.target.value)}
-                  placeholder="john@example.com"
+                  placeholder="Enter your email"
                 />
               </div>
               <div>
@@ -361,7 +361,7 @@ export default function CustomizeCheckoutPage() {
                   id="phone"
                   value={formData.phone}
                   onChange={(e) => handleInputChange("phone", e.target.value)}
-                  placeholder="+91 9876543210"
+                  placeholder="Enter your phone number"
                 />
               </div>
               <div>
@@ -370,7 +370,7 @@ export default function CustomizeCheckoutPage() {
                   id="address"
                   value={formData.address}
                   onChange={(e) => handleInputChange("address", e.target.value)}
-                  placeholder="123 Main Street"
+                  placeholder="Enter your street address"
                 />
               </div>
               <div className="grid grid-cols-3 gap-4">
@@ -380,7 +380,7 @@ export default function CustomizeCheckoutPage() {
                     id="city"
                     value={formData.city}
                     onChange={(e) => handleInputChange("city", e.target.value)}
-                    placeholder="Mumbai"
+                    placeholder="Enter your city"
                   />
                 </div>
                 <div>
@@ -389,7 +389,7 @@ export default function CustomizeCheckoutPage() {
                     id="state"
                     value={formData.state}
                     onChange={(e) => handleInputChange("state", e.target.value)}
-                    placeholder="Maharashtra"
+                    placeholder="Enter your state"
                   />
                 </div>
                 <div>
@@ -398,7 +398,7 @@ export default function CustomizeCheckoutPage() {
                     id="pincode"
                     value={formData.pincode}
                     onChange={(e) => handleInputChange("pincode", e.target.value)}
-                    placeholder="400001"
+                    placeholder="Enter your pincode"
                   />
                 </div>
               </div>
@@ -430,6 +430,7 @@ export default function CustomizeCheckoutPage() {
                         id="shippingFirstName"
                         value={formData.shippingFirstName}
                         onChange={(e) => handleInputChange("shippingFirstName", e.target.value)}
+                        placeholder="Enter your first name"
                       />
                     </div>
                     <div>
@@ -438,6 +439,7 @@ export default function CustomizeCheckoutPage() {
                         id="shippingLastName"
                         value={formData.shippingLastName}
                         onChange={(e) => handleInputChange("shippingLastName", e.target.value)}
+                        placeholder="Enter your last name"
                       />
                     </div>
                   </div>
@@ -447,6 +449,7 @@ export default function CustomizeCheckoutPage() {
                       id="shippingAddress"
                       value={formData.shippingAddress}
                       onChange={(e) => handleInputChange("shippingAddress", e.target.value)}
+                      placeholder="Enter your street address"
                     />
                   </div>
                   <div className="grid grid-cols-3 gap-4">
@@ -456,6 +459,7 @@ export default function CustomizeCheckoutPage() {
                         id="shippingCity"
                         value={formData.shippingCity}
                         onChange={(e) => handleInputChange("shippingCity", e.target.value)}
+                        placeholder="Enter your city"
                       />
                     </div>
                     <div>
@@ -464,6 +468,7 @@ export default function CustomizeCheckoutPage() {
                         id="shippingState"
                         value={formData.shippingState}
                         onChange={(e) => handleInputChange("shippingState", e.target.value)}
+                        placeholder="Enter your state"
                       />
                     </div>
                     <div>
@@ -472,6 +477,7 @@ export default function CustomizeCheckoutPage() {
                         id="shippingPincode"
                         value={formData.shippingPincode}
                         onChange={(e) => handleInputChange("shippingPincode", e.target.value)}
+                        placeholder="Enter your pincode"
                       />
                     </div>
                   </div>
@@ -585,6 +591,7 @@ export default function CustomizeCheckoutPage() {
               <Button
                 onClick={handlePlaceOrder}
                 disabled={isProcessing}
+                loading={isProcessing}
                 className="w-full bg-red-500 hover:bg-red-600"
               >
                 {isProcessing ? "Processing..." : `Place Order - ${CURRENCY.symbol}${finalTotal.toLocaleString()}`}

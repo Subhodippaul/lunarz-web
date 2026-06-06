@@ -72,10 +72,10 @@ export default function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState("online");
   const [shippingSettings, setShippingSettings] = useState<ShippingSettings | null>(null);
   const [showPaymentDrawer, setShowPaymentDrawer] = useState(false);
+  const [formErrors, setFormErrors] = useState<Partial<Record<keyof AddressForm, string>>>({});
 
   // Controlled address form (persisted in sessionStorage)
   const [form, setForm] = useState<AddressForm>(emptyForm());
-
   // Saved addresses from DB
   const [savedAddresses, setSavedAddresses] = useState<SupabaseAddress[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
@@ -167,8 +167,20 @@ export default function CheckoutPage() {
 
   const validateForm = () => {
     if (!showNewForm && selectedAddressId) return true;
-    return !!(form.firstName && form.lastName && form.phone &&
-              form.address && form.city && form.state && form.pincode);
+    const required: (keyof AddressForm)[] = ["firstName", "lastName", "phone", "address", "city", "state", "pincode"];
+    const newErrors: Partial<Record<keyof AddressForm, string>> = {};
+    const labels: Record<string, string> = {
+      firstName: "First name", lastName: "Last name", phone: "Phone number",
+      address: "Address", city: "City", state: "State", pincode: "Pincode",
+    };
+    for (const field of required) {
+      if (!form[field].trim()) newErrors[field] = `${labels[field]} is required.`;
+    }
+    if (form.phone && form.phone.trim() && !/^\+?[\d\s\-]{7,15}$/.test(form.phone)) {
+      newErrors.phone = "Enter a valid phone number.";
+    }
+    setFormErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   // Totals
@@ -185,7 +197,6 @@ export default function CheckoutPage() {
       addToast({ type: "error", title: "Missing Information", description: "Please fill in all required address fields." });
       return;
     }
-
     setIsProcessing(true);
     try {
       const billingAddress = getActiveAddress();
@@ -388,8 +399,10 @@ export default function CheckoutPage() {
 
   // ─── Render ───────────────────────────────────────────────────────────────
 
-  const f = (field: keyof AddressForm) => (e: React.ChangeEvent<HTMLInputElement>) =>
+  const f = (field: keyof AddressForm) => (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm(prev => ({ ...prev, [field]: e.target.value }));
+    if (formErrors[field]) setFormErrors(prev => { const n = { ...prev }; delete n[field]; return n; });
+  };
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-8">
@@ -463,40 +476,54 @@ export default function CheckoutPage() {
                     <p className="text-sm font-medium text-gray-700">Enter new address</p>
                   )}
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="grid gap-2">
+                    <div className="grid gap-1">
                       <Label htmlFor="firstName">{CHECKOUT.firstName} *</Label>
-                      <Input id="firstName" value={form.firstName} onChange={f("firstName")} placeholder="John" />
+                      <Input id="firstName" value={form.firstName} onChange={f("firstName")} placeholder="Enter your first name"
+                        className={formErrors.firstName ? "border-red-500 focus-visible:ring-red-500" : ""} />
+                      {formErrors.firstName && <p className="text-xs text-red-500">{formErrors.firstName}</p>}
                     </div>
-                    <div className="grid gap-2">
+                    <div className="grid gap-1">
                       <Label htmlFor="lastName">{CHECKOUT.lastName} *</Label>
-                      <Input id="lastName" value={form.lastName} onChange={f("lastName")} placeholder="Doe" />
+                      <Input id="lastName" value={form.lastName} onChange={f("lastName")} placeholder="Enter your last name"
+                        className={formErrors.lastName ? "border-red-500 focus-visible:ring-red-500" : ""} />
+                      {formErrors.lastName && <p className="text-xs text-red-500">{formErrors.lastName}</p>}
                     </div>
                   </div>
-                  <div className="grid gap-2">
+                  <div className="grid gap-1">
                     <Label htmlFor="email">{CHECKOUT.email}</Label>
                     <Input id="email" type="email" value={form.email} onChange={f("email")}
-                      placeholder={authState.user?.email || "john@example.com"} />
+                      placeholder={authState.user?.email || "Enter your email"} />
                   </div>
-                  <div className="grid gap-2">
+                  <div className="grid gap-1">
                     <Label htmlFor="phone">{CHECKOUT.phone} *</Label>
-                    <Input id="phone" value={form.phone} onChange={f("phone")} placeholder="+91 9876543210" />
+                    <Input id="phone" value={form.phone} onChange={f("phone")} placeholder="Enter your phone number"
+                      className={formErrors.phone ? "border-red-500 focus-visible:ring-red-500" : ""} />
+                    {formErrors.phone && <p className="text-xs text-red-500">{formErrors.phone}</p>}
                   </div>
-                  <div className="grid gap-2">
+                  <div className="grid gap-1">
                     <Label htmlFor="address">{CHECKOUT.address} *</Label>
-                    <Input id="address" value={form.address} onChange={f("address")} placeholder="123 Main Street" />
+                    <Input id="address" value={form.address} onChange={f("address")} placeholder="Enter your street address"
+                      className={formErrors.address ? "border-red-500 focus-visible:ring-red-500" : ""} />
+                    {formErrors.address && <p className="text-xs text-red-500">{formErrors.address}</p>}
                   </div>
                   <div className="grid grid-cols-3 gap-4">
-                    <div className="grid gap-2">
+                    <div className="grid gap-1">
                       <Label htmlFor="city">{CHECKOUT.city} *</Label>
-                      <Input id="city" value={form.city} onChange={f("city")} placeholder="Mumbai" />
+                      <Input id="city" value={form.city} onChange={f("city")} placeholder="Enter your city"
+                        className={formErrors.city ? "border-red-500 focus-visible:ring-red-500" : ""} />
+                      {formErrors.city && <p className="text-xs text-red-500">{formErrors.city}</p>}
                     </div>
-                    <div className="grid gap-2">
+                    <div className="grid gap-1">
                       <Label htmlFor="state">{CHECKOUT.state} *</Label>
-                      <Input id="state" value={form.state} onChange={f("state")} placeholder="Maharashtra" />
+                      <Input id="state" value={form.state} onChange={f("state")} placeholder="Enter your state"
+                        className={formErrors.state ? "border-red-500 focus-visible:ring-red-500" : ""} />
+                      {formErrors.state && <p className="text-xs text-red-500">{formErrors.state}</p>}
                     </div>
-                    <div className="grid gap-2">
+                    <div className="grid gap-1">
                       <Label htmlFor="pincode">{CHECKOUT.pincode} *</Label>
-                      <Input id="pincode" value={form.pincode} onChange={f("pincode")} placeholder="400001" />
+                      <Input id="pincode" value={form.pincode} onChange={f("pincode")} placeholder="Enter your pincode"
+                        className={formErrors.pincode ? "border-red-500 focus-visible:ring-red-500" : ""} />
+                      {formErrors.pincode && <p className="text-xs text-red-500">{formErrors.pincode}</p>}
                     </div>
                   </div>
                 </div>

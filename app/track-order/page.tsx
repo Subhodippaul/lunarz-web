@@ -147,7 +147,7 @@ console.log('this.config.email.',process.env.SHIPROCKET_EMAIL, process.env.SHIPR
                     type="text"
                     value={orderNumber}
                     onChange={(e) => setOrderNumber(e.target.value)}
-                    placeholder="e.g., LNZ240001 or 1234567890"
+                    placeholder="e.g. LNZ240001 or AWB tracking number"
                     required
                     className="mt-2"
                   />
@@ -159,7 +159,7 @@ console.log('this.config.email.',process.env.SHIPROCKET_EMAIL, process.env.SHIPR
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="your.email@example.com"
+                    placeholder="Enter your email"
                     required
                     className="mt-2"
                   />
@@ -176,6 +176,7 @@ console.log('this.config.email.',process.env.SHIPROCKET_EMAIL, process.env.SHIPR
               <Button 
                 type="submit" 
                 disabled={loading}
+                loading={loading}
                 className="w-full bg-blue-600 hover:bg-blue-700"
               >
                 {loading ? "Tracking..." : "Track Order"}

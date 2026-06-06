@@ -653,7 +653,7 @@ export default function ProfilePage() {
                         value={profileData.name}
                         onChange={(e) => setProfileData(prev => ({ ...prev, name: e.target.value }))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                        placeholder="Enter your full name"
+                      placeholder="Enter your full name"
                       />
                     </div>
                     <div>
@@ -665,7 +665,7 @@ export default function ProfilePage() {
                         value={profileData.email}
                         onChange={(e) => setProfileData(prev => ({ ...prev, email: e.target.value }))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                        placeholder="Enter your email address"
+                      placeholder="Enter your email address"
                       />
                     </div>
                   </div>
@@ -705,7 +705,7 @@ export default function ProfilePage() {
                       value={passwordData.currentPassword}
                       onChange={(e) => setPasswordData(prev => ({ ...prev, currentPassword: e.target.value }))}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                      placeholder="Enter your current password"
+                      placeholder="Enter current password"
                     />
                   </div>
                   <div>
@@ -717,7 +717,7 @@ export default function ProfilePage() {
                       value={passwordData.newPassword}
                       onChange={(e) => setPasswordData(prev => ({ ...prev, newPassword: e.target.value }))}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                      placeholder="Enter your new password (min 6 characters)"
+                      placeholder="Enter new password (min. 6 characters)"
                     />
                   </div>
                   <div>
@@ -729,7 +729,7 @@ export default function ProfilePage() {
                       value={passwordData.confirmPassword}
                       onChange={(e) => setPasswordData(prev => ({ ...prev, confirmPassword: e.target.value }))}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                      placeholder="Confirm your new password"
+                      placeholder="Confirm new password"
                     />
                   </div>
                   <div className="flex gap-3">

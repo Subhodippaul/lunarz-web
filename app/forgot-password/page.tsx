@@ -332,14 +332,13 @@ function ForgotPasswordContent() {
                     placeholder="Enter your email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    disabled={isLoading}
-                  />
+                    disabled={isLoading}                  />
                 </div>
 
                 <Button 
                   type="submit" 
                   className="w-full"
-                  disabled={isLoading}
+                  loading={isLoading}
                 >
                   {isLoading ? "Sending..." : "Send Verification Code"}
                 </Button>
@@ -353,7 +352,7 @@ function ForgotPasswordContent() {
                   <Input
                     id="otp"
                     type="text"
-                    placeholder="Enter 6-digit code"
+                    placeholder="Enter 6-digit OTP"
                     value={otp}
                     onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
                     disabled={isLoading}
@@ -373,7 +372,7 @@ function ForgotPasswordContent() {
                 <Button 
                   type="submit" 
                   className="w-full"
-                  disabled={isLoading}
+                  loading={isLoading}
                 >
                   {isLoading ? "Verifying..." : "Verify Code"}
                 </Button>
@@ -383,6 +382,7 @@ function ForgotPasswordContent() {
                   variant="outline"
                   className="w-full"
                   onClick={handleResendOTP}
+                  loading={isLoading && otpTimer === 0}
                   disabled={isLoading || otpTimer > 0}
                 >
                   Resend Code
@@ -397,7 +397,7 @@ function ForgotPasswordContent() {
                   <Input
                     id="newPassword"
                     type="password"
-                    placeholder="Enter new password"
+                    placeholder="Enter your new password"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     disabled={isLoading}
@@ -409,7 +409,7 @@ function ForgotPasswordContent() {
                   <Input
                     id="confirmPassword"
                     type="password"
-                    placeholder="Confirm new password"
+                    placeholder="Confirm your new password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     disabled={isLoading}
@@ -423,7 +423,7 @@ function ForgotPasswordContent() {
                 <Button 
                   type="submit" 
                   className="w-full"
-                  disabled={isLoading}
+                  loading={isLoading}
                 >
                   {isLoading ? "Updating..." : "Update Password"}
                 </Button>
