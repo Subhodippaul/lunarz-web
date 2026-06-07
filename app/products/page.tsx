@@ -55,6 +55,7 @@ function ProductsPageContent() {
   const loadProducts = async () => {
     try {
       const fetchedProducts = await ProductService.getAllProducts();
+      console.log('fetchedProducts...........',fetchedProducts);
       setProducts(fetchedProducts);
     } catch (error) {
       console.error("Error loading products:", error);

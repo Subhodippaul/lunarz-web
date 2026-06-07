@@ -8,6 +8,16 @@ const nextConfig: NextConfig = {
         hostname: "*.supabase.co",
         pathname: "/storage/v1/object/public/**",
       },
+      // Google Drive direct-download images
+      {
+        protocol: "https",
+        hostname: "drive.google.com",
+      },
+      // Google's image proxy / resizing CDN (used by Drive thumbnails)
+      {
+        protocol: "https",
+        hostname: "lh3.googleusercontent.com",
+      },
     ],
   },
   webpack: (config, { isServer }) => {

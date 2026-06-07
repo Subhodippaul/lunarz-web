@@ -5,6 +5,7 @@ import { getAllProducts } from "@/lib/supabase-services";
 import { ChevronLeft, ChevronRight, Sparkles, ImageOff } from "lucide-react";
 import Link from "next/link";
 import { Separator } from "@/components/ui/separator";
+import { toDriveImageUrl } from "@/lib/drive-image";
 
 const ITEMS_PER_SLIDE = 4;
 
@@ -24,8 +25,9 @@ function variantColor(variant: string): string {
 // Self-contained image with CSS fallback — no external file needed
 function ProductImage({ src, alt, className }: { src?: string; alt: string; className?: string }) {
   const [errored, setErrored] = useState(false);
+  const resolvedSrc = src ? toDriveImageUrl(src) : undefined;
 
-  if (!src || errored) {
+  if (!resolvedSrc || errored) {
     return (
       <div className="w-full h-full bg-gray-200 flex flex-col items-center justify-center gap-1">
         <ImageOff className="w-8 h-8 text-gray-400" />
@@ -36,7 +38,7 @@ function ProductImage({ src, alt, className }: { src?: string; alt: string; clas
 
   return (
     <img
-      src={src}
+      src={resolvedSrc}
       alt={alt}
       className={className}
       onError={() => setErrored(true)}

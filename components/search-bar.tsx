@@ -5,6 +5,7 @@ import { Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { ProductService } from "@/lib/supabase-services";
 import { Product } from "@/lib/data";
+import { toDriveImageUrl } from "@/lib/drive-image";
 
 interface SearchBarProps {
   isMobile?: boolean;
@@ -125,8 +126,9 @@ export default function SearchBar({ isMobile = false }: SearchBarProps) {
                     className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3 border-b border-gray-100 last:border-b-0"
                   >
                     <img
-                      src={product.images[0] || "/placeholder.jpg"}
+                      src={toDriveImageUrl(product.images[0]) || "/placeholder.jpg"}
                       alt={product.name}
+                      referrerPolicy="no-referrer"
                       className="w-10 h-10 object-cover rounded"
                     />
                     <div className="flex-1 min-w-0">
@@ -193,8 +195,9 @@ export default function SearchBar({ isMobile = false }: SearchBarProps) {
                   className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3 border-b border-gray-100 last:border-b-0"
                 >
                   <img
-                    src={product.images[0] || "/placeholder.jpg"}
+                    src={toDriveImageUrl(product.images[0]) || "/placeholder.jpg"}
                     alt={product.name}
+                    referrerPolicy="no-referrer"
                     className="w-12 h-12 object-cover rounded"
                   />
                   <div className="flex-1 min-w-0">

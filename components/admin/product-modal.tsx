@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { AdminProductService } from "@/lib/admin-services";
 import { Product } from "@/lib/data";
 import { X, Plus, Minus, Lock } from "lucide-react";
+import { toDriveImageUrl, isDriveUrl } from "@/lib/drive-image";
 
 interface ProductModalProps {
   isOpen: boolean;
@@ -13,16 +14,9 @@ interface ProductModalProps {
 // ── Defaults & Constants ──────────────────────────────────────────────────────
 
 const CATEGORIES = [
-  "T-Shirts",
   "Hoodies",
-  "Oversized Tees",
-  "Graphic Tees",
-  "Polo T-Shirts",
-  "Sweatshirts",
-  "Jackets",
-  "Joggers",
-  "Shorts",
-  "Accessories",
+  "Oversized",
+ "reguler"
 ];
 
 const DEFAULT_PRICE = 1299;
@@ -142,7 +136,9 @@ export default function ProductModal({ isOpen, onClose, product }: ProductModalP
     try {
       const productData = {
         ...formData,
-        images: formData.images.filter((img) => img.trim() !== ""),
+        // Store raw URLs in DB — conversion to proxy URL happens at display time
+        images: formData.images
+          .filter((img) => img.trim() !== ""),
         variants: formData.variants.filter((v) => v.trim() !== ""),
         sizes: formData.sizes.filter((s) => s.trim() !== ""),
         relatedProducts: formData.relatedProducts.filter((id) => id.trim() !== ""),
@@ -459,29 +455,59 @@ export default function ProductModal({ isOpen, onClose, product }: ProductModalP
 
             {/* Images */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Product Images (URLs)
               </label>
-              {formData.images.map((image, index) => (
-                <div key={index} className="flex items-center space-x-2 mb-2">
-                  <input
-                    type="url"
-                    value={image}
-                    onChange={(e) => updateArrayItem("images", index, e.target.value)}
-                    placeholder="https://example.com/image.jpg"
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                  {formData.images.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => removeArrayItem("images", index)}
-                      className="p-2 text-red-600 hover:text-red-800"
-                    >
-                      <Minus className="h-4 w-4" />
-                    </button>
-                  )}
-                </div>
-              ))}
+              <p className="text-xs text-gray-500 mb-3">
+                Paste any image URL <span className="font-medium">or a Google Drive share link</span> — Drive links are converted automatically.
+                Make sure Drive files are shared as <span className="italic">"Anyone with the link"</span>.
+              </p>
+              {formData.images.map((image, index) => {
+                const displayUrl = toDriveImageUrl(image);
+                const isDrive = isDriveUrl(image);
+                return (
+                  <div key={index} className="mb-3">
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="text"
+                        value={image}
+                        onChange={(e) => updateArrayItem("images", index, e.target.value)}
+                        placeholder="https://example.com/image.jpg  or  https://drive.google.com/file/d/…/view"
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                      />
+                      {formData.images.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeArrayItem("images", index)}
+                          className="p-2 text-red-600 hover:text-red-800"
+                        >
+                          <Minus className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
+                    {/* Drive conversion notice */}
+                    {isDrive && (
+                      <p className="text-xs text-blue-600 mt-1 ml-1">
+                        ✓ Drive link detected — will be used as a direct image URL automatically.
+                      </p>
+                    )}
+                    {/* Live preview */}
+                    {displayUrl && displayUrl !== "" && (
+                      <div className="mt-2 ml-1 w-20 h-20 rounded border border-gray-200 overflow-hidden bg-gray-50">
+                        <img
+                          src={displayUrl}
+                          alt="preview"
+                          referrerPolicy="no-referrer"
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).style.display = "none";
+                          }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
               <button
                 type="button"
                 onClick={() => addArrayItem("images")}

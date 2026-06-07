@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/components/ui/toast";
 import { PRODUCT_DETAILS, CURRENCY, NAV_LINKS } from "@/lib/constants";
 import RelatedProducts from "./related-products";
+import { toDriveImageUrl } from "@/lib/drive-image";
 import SizeChart from "./size-chart";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -38,12 +39,17 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
     product.lowStockThreshold !== undefined &&
     product.stock <= product.lowStockThreshold;
 
-  // Get current images based on selected variant
-  const getCurrentImages = () => {
-    if (product.colorImages && selectedVariant && product.colorImages[selectedVariant]) {
-      return product.colorImages[selectedVariant];
-    }
-    return product.images;
+  // Get current images based on selected variant, converting Drive URLs at display time
+  const getCurrentImages = (): string[] => {
+    const raw: string[] =
+      product.colorImages && selectedVariant && product.colorImages[selectedVariant]
+        ? product.colorImages[selectedVariant]
+        : Array.isArray(product.images)
+        ? product.images
+        : typeof product.images === 'string' && (product.images as string).trim()
+        ? [product.images as unknown as string]
+        : [];
+    return raw.map(toDriveImageUrl);
   };
 
   const currentImages = getCurrentImages();
@@ -186,6 +192,7 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
                 <img
                   src={currentImages[selectedImageIndex]}
                   alt={`${product.name} - ${selectedVariant || 'Default'}`}
+                  referrerPolicy="no-referrer"
                   className="w-full h-full object-cover"
                 />
               ) : (
@@ -208,6 +215,7 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
                   <img
                     src={image}
                     alt={`${product.name} thumbnail ${index + 1}`}
+                    referrerPolicy="no-referrer"
                     className="w-full h-full object-cover"
                   />
                 </button>

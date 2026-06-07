@@ -4,6 +4,7 @@ import { Product } from "@/lib/data";
 import { supabase } from "@/lib/supabase";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
+import { toDriveImageUrl } from "@/lib/drive-image";
 
 interface RelatedProductsProps {
   currentProduct: Product;
@@ -156,8 +157,9 @@ export default function RelatedProducts({ currentProduct }: RelatedProductsProps
               <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden mb-4">
                 {product.images && product.images.length > 0 ? (
                   <img
-                    src={product.images[0]}
+                    src={toDriveImageUrl(product.images[0])}
                     alt={product.name}
+                    referrerPolicy="no-referrer"
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />
                 ) : (

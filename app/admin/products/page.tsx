@@ -20,6 +20,7 @@ import ProductModal from "@/components/admin/product-modal";
 import StockModal from "@/components/admin/stock-modal";
 import CSVImportModal from "@/components/admin/csv-import-modal";
 import { useToast } from "@/components/ui/toast";
+import { toDriveImageUrl } from "@/lib/drive-image";
 
 export default function AdminProducts() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -280,7 +281,7 @@ export default function AdminProducts() {
                         <div className="shrink-0 h-12 w-12">
                           <img
                             className="h-12 w-12 rounded-lg object-cover"
-                            src={product.images[0] || "/placeholder.jpg"}
+                            src={toDriveImageUrl(product.images[0]) || "/placeholder.jpg"}
                             alt={product.name}
                           />
                         </div>

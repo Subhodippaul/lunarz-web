@@ -4,19 +4,24 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useState } from "react";
 import { CURRENCY } from "@/lib/constants";
 import { ImageOff } from "lucide-react";
+import { toDriveImageUrl } from "@/lib/drive-image";
 
 export default function ProductCard({ product }: any) {
   const [isHovered, setIsHovered] = useState(false);
   const [primaryError, setPrimaryError] = useState(false);
   const [secondaryError, setSecondaryError] = useState(false);
 
-  // Normalize images — handle string, array, or empty
+  // Normalize images — handle string, array, or empty; convert Drive URLs
   const imagesRaw = product.images;
-  const imagesArray: string[] = Array.isArray(imagesRaw)
-    ? imagesRaw
-    : typeof imagesRaw === 'string' && imagesRaw.trim()
-    ? [imagesRaw]
-    : [];
+  
+
+  const imagesArray: string[] = (
+    Array.isArray(imagesRaw)
+      ? imagesRaw
+      : typeof imagesRaw === 'string' && imagesRaw.trim()
+      ? [imagesRaw]
+      : []
+  ).map(toDriveImageUrl);
 
   const primaryImage = imagesArray[0] || null;
   const secondaryImage = imagesArray[1] || null;
