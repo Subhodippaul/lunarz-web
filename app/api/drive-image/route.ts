@@ -1,32 +1,47 @@
 // app/api/drive-image/route.ts
-// Legacy proxy route — kept for backward compatibility with any old URLs
-// that may still be stored in the database as /api/drive-image?id=FILE_ID.
-// New code uses the thumbnail URL directly via toDriveImageUrl() in drive-image.ts.
-export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
-  const id = searchParams.get("id");
+import { NextRequest } from "next/server";
+
+export async function GET(req: NextRequest) {
+  const id = req.nextUrl.searchParams.get("id");
   if (!id) return new Response("Missing id", { status: 400 });
 
-  // Use the thumbnail endpoint — much more reliable than uc?export=download
-  // which triggers Google's virus-scan HTML page for larger files.
-  const thumbnailUrl = `https://drive.google.com/thumbnail?id=${id}&sz=w800`;
-
-  const res = await fetch(thumbnailUrl, {
-    headers: {
-      "User-Agent": "Mozilla/5.0",
-    },
-    redirect: "follow",
-  });
+  const res = await fetch(
+    `https://drive.google.com/uc?export=download&id=${id}`,
+    {
+      headers: { "User-Agent": "Mozilla/5.0" },
+      redirect: "follow",
+    }
+  );
 
   if (!res.ok) return new Response("Failed to fetch image", { status: res.status });
 
-  const buffer = await res.arrayBuffer();
   const contentType = res.headers.get("content-type") ?? "image/jpeg";
 
-  return new Response(buffer, {
+  // If Google returns HTML (virus-scan confirmation page), handle confirm token
+  if (contentType.includes("text/html")) {
+    const html = await res.text();
+    const confirmMatch = html.match(/confirm=([0-9A-Za-z_-]+)/);
+    if (!confirmMatch) return new Response("Drive access denied", { status: 403 });
+
+    const confirmed = await fetch(
+      `https://drive.google.com/uc?export=download&id=${id}&confirm=${confirmMatch[1]}`,
+      { headers: { "User-Agent": "Mozilla/5.0" }, redirect: "follow" }
+    );
+
+    if (!confirmed.ok) return new Response("Confirmation failed", { status: confirmed.status });
+
+    return new Response(confirmed.body, {
+      headers: {
+        "Content-Type": confirmed.headers.get("content-type") ?? "image/jpeg",
+        "Cache-Control": "public, max-age=86400",
+      },
+    });
+  }
+
+  return new Response(res.body, {
     headers: {
       "Content-Type": contentType,
-      "Cache-Control": "public, max-age=86400", // cache 24h to avoid re-fetching
+      "Cache-Control": "public, max-age=86400",
     },
   });
 }
