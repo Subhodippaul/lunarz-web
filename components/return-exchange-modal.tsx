@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { X, Upload, Trash2, AlertCircle, CheckCircle } from "lucide-react";
 import { OrderManagementService } from "@/lib/order-management-service";
 import { useAuth } from "@/lib/auth-context";
+import { toDriveImageUrl } from "@/lib/drive-image";
 
 interface ReturnExchangeModalProps {
   isOpen: boolean;
@@ -23,6 +24,7 @@ export default function ReturnExchangeModal({
   type, 
   onSuccess 
 }: ReturnExchangeModalProps) {
+  console.log('order.......',order);
   const { state: authState } = useAuth();
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(1);
@@ -174,7 +176,7 @@ export default function ReturnExchangeModal({
       default: return '';
     }
   };
-
+console.log('formData.selectedItems...',formData.selectedItems)
   return (
     <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
@@ -213,14 +215,14 @@ export default function ReturnExchangeModal({
                         <div className="flex-1">
                           <div className="flex items-center gap-4 mb-3">
                             <img
-                              src={item.image || '/placeholder.jpg'}
+                              src={toDriveImageUrl(item.product.images[0]) || '/placeholder.jpg'}
                               alt={item.name}
                               className="w-16 h-16 object-cover rounded"
                             />
                             <div className="flex-1">
-                              <h4 className="font-medium">{item.name}</h4>
+                              <h4 className="font-medium">{item.product.name}</h4>
                               <p className="text-sm text-gray-600">
-                                Size: {item.size} | Color: {item.color || item.variant || 'N/A'} | Price: ₹{item.price}
+                                Size: {item.selectedSize} | Color: {item.product.color || item.selectedVariant || 'N/A'} | Price: ₹{item.product.price}
                               </p>
                               <p className="text-sm text-gray-600">
                                 Ordered Quantity: {item.quantity}

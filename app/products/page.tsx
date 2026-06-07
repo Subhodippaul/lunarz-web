@@ -1,14 +1,15 @@
 "use client";
-import { useState, useEffect, useMemo, Suspense } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import ProductCard from "@/components/product-card";
 import ProductFilters from "@/components/product-filters";
 import ProductsBanner from "@/components/products-banner";
-// Alternative: import ProductsBannerSimple from "@/components/products-banner-simple";
 import { Product } from "@/lib/data";
 import { ProductService } from "@/lib/supabase-services";
-import { PRODUCTS } from "@/lib/constants";
 import { CenteredLoader } from "@/components/ui/loader";
+import { Loader2 } from "lucide-react";
+
+const PAGE_SIZE = 10;
 
 interface FilterState {
   colors: string[];
@@ -17,11 +18,12 @@ interface FilterState {
   sizes: string[];
 }
 
-// Separate component that uses useSearchParams
 function ProductsPageContent() {
   const searchParams = useSearchParams();
-  const [products, setProducts] = useState<Product[]>([]);
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
+  const [displayedCount, setDisplayedCount] = useState(PAGE_SIZE);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [sortBy, setSortBy] = useState("featured");
   const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState<FilterState>({
@@ -31,32 +33,34 @@ function ProductsPageContent() {
     sizes: [],
   });
 
+  // Sentinel element at the bottom of the list
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+
   useEffect(() => {
     loadProducts();
   }, []);
 
   useEffect(() => {
-    // Handle URL parameters for category filtering and search
-    const categoryParam = searchParams.get('category');
-    const searchParam = searchParams.get('search');
-    
+    const categoryParam = searchParams.get("category");
+    const searchParam = searchParams.get("search");
+
     if (categoryParam) {
-      setFilters(prev => ({
-        ...prev,
-        categories: [categoryParam]
-      }));
+      setFilters((prev) => ({ ...prev, categories: [categoryParam] }));
     }
-    
     if (searchParam) {
       setSearchQuery(searchParam);
     }
   }, [searchParams]);
 
+  // Reset displayed count whenever filters/sort/search change
+  useEffect(() => {
+    setDisplayedCount(PAGE_SIZE);
+  }, [filters, sortBy, searchQuery]);
+
   const loadProducts = async () => {
     try {
       const fetchedProducts = await ProductService.getAllProducts();
-      console.log('fetchedProducts...........',fetchedProducts);
-      setProducts(fetchedProducts);
+      setAllProducts(fetchedProducts);
     } catch (error) {
       console.error("Error loading products:", error);
     } finally {
@@ -64,59 +68,55 @@ function ProductsPageContent() {
     }
   };
 
-  // Filter and sort products
+  // All filtered+sorted products (full list, no slice yet)
   const filteredAndSortedProducts = useMemo(() => {
-    let filtered = products.filter((product) => {
-      // Search filter
+    let filtered = allProducts.filter((product) => {
       if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase();
-        const matchesSearch = 
+        const matchesSearch =
           product.name.toLowerCase().includes(query) ||
           product.description.toLowerCase().includes(query) ||
           product.category.toLowerCase().includes(query);
-        if (!matchesSearch) {
-          return false;
-        }
+        if (!matchesSearch) return false;
       }
 
-      // Color filter
       if (filters.colors.length > 0) {
         const productColors = product.variants || [];
-        if (!filters.colors.some(color => productColors.includes(color))) {
+        if (!filters.colors.some((color) => productColors.includes(color)))
           return false;
-        }
       }
 
-      // Price filter
-      if (product.price < filters.priceRange.min || product.price > filters.priceRange.max) {
+      if (
+        product.price < filters.priceRange.min ||
+        product.price > filters.priceRange.max
+      )
         return false;
-      }
 
-      // Category filter
       if (filters.categories.length > 0) {
-        const productCategorySlug = product.category.toLowerCase().replace(/\s+/g, '-');
-        const matchesCategory = filters.categories.some(filterCategory => {
-          // Handle both slug format and original category name
-          const filterCategorySlug = filterCategory.toLowerCase().replace(/\s+/g, '-');
-          return productCategorySlug === filterCategorySlug || product.category.toLowerCase() === filterCategory.toLowerCase();
+        const productCategorySlug = product.category
+          .toLowerCase()
+          .replace(/\s+/g, "-");
+        const matchesCategory = filters.categories.some((filterCategory) => {
+          const filterCategorySlug = filterCategory
+            .toLowerCase()
+            .replace(/\s+/g, "-");
+          return (
+            productCategorySlug === filterCategorySlug ||
+            product.category.toLowerCase() === filterCategory.toLowerCase()
+          );
         });
-        if (!matchesCategory) {
-          return false;
-        }
+        if (!matchesCategory) return false;
       }
 
-      // Size filter
       if (filters.sizes.length > 0) {
         const productSizes = product.sizes || [];
-        if (!filters.sizes.some(size => productSizes.includes(size))) {
+        if (!filters.sizes.some((size) => productSizes.includes(size)))
           return false;
-        }
       }
 
       return true;
     });
 
-    // Sort products
     switch (sortBy) {
       case "price-low":
         filtered.sort((a, b) => a.price - b.price);
@@ -131,16 +131,46 @@ function ProductsPageContent() {
         filtered.sort((a, b) => b.name.localeCompare(a.name));
         break;
       case "newest":
-        // Since we don't have createdAt, sort by id (assuming newer documents have longer IDs)
         filtered.sort((a, b) => b.id.localeCompare(a.id));
-        break;
-      default:
-        // Featured - keep original order or sort by some featured logic
         break;
     }
 
     return filtered;
-  }, [products, filters, sortBy, searchQuery]);
+  }, [allProducts, filters, sortBy, searchQuery]);
+
+  // The slice that's actually rendered
+  const visibleProducts = useMemo(
+    () => filteredAndSortedProducts.slice(0, displayedCount),
+    [filteredAndSortedProducts, displayedCount]
+  );
+
+  const hasMore = displayedCount < filteredAndSortedProducts.length;
+
+  // IntersectionObserver — fires when sentinel enters the viewport
+  const handleObserver = useCallback(
+    (entries: IntersectionObserverEntry[]) => {
+      const target = entries[0];
+      if (target.isIntersecting && hasMore && !loadingMore) {
+        setLoadingMore(true);
+        // Small delay to show the spinner briefly (feels more natural)
+        setTimeout(() => {
+          setDisplayedCount((prev) => prev + PAGE_SIZE);
+          setLoadingMore(false);
+        }, 400);
+      }
+    },
+    [hasMore, loadingMore]
+  );
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(handleObserver, {
+      root: null,
+      rootMargin: "200px", // trigger 200px before sentinel is visible
+      threshold: 0,
+    });
+    if (sentinelRef.current) observer.observe(sentinelRef.current);
+    return () => observer.disconnect();
+  }, [handleObserver]);
 
   const handleClearFilters = () => {
     setFilters({
@@ -157,10 +187,8 @@ function ProductsPageContent() {
 
   return (
     <section className="max-w-7xl mx-auto px-6 py-12">
-      {/* Banner Section */}
       <ProductsBanner />
-      
-      {/* Search Results Header */}
+
       {searchQuery && (
         <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
           <h2 className="text-lg font-semibold text-blue-900">
@@ -171,10 +199,7 @@ function ProductsPageContent() {
           </p>
         </div>
       )}
-      
-      {/* <h1 className="text-3xl font-bold mb-8">{PRODUCTS.pageTitle}</h1> */}
-      
-      {/* Filters and Sort */}
+
       <ProductFilters
         filters={filters}
         onFiltersChange={setFilters}
@@ -183,16 +208,14 @@ function ProductsPageContent() {
         onClearFilters={handleClearFilters}
       />
 
-      {/* Products Grid */}
       {filteredAndSortedProducts.length === 0 ? (
         <div className="text-center py-12">
           <p className="text-gray-600">
-            {products.length === 0 
-              ? "No products available at the moment." 
-              : "No products match your current filters."
-            }
+            {allProducts.length === 0
+              ? "No products available at the moment."
+              : "No products match your current filters."}
           </p>
-          {products.length > 0 && (
+          {allProducts.length > 0 && (
             <button
               onClick={handleClearFilters}
               className="mt-4 text-blue-600 hover:text-blue-700 underline"
@@ -205,23 +228,36 @@ function ProductsPageContent() {
         <div className="mt-8">
           <div className="flex justify-between items-center mb-6">
             <p className="text-gray-600">
-              Showing {filteredAndSortedProducts.length} of {products.length} products
+              Showing {visibleProducts.length} of{" "}
+              {filteredAndSortedProducts.length} products
             </p>
           </div>
-          
-          {/* 5-column grid for desktop, responsive for smaller screens */}
+
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 lg:gap-6">
-            {filteredAndSortedProducts.map((product) => (
+            {visibleProducts.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>
+        {/* Sentinel + loading indicator */}
+<div ref={sentinelRef} className="mt-10 flex justify-center">
+  {loadingMore && (
+    <div className="flex items-center gap-2 text-gray-500">
+      <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+      <span className="text-sm">Loading more products...</span>
+    </div>
+  )}
+  {!hasMore && allProducts.length > 0 && (
+    <p className="text-sm text-gray-400">
+      You've seen all {filteredAndSortedProducts.length} products
+    </p>
+  )}
+</div>
         </div>
       )}
     </section>
   );
 }
 
-// Main ProductsPage component with Suspense boundary
 export default function ProductsPage() {
   return (
     <Suspense fallback={<CenteredLoader text="Loading products..." size="lg" />}>
