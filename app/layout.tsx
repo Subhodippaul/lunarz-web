@@ -6,6 +6,7 @@ import { AuthProvider } from "@/lib/auth-context";
 import { CouponProvider } from "@/lib/coupon-context";
 import { ToastProvider } from "@/components/ui/toast";
 import ConditionalLayout from "@/components/conditional-layout";
+import { headers } from "next/headers";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -13,7 +14,12 @@ const poppins = Poppins({
   variable: "--font-poppins",
 });
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default async function RootLayout({ children }: { children: ReactNode }) {
+  const headersList = await headers();
+    const host = headersList.get("host");
+  
+    const isComingSoon = host === "lunarz.in" || host === "www.lunarz.in";
+
   return (
     <html lang="en">
       <body className={`min-h-screen flex flex-col ${poppins.className}`}>
@@ -21,9 +27,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <AuthProvider>
             <CartProvider>
               <CouponProvider>
-                <ConditionalLayout>
-                  {children}
-                </ConditionalLayout>
+                {isComingSoon ? (
+                  children
+                ) : (
+                  <ConditionalLayout>{children}</ConditionalLayout>
+                )}
               </CouponProvider>
             </CartProvider>
           </AuthProvider>
