@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 
-const LAUNCH_DATE = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days from now
+const LAUNCH_DATE = new Date('2026-06-24T00:00:00+05:30')
 const WA_NUMBER = '+919432436470'
 const CONTACT_EMAIL = 'lunarz.info@gmail.com'
 
