@@ -7,6 +7,7 @@ import { CouponProvider } from "@/lib/coupon-context";
 import { ToastProvider } from "@/components/ui/toast";
 import ConditionalLayout from "@/components/conditional-layout";
 import { headers } from "next/headers";
+import { Analytics } from "@vercel/analytics/next";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -36,6 +37,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
             </CartProvider>
           </AuthProvider>
         </ToastProvider>
+        <Analytics />
       </body>
     </html>
   );
