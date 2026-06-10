@@ -8,6 +8,11 @@ import { ToastProvider } from "@/components/ui/toast";
 import ConditionalLayout from "@/components/conditional-layout";
 import { headers } from "next/headers";
 import { Analytics } from "@vercel/analytics/next";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  metadataBase: new URL("https://lunarz.in"),
+};
 
 const poppins = Poppins({
   subsets: ["latin"],
