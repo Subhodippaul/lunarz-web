@@ -7,21 +7,6 @@ import { useToast } from "@/components/ui/toast";
 import { Product } from "@/lib/data";
 import { ProductService } from "@/lib/supabase-services";
 import ProductDetails from "@/components/product-details";
-import type { Metadata } from 'next';
-
-type Props = {
-  params: {
-    slug: string;
-  };
-};
-
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  return {
-    alternates: {
-      canonical: `https://lunarz.in/product/${params.slug}`,
-    },
-  };
-}
 
 export default function ProductDetailsPage() {
   const params = useParams();
