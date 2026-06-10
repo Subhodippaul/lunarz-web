@@ -60,15 +60,15 @@ export default function StockModal({ isOpen, onClose, product, onStockUpdate }: 
 
     setLoading(true);
     try {
-      await InventoryService.addStockEntry(
-        product.id,
-        formData.type,
-        formData.quantity,
-        formData.reason,
-        state.user.id,
-        formData.reference || undefined,
-        formData.notes || undefined
-      );
+      // await InventoryService.addStockEntry(
+      //   product.id,
+      //   formData.type,
+      //   formData.quantity,
+      //   formData.reason,
+      //   state.user.id,
+      //   formData.reference || undefined,
+      //   formData.notes || undefined
+      // );
 
       addToast({
         title: "Success",
