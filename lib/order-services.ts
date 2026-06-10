@@ -40,6 +40,18 @@ export async function createOrder(orderData: CreateOrderData): Promise<string> {
       .single();
 
     if (error) throw error;
+
+    // Decrement shared color inventory for each item in the order (non-blocking)
+    try {
+      await fetch('/api/orders/deduct-inventory', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId, items: orderData.items }),
+      });
+    } catch (deductErr) {
+      console.error('Color inventory deduction failed (non-fatal):', deductErr);
+    }
+
     return orderId;
   } catch (error: any) {
     console.error("Error creating order:", error);

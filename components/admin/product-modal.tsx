@@ -11,6 +11,10 @@ interface ProductModalProps {
   product?: Product | null;
 }
 
+// ── Constants ─────────────────────────────────────────────────────────────────
+
+const ALL_SIZES = ["S", "M", "L", "XL", "XXL"];
+
 // ── Defaults & Constants ──────────────────────────────────────────────────────
 
 const CATEGORIES = [
@@ -80,7 +84,6 @@ function newFormData() {
     manufacturer: DEFAULT_MANUFACTURER,
     images: [""],
     variants: [""],
-    sizes: [""],
     colorImages: {} as { [color: string]: string[] },
     relatedProducts: [""],
     stock: 0,
@@ -88,6 +91,73 @@ function newFormData() {
     sku: generateSKU(),
     barcode: generateBarcode(),
   };
+}
+
+// ── ColorSizePreview — shows inventory sizes for a color (read-only, admin info) ──
+
+function ColorSizePreview({ color, category }: { color: string; category: string }) {
+  const [sizeMap, setSizeMap] = useState<Record<string, number> | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!color.trim() || !category.trim()) { setSizeMap(null); return; }
+    setLoading(true);
+    fetch(
+      `/api/color-inventory/sizes?color=${encodeURIComponent(color.trim())}&category=${encodeURIComponent(category.trim())}`
+    )
+      .then(r => r.ok ? r.json() : { sizes: [] })
+      .then(d => {
+        if (!d.sizes?.length) { setSizeMap(null); return; }
+        const map: Record<string, number> = {};
+        for (const row of d.sizes) map[row.size] = row.stock;
+        setSizeMap(map);
+      })
+      .catch(() => setSizeMap(null))
+      .finally(() => setLoading(false));
+  }, [color, category]);
+
+  if (!color.trim() || !category.trim()) return null;
+
+  return (
+    <div className="mt-1.5 ml-0.5">
+      {loading && <p className="text-xs text-gray-400 animate-pulse">Loading sizes…</p>}
+      {!loading && sizeMap === null && (
+        <p className="text-xs text-gray-400 italic">No inventory configured for this color yet.</p>
+      )}
+      {!loading && sizeMap && (
+        <div className="flex flex-wrap gap-1.5">
+          {ALL_SIZES.map(size => {
+            const stock = sizeMap[size];
+            const known = stock !== undefined;
+            const outOfStock = known && stock <= 0;
+            return (
+              <span
+                key={size}
+                className={`relative inline-flex px-2 py-0.5 text-xs font-medium rounded border
+                  ${!known
+                    ? "border-gray-200 text-gray-300 bg-gray-50"
+                    : outOfStock
+                    ? "border-red-200 text-red-400 bg-red-50"
+                    : "border-green-300 text-green-700 bg-green-50"
+                  }`}
+                title={known ? `Stock: ${stock}` : "Not in inventory"}
+              >
+                {size}
+                {outOfStock && (
+                  <span className="absolute inset-0 flex items-center justify-center pointer-events-none" aria-hidden="true">
+                    <span className="block w-full h-px bg-red-200 rotate-[-20deg]" />
+                  </span>
+                )}
+              </span>
+            );
+          })}
+          <span className="text-xs text-gray-400 self-center ml-1">
+            (from inventory)
+          </span>
+        </div>
+      )}
+    </div>
+  );
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -111,7 +181,6 @@ export default function ProductModal({ isOpen, onClose, product }: ProductModalP
         manufacturer: product.manufacturer || DEFAULT_MANUFACTURER,
         images: product.images.length > 0 ? product.images : [""],
         variants: product.variants && product.variants.length > 0 ? product.variants : [""],
-        sizes: product.sizes.length > 0 ? product.sizes : [""],
         colorImages: product.colorImages || {},
         relatedProducts:
           product.relatedProducts && product.relatedProducts.length > 0
@@ -137,10 +206,9 @@ export default function ProductModal({ isOpen, onClose, product }: ProductModalP
       const productData = {
         ...formData,
         // Store raw URLs in DB — conversion to proxy URL happens at display time
-        images: formData.images
-          .filter((img) => img.trim() !== ""),
+        images: formData.images.filter((img) => img.trim() !== ""),
         variants: formData.variants.filter((v) => v.trim() !== ""),
-        sizes: formData.sizes.filter((s) => s.trim() !== ""),
+        sizes: [], // sizes are managed through inventory, not manually
         relatedProducts: formData.relatedProducts.filter((id) => id.trim() !== ""),
       };
 
@@ -159,19 +227,19 @@ export default function ProductModal({ isOpen, onClose, product }: ProductModalP
     }
   };
 
-  const addArrayItem = (field: "images" | "variants" | "sizes" | "relatedProducts") => {
+  const addArrayItem = (field: "images" | "variants" | "relatedProducts") => {
     setFormData((prev) => ({ ...prev, [field]: [...prev[field], ""] }));
   };
 
   const removeArrayItem = (
-    field: "images" | "variants" | "sizes" | "relatedProducts",
+    field: "images" | "variants" | "relatedProducts",
     index: number
   ) => {
     setFormData((prev) => ({ ...prev, [field]: prev[field].filter((_, i) => i !== index) }));
   };
 
   const updateArrayItem = (
-    field: "images" | "variants" | "sizes" | "relatedProducts",
+    field: "images" | "variants" | "relatedProducts",
     index: number,
     value: string
   ) => {
@@ -520,26 +588,35 @@ export default function ProductModal({ isOpen, onClose, product }: ProductModalP
 
             {/* Variants */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Variants (Colors)
               </label>
+              <p className="text-xs text-gray-400 mb-2">
+                Enter each color. The available sizes from inventory are shown automatically below each color.
+              </p>
               {formData.variants.map((variant, index) => (
-                <div key={index} className="flex items-center space-x-2 mb-2">
-                  <input
-                    type="text"
-                    value={variant}
-                    onChange={(e) => updateArrayItem("variants", index, e.target.value)}
-                    placeholder="e.g. Black, White, Red"
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                  {formData.variants.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => removeArrayItem("variants", index)}
-                      className="p-2 text-red-600 hover:text-red-800"
-                    >
-                      <Minus className="h-4 w-4" />
-                    </button>
+                <div key={index} className="mb-4">
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="text"
+                      value={variant}
+                      onChange={(e) => updateArrayItem("variants", index, e.target.value)}
+                      placeholder="e.g. Black, White, Red"
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                    {formData.variants.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeArrayItem("variants", index)}
+                        className="p-2 text-red-600 hover:text-red-800"
+                      >
+                        <Minus className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
+                  {/* Show inventory sizes for this color */}
+                  {variant.trim() && (
+                    <ColorSizePreview color={variant} category={formData.category} />
                   )}
                 </div>
               ))}
@@ -550,41 +627,6 @@ export default function ProductModal({ isOpen, onClose, product }: ProductModalP
               >
                 <Plus className="h-4 w-4 mr-1" />
                 Add Variant
-              </button>
-            </div>
-
-            {/* Sizes */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Available Sizes
-              </label>
-              {formData.sizes.map((size, index) => (
-                <div key={index} className="flex items-center space-x-2 mb-2">
-                  <input
-                    type="text"
-                    value={size}
-                    onChange={(e) => updateArrayItem("sizes", index, e.target.value)}
-                    placeholder="e.g. XS, S, M, L, XL"
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                  {formData.sizes.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => removeArrayItem("sizes", index)}
-                      className="p-2 text-red-600 hover:text-red-800"
-                    >
-                      <Minus className="h-4 w-4" />
-                    </button>
-                  )}
-                </div>
-              ))}
-              <button
-                type="button"
-                onClick={() => addArrayItem("sizes")}
-                className="flex items-center text-sm text-blue-600 hover:text-blue-800"
-              >
-                <Plus className="h-4 w-4 mr-1" />
-                Add Size
               </button>
             </div>
 
