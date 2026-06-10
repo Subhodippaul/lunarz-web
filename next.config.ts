@@ -36,6 +36,21 @@ const nextConfig: NextConfig = {
   },
   // Add empty turbopack config to silence the warning
   turbopack: {},
+  async redirects() {
+    return [
+      {
+        source: '/:path*',
+        has: [
+          {
+            type: 'host',
+            value: 'www.lunarz.in',
+          },
+        ],
+        destination: 'https://lunarz.in/:path*',
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;
