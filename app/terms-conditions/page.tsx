@@ -55,7 +55,7 @@ export default function TermsConditionsPage() {
               <p><strong>Business Address:</strong> 123 Fashion Street, Mumbai, Maharashtra 400001, India</p>
               <p><strong>Email:</strong> <a href="mailto:lunarz.info@gmail.com" className="text-blue-600 hover:underline">lunarz.info@gmail.com</a></p>
               <p><strong>Phone:</strong> +91 12345 67890</p>
-              <p><strong>Website:</strong> <a href="https://lunarz.com" className="text-blue-600 hover:underline">www.lunarz.com</a></p>
+              <p><strong>Website:</strong> <a href="https://lunarz.com" className="text-blue-600 hover:underline">lunarz.com</a></p>
             </div>
           </CardContent>
         </Card>

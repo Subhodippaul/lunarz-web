@@ -12,6 +12,11 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://lunarz.in"),
+  title: "Lunarz India",
+  description: "Premium t-shirts",
+  alternates: {
+    canonical: "https://lunarz.in",
+  },
 };
 
 const poppins = Poppins({
