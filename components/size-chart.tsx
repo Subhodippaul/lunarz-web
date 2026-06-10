@@ -114,53 +114,6 @@ export default function SizeChart({ isOpen, onClose, productType = "t-shirt" }: 
               </table>
             </div>
 
-            {/* How to Measure */}
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <h3 className="font-semibold text-blue-900 mb-3">How to Measure:</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-blue-800">
-                <div>
-                  <strong>Chest:</strong> Measure around the fullest part of your chest, keeping the tape horizontal.
-                </div>
-                <div>
-                  <strong>Length:</strong> Measure from the highest point of the shoulder to the bottom hem.
-                </div>
-                <div>
-                  <strong>Shoulder:</strong> Measure from shoulder point to shoulder point across the back.
-                </div>
-              </div>
-            </div>
-
-            {/* Size Recommendations */}
-            <div className="bg-green-50 p-4 rounded-lg">
-              <h3 className="font-semibold text-green-900 mb-3">Size Recommendations:</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-green-800">
-                <div>
-                  <strong>For a fitted look:</strong> Choose your exact chest measurement size.
-                </div>
-                <div>
-                  <strong>For a relaxed fit:</strong> Go one size up from your chest measurement.
-                </div>
-                <div>
-                  <strong>For an oversized look:</strong> Go two sizes up from your chest measurement.
-                </div>
-                <div>
-                  <strong>Between sizes?</strong> We recommend sizing up for comfort.
-                </div>
-              </div>
-            </div>
-
-            {/* Care Instructions */}
-            <div className="bg-yellow-50 p-4 rounded-lg">
-              <h3 className="font-semibold text-yellow-900 mb-2">Care Instructions:</h3>
-              <ul className="text-sm text-yellow-800 space-y-1">
-                <li>• Machine wash cold with like colors</li>
-                <li>• Do not bleach or use fabric softener</li>
-                <li>• Tumble dry low or hang dry</li>
-                <li>• Iron inside out on low heat if needed</li>
-                <li>• Do not dry clean</li>
-              </ul>
-            </div>
-
             {/* Close Button */}
             <div className="flex justify-center pt-4">
               <Button onClick={onClose} className="px-8">
