@@ -261,9 +261,6 @@ export default function InvoiceMaker() {
             </div>
           </div>
           <div className="flex gap-2 w-full sm:w-auto">
-            <Button variant="outline" onClick={() => setPreview(true)} className="flex-1 sm:flex-none text-sm">
-              <Eye className="w-4 h-4 mr-2" /> Preview
-            </Button>
             <Button onClick={downloadPDF} className="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700 text-sm">
               <Download className="w-4 h-4 mr-2" /> Download
             </Button>
@@ -438,9 +435,6 @@ export default function InvoiceMaker() {
           </Card>
 
           <div className="flex flex-col sm:flex-row justify-end gap-3 pb-8">
-            <Button variant="outline" onClick={() => setPreview(true)} className="w-full sm:w-auto">
-              <Eye className="w-4 h-4 mr-2" /> Preview Invoice
-            </Button>
             <Button onClick={downloadPDF} className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700">
               <Download className="w-4 h-4 mr-2" /> Download PDF
             </Button>
