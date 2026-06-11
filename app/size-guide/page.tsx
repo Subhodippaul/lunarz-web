@@ -18,13 +18,13 @@ export default function SizeGuidePage() {
   };
 
   const categories = [
-    { id: "t-shirts", name: "T-Shirts", icon: "👕" },
-    { id: "hoodies", name: "Hoodies", icon: "🧥" },
-    { id: "oversized", name: "Oversized Tees", icon: "👔" }
+    { id: "Regular", name: "T-Shirts", icon: "👕" },
+    { id: "Hoodies", name: "Hoodies", icon: "🧥" },
+    { id: "Oversized", name: "Oversized Tees", icon: "👔" }
   ];
 
   const sizeCharts = {
-    "t-shirts": {
+    "Regular": {
       title: "T-Shirts Size Chart",
       description: "Regular fit t-shirts measurements in inches",
       headers: ["Size", "Chest", "Length", "Shoulder", "Sleeve"],
@@ -38,7 +38,7 @@ export default function SizeGuidePage() {
         ["XXXL", "46-48", "32", "22", "10"]
       ]
     },
-    "hoodies": {
+    "Hoodies": {
       title: "Hoodies Size Chart",
       description: "Comfortable fit hoodies measurements in inches",
       headers: ["Size", "Chest", "Length", "Shoulder", "Sleeve"],
@@ -52,7 +52,7 @@ export default function SizeGuidePage() {
         ["XXXL", "48-50", "31", "23", "29"]
       ]
     },
-    "oversized": {
+    "Oversized": {
       title: "Oversized T-Shirts Size Chart",
       description: "Relaxed oversized fit measurements in inches",
       headers: ["Size", "Chest", "Length", "Shoulder", "Sleeve"],
