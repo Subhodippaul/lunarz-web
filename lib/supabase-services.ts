@@ -72,6 +72,17 @@ export async function getProductById(id: string): Promise<Product | null> {
   return data ? mapRow(data) : null;
 }
 
+export async function getProductByName(name: string) {
+  const { data, error } = await supabase
+    .from("products")
+    .select("*")
+    .eq("name", decodeURIComponent(name as string))
+    .single();
+
+  if (error) return null;
+  return data;
+}
+
 export async function getProductsByCategory(category: string): Promise<Product[]> {
   const { data, error } = await supabase
     .from('products')
@@ -397,6 +408,10 @@ export class ProductService {
 
   static async getProductById(id: string): Promise<Product | null> {
     return getProductById(id);
+  }
+
+   static async getProductByName(name: string): Promise<Product | null> {
+    return getProductByName(name);
   }
 
   static async getProductsByCategory(category: string): Promise<Product[]> {

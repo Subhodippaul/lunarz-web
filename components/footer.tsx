@@ -32,7 +32,6 @@ export default function Footer() {
       title: "Shop",
       links: [
         { name: "All Products", href: "/products" },
-        { name: "T-Shirts", href: "/products?category=t-shirts" },
         { name: "Hoodies", href: "/products?category=hoodies" },
         { name: "New Arrivals", href: "/products?sort=newest" },
         { name: "Best Sellers", href: "/products?sort=popular" },

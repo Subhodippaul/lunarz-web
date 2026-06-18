@@ -5,6 +5,7 @@ import { useState } from "react";
 import { CURRENCY } from "@/lib/constants";
 import { ImageOff } from "lucide-react";
 import { toDriveImageUrl } from "@/lib/drive-image";
+import { createSlug } from "@/lib/slug";
 
 export default function ProductCard({ product }: any) {
   const [isHovered, setIsHovered] = useState(false);
@@ -31,7 +32,7 @@ export default function ProductCard({ product }: any) {
 
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300 group flex flex-col h-[330px] py-0 gap-3">
-      <Link href={`/products/${product.id}`} className="flex-1 min-h-0">
+      <Link href={`/products/${createSlug(product.name)}`} className="flex-1 min-h-0">
         {/* Image Box */}
         <div
           className="h-full bg-gray-100 relative overflow-hidden cursor-pointer"
@@ -79,7 +80,7 @@ export default function ProductCard({ product }: any) {
 
       <CardContent className="p-3 shrink-0">
         {/* Product Name */}
-        <Link href={`/products/${product.id}`}>
+        <Link href={`/products/${createSlug(product.name)}`}>
           <h3 className="font-medium text-md text-gray-900 hover:text-blue-600 transition-colors cursor-pointer mb-2 truncate">
             {product.name}
           </h3>

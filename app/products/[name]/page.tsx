@@ -17,15 +17,15 @@ export default function ProductDetailsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (params.id) {
-      loadProduct(params.id as string);
+    if (params.name) {
+      loadProduct(params.name as string);
     }
-  }, [params.id]);
+  }, [params.name]);
 
-  const loadProduct = async (id: string) => {
+  const loadProduct = async (name: string) => {
     try {
       setLoading(true);
-      const fetchedProduct = await ProductService.getProductById(id);
+      const fetchedProduct = await ProductService.getProductByName(name);
       if (fetchedProduct) {
         setProduct(fetchedProduct);
       } else {
