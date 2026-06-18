@@ -57,7 +57,6 @@ export default function CategoryCarousel() {
   }, []);
 
   useEffect(() => {
-    // Only auto-play if we need navigation (carousel mode)
     if (isAutoPlaying && needsNavigation()) {
       autoPlayRef.current = setInterval(() => {
         setCurrentIndex((prevIndex) => {
@@ -76,10 +75,8 @@ export default function CategoryCarousel() {
 
   const loadCategories = async () => {
     try {
-      // Get all products to count categories
       const products = await ProductService.getAllProducts();
 
-      // Count products per category
       const categoryCount: { [key: string]: number } = {};
       products.forEach((product) => {
         const categorySlug = product.category
@@ -87,8 +84,6 @@ export default function CategoryCarousel() {
           .replace(/\s+/g, "-");
         categoryCount[categorySlug] = (categoryCount[categorySlug] || 0) + 1;
       });
-
-      // Update default categories with actual product counts
 
       const updatedCategories = defaultCategories.map(
         (category) => (
@@ -103,7 +98,6 @@ export default function CategoryCarousel() {
       setCategories(updatedCategories);
     } catch (error) {
       console.error("Error loading categories:", error);
-      // Use default categories if loading fails
       setCategories(defaultCategories);
     } finally {
       setLoading(false);
@@ -115,33 +109,27 @@ export default function CategoryCarousel() {
 
     const categoryCount = categories.length;
 
-    // Mobile: Show 2 items max, but adjust if fewer categories
     if (window.innerWidth < 640) {
       return Math.min(2, categoryCount);
     }
 
-    // Tablet: Show 3 items max, but adjust if fewer categories
     if (window.innerWidth < 768) {
       return Math.min(3, categoryCount);
     }
 
-    // Desktop: Show 4 items max - this will trigger carousel mode if more than 4
     return Math.min(4, categoryCount);
   };
 
-  // Check if we need navigation arrows
   const needsNavigation = () => {
     const categoryCount = categories.length || defaultCategories.length;
     const itemsPerView = getItemsPerView();
 
     if (typeof window === "undefined") return categoryCount > 4;
 
-    // Mobile: Always show navigation if more than items per view
     if (window.innerWidth < 768) {
       return categoryCount > itemsPerView;
     }
 
-    // Desktop: Show navigation if more than 4 categories
     return categoryCount > 4;
   };
 
@@ -149,7 +137,6 @@ export default function CategoryCarousel() {
     const itemsPerView = getItemsPerView();
     const categoryCount = categories.length || defaultCategories.length;
 
-    // If we have fewer categories than items per view, no scrolling needed
     if (categoryCount <= itemsPerView) {
       return 0;
     }
@@ -183,7 +170,6 @@ export default function CategoryCarousel() {
     setIsAutoPlaying(true);
   };
 
-  // Get grid classes based on category count
   const getGridClasses = () => {
     const count = categories.length || defaultCategories.length;
 
@@ -194,7 +180,6 @@ export default function CategoryCarousel() {
     if (count === 4)
       return "grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 max-w-5xl mx-auto gap-6";
 
-    // 5 or more categories - use full responsive grid
     return "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6";
   };
 
@@ -241,10 +226,9 @@ export default function CategoryCarousel() {
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
         >
-          {/* Navigation Arrows - Show based on needsNavigation logic */}
+          {/* Navigation Arrows */}
           {needsNavigation() && (
             <>
-              {/* Desktop Navigation Arrows */}
               <button
                 onClick={prevSlide}
                 className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 bg-white rounded-full p-2 shadow-lg hover:shadow-xl transition-shadow"
@@ -260,134 +244,67 @@ export default function CategoryCarousel() {
               >
                 <ChevronRight className="h-6 w-6 text-gray-600" />
               </button>
-
-              {/* Mobile Navigation Arrows */}
-              {/* <button
-                onClick={prevSlide}
-                className="flex md:hidden absolute left-2 top-1/2 -translate-y-1/2 z-10 bg-white/90 rounded-full p-2 shadow-lg hover:shadow-xl transition-shadow"
-                aria-label="Previous categories"
-              >
-                <ChevronLeft className="h-5 w-5 text-gray-600" />
-              </button>
-
-              <button
-                onClick={nextSlide}
-                className="flex md:hidden absolute right-2 top-1/2 -translate-y-1/2 z-10 bg-white/90 rounded-full p-2 shadow-lg hover:shadow-xl transition-shadow"
-                aria-label="Next categories"
-              >
-                <ChevronRight className="h-5 w-5 text-gray-600" />
-              </button> */}
             </>
           )}
 
-          {/* Carousel Container - Use grid layout if no navigation needed, carousel if navigation needed */}
-          {true ? (
-            // Static grid layout when all categories fit
-            <div className={`grid gap-6 ${getGridClasses()}`}>
-              {categories.map((category) => (
+          {/* Static grid layout */}
+          <div className={`grid gap-6 ${getGridClasses()}`}>
+            {categories.map((category) => {
+              const isComingSoon = category.slug === "custom-tshirt";
+              return (
                 <div key={category.id}>
                   <Link
                     href={
-                      category.slug == "custom-tshirt"
+                      isComingSoon
+                        ? "#"
+                        : category.slug === "custom-tshirt"
                         ? `/${category.slug}`
                         : `/products?category=${category.slug}`
                     }
-                    className="group block"
+                    onClick={isComingSoon ? (e) => e.preventDefault() : undefined}
+                    className={`group block ${isComingSoon ? "cursor-not-allowed" : ""}`}
                   >
                     <div className="relative overflow-hidden rounded-lg bg-white shadow-sm hover:shadow-md transition-shadow">
+                      {/* Coming Soon Overlay */}
+                      {isComingSoon && (
+                        <div className="absolute inset-0 z-10 bg-black/50 flex flex-col items-center justify-center rounded-lg">
+                          <span className="text-white font-bold text-lg tracking-wide">
+                            Coming Soon
+                          </span>
+                          <span className="text-white/70 text-xs mt-1">
+                            Stay tuned!
+                          </span>
+                        </div>
+                      )}
+
                       {/* Category Image */}
                       <div className="aspect-square relative overflow-hidden">
                         <img
                           src={category.image}
                           alt={category.name}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          className={`w-full h-full object-cover transition-transform duration-300 ${
+                            isComingSoon
+                              ? "grayscale opacity-60"
+                              : "group-hover:scale-105"
+                          }`}
                           onError={(e) => {
-                            // Fallback to a placeholder if image fails to load
                             const target = e.target as HTMLImageElement;
-                            // target.src = `https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400&h=400&fit=crop&crop=center`;
                           }}
                         />
                       </div>
 
                       {/* Category Info */}
                       <div className="p-4 text-center">
-                        <h3
-                          className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors
-               truncate w-full"
-                        >
+                        <h3 className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors truncate w-full">
                           {category.name}
                         </h3>
                       </div>
                     </div>
                   </Link>
                 </div>
-              ))}
-            </div>
-          ) : (
-            // Carousel layout when categories exceed viewport
-            //             <div className="overflow-hidden" ref={carouselRef}>
-            //               <div
-            //                 className="flex transition-transform duration-500 ease-in-out"
-            //                 style={{
-            //                   transform: `translateX(-${currentIndex * (100 / getItemsPerView())}%)`
-            //                 }}
-            //               >
-            //                 {categories.map((category) => (
-            //                   <div
-            //                     key={category.id}
-            //                     className="shrink-0 px-3"
-            //                     style={{ width: `${100 / getItemsPerView()}%` }}
-            //                   >
-            //                     <Link
-            //                     href={category.slug == 'custom-tshirt' ? `/${category.slug}` : `/products?category=${category.slug}`}
-            //                       className="group block"
-            //                     >
-            //                       <div className="relative overflow-hidden rounded-lg bg-white shadow-sm hover:shadow-md transition-shadow">
-            //                         {/* Category Image */}
-            //                         <div className="aspect-square relative overflow-hidden">
-            //                           <img
-            //                             src={category.image}
-            //                             alt={category.name}
-            //                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-            //                             onError={(e) => {
-            //                               // Fallback to a placeholder if image fails to load
-            //                               const target = e.target as HTMLImageElement;
-            //                               target.src = `https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400&h=400&fit=crop&crop=center`;
-            //                             }}
-            //                           />
-
-            //                         </div>
-
-            //                         {/* Category Info */}
-            //                         <div className="p-4 text-center">
-            // <h3 className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors
-            //                truncate w-full">                            {category.name}
-            //                           </h3>
-            //                         </div>
-            //                       </div>
-            //                     </Link>
-            //                   </div>
-            //                 ))}
-            //               </div>
-            //             </div>
-            <></>
-          )}
-
-          {/* Dots Indicator - Show for carousel mode */}
-          {/* {needsNavigation() && (
-            <div className="flex justify-center mt-6 space-x-2">
-              {Array.from({ length: getMaxIndex() + 1 }).map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => goToSlide(index)}
-                  className={`w-2 h-2 rounded-full transition-colors ${
-                    index === currentIndex ? 'bg-blue-600' : 'bg-gray-300'
-                  }`}
-                  aria-label={`Go to slide ${index + 1}`}
-                />
-              ))}
-            </div>
-          )} */}
+              );
+            })}
+          </div>
         </div>
 
         {/* View All Categories Link */}
