@@ -9,7 +9,7 @@ import { ProductService } from "@/lib/supabase-services";
 import { CenteredLoader } from "@/components/ui/loader";
 import { Loader2 } from "lucide-react";
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 8;
 
 interface FilterState {
   colors: string[];
@@ -233,7 +233,7 @@ function ProductsPageContent() {
             </p>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 lg:gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-4 lg:gap-6">
             {visibleProducts.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}

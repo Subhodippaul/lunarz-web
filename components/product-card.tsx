@@ -31,7 +31,7 @@ export default function ProductCard({ product }: any) {
   const showSecondary = secondaryImage && !secondaryError;
 
   return (
-    <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300 group flex flex-col h-[330px] py-0 gap-3">
+    <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300 group flex flex-col h-[400px] py-0 gap-3">
       <Link href={`/products/${createSlug(product.name)}`} className="flex-1 min-h-0">
         {/* Image Box */}
         <div

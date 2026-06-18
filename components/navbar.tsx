@@ -141,7 +141,7 @@ export default function Navbar() {
                         <div className="text-sm text-gray-500">Browse our complete collection</div>
                       </div>
                     </Link>
-                    <Link 
+                    {/* <Link 
                       href={NAV_LINKS.customTshirt}
                       className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors"
                     >
@@ -150,7 +150,7 @@ export default function Navbar() {
                         <div className="font-medium">Custom T-Shirts</div>
                         <div className="text-sm text-gray-500">Design your own unique style</div>
                       </div>
-                    </Link>
+                    </Link> */}
                   </div>
                 </div>
                 
