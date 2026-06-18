@@ -30,7 +30,7 @@ const faqData: FAQItem[] = [
     id: 3,
     category: "Orders & Shipping",
     question: "What are the shipping charges?",
-    answer: "Free shipping on orders above ₹999. For orders below ₹999, shipping charges are ₹99 for standard delivery and ₹199 for express delivery."
+    answer: "We offer FREE shipping on all prepaid orders across India. Cash on Delivery (COD) is available for an additional ₹50 charge."
   },
   {
     id: 4,
@@ -154,7 +154,7 @@ const faqData: FAQItem[] = [
     id: 22,
     category: "Account & Support",
     question: "How can I contact customer support?",
-    answer: "You can reach us via email at lunarz.info@gmail.com, phone at +91 12345 67890 (Mon-Fri, 9 AM-6 PM), or through our contact form on the website."
+    answer: "You can reach us via email at lunarz.info@gmail.com, phone at +91 9432436470 (Mon-Fri, 9 AM-6 PM), or through our contact form on the website."
   },
   {
     id: 23,

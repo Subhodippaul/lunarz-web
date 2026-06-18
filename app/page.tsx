@@ -39,7 +39,7 @@ export default async function HomePage() {
       <TrendingProductsSlider />
       <LatestCollectionSlider />
       <AdvertisementSection />
-      <CustomerReviewSection />
+      {/* <CustomerReviewSection /> */}
     </>
   );
 }

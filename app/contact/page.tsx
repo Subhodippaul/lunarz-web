@@ -105,44 +105,8 @@ export default function ContactPage() {
                       <h3 className="font-semibold mb-2">Call Us</h3>
                       <p className="text-gray-600 mb-2">Mon-Fri from 9am to 6pm</p>
                       <a href="tel:+911234567890" className="text-blue-600 hover:underline">
-                        +91 12345 67890
+                        +91 9432436470
                       </a>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-start space-x-4">
-                    <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                      <MapPin className="h-6 w-6 text-purple-600" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold mb-2">Visit Us</h3>
-                      <p className="text-gray-600">
-                        123 Fashion Street<br />
-                        Mumbai, Maharashtra 400001<br />
-                        India
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-start space-x-4">
-                    <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-                      <Clock className="h-6 w-6 text-orange-600" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold mb-2">Business Hours</h3>
-                      <div className="text-gray-600 space-y-1">
-                        <p>Monday - Friday: 9:00 AM - 6:00 PM</p>
-                        <p>Saturday: 10:00 AM - 4:00 PM</p>
-                        <p>Sunday: Closed</p>
-                      </div>
                     </div>
                   </div>
                 </CardContent>

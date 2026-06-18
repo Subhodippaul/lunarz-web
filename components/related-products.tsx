@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { toDriveImageUrl } from "@/lib/drive-image";
+import { createSlug } from "@/lib/slug";
 
 interface RelatedProductsProps {
   currentProduct: Product;
@@ -152,7 +153,7 @@ export default function RelatedProducts({ currentProduct }: RelatedProductsProps
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
         {visibleProducts.map((product) => (
-          <Link key={product.id} href={`/products/${product.id}`}>
+          <Link key={product.id} href={`/products/${createSlug(product.name)}`}>
             <div className="group cursor-pointer">
               <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden mb-4">
                 {product.images && product.images.length > 0 ? (

@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { Separator } from "@/components/ui/separator";
 import { toDriveImageUrl } from "@/lib/drive-image";
+import { createSlug } from "@/lib/slug";
 
 export default function LatestCollectionSlider() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -138,7 +139,7 @@ export default function LatestCollectionSlider() {
                       .map((product) => (
                         <Link
                           key={product.id}
-                          href={`/products/${product.id}`}
+                          href={`/products/${createSlug(product.name)}`}
                           className="group bg-white rounded-lg border border-gray-200 hover:shadow-lg transition-all duration-300 overflow-hidden"
                         >
                           {/* Product Image */}
@@ -280,7 +281,7 @@ export default function LatestCollectionSlider() {
                       .map((product) => (
                         <Link
                           key={product.id}
-                          href={`/products/${product.id}`}
+                          href={`/products/${createSlug(product.name)}`}
                           className="group bg-white rounded-lg border border-gray-200 hover:shadow-lg transition-all duration-300 overflow-hidden"
                         >
                           {/* Product Image */}

@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight, Sparkles, ImageOff } from "lucide-react";
 import Link from "next/link";
 import { Separator } from "@/components/ui/separator";
 import { toDriveImageUrl } from "@/lib/drive-image";
+import { createSlug } from "@/lib/slug";
 
 const ITEMS_PER_SLIDE = 4;
 
@@ -134,7 +135,7 @@ export default function NewArrivalsSlider() {
                       .map((product) => (
                         <Link
                           key={product.id}
-                          href={`/products/${product.id}`}
+                          href={`/products/${createSlug(product.name)}`}
                           className="group bg-white rounded-lg border border-gray-200 hover:shadow-lg transition-all duration-300 overflow-hidden"
                         >
                           <div className="relative aspect-square overflow-hidden bg-gray-100">
@@ -214,7 +215,7 @@ export default function NewArrivalsSlider() {
                       .map((product) => (
                         <Link
                           key={product.id}
-                          href={`/products/${product.id}`}
+                          href={`/products/${createSlug(product.name)}`}
                           className="group bg-white rounded-lg border border-gray-200 hover:shadow-lg transition-all duration-300 overflow-hidden"
                         >
                           <div className="relative aspect-square overflow-hidden bg-gray-100">

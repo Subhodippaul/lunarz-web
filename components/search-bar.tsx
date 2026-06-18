@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { ProductService } from "@/lib/supabase-services";
 import { Product } from "@/lib/data";
 import { toDriveImageUrl } from "@/lib/drive-image";
+import { createSlug } from "@/lib/slug";
 
 interface SearchBarProps {
   isMobile?: boolean;
@@ -74,8 +75,8 @@ export default function SearchBar({ isMobile = false }: SearchBarProps) {
     }
   };
 
-  const handleProductClick = (productId: string) => {
-    router.push(`/products/${productId}`);
+  const handleProductClick = (productName: string) => {
+    router.push(`/products/${createSlug(productName)}`);
     setIsOpen(false);
     setQuery("");
   };
@@ -122,7 +123,7 @@ export default function SearchBar({ isMobile = false }: SearchBarProps) {
                 {results.map((product) => (
                   <button
                     key={product.id}
-                    onClick={() => handleProductClick(product.id)}
+                    onClick={() => handleProductClick(createSlug(product.name))}
                     className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3 border-b border-gray-100 last:border-b-0"
                   >
                     <img
@@ -191,7 +192,7 @@ export default function SearchBar({ isMobile = false }: SearchBarProps) {
               {results.map((product) => (
                 <button
                   key={product.id}
-                  onClick={() => handleProductClick(product.id)}
+                  onClick={() => handleProductClick(encodeURIComponent((product.name)))}
                   className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3 border-b border-gray-100 last:border-b-0"
                 >
                   <img
