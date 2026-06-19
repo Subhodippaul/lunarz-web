@@ -227,7 +227,7 @@ export class EmailService {
 
           <div class="footer">
             <p>Thank you for shopping with Lunarz!</p>
-            <p>If you have any questions, contact us at support@lunarz.com</p>
+            <p>If you have any questions, contact us at lunarz.info@gmail.com</p>
           </div>
         </div>
       </body>
@@ -371,7 +371,7 @@ export class EmailService {
 
             <div class="security-tips">
               <h3>Need Help?</h3>
-              <p>If you're having trouble resetting your password or didn't request this code, please contact our support team at <strong>support@lunarz.com</strong></p>
+              <p>If you're having trouble resetting your password or didn't request this code, please contact our support team at <strong>lunarz.info@gmail.com</strong></p>
             </div>
           </div>
 

@@ -276,8 +276,12 @@ export default function PrivacyPolicyPage() {
             </p>
             <div className="space-y-2 text-gray-700">
               <p><strong>Email:</strong> <a href="mailto:lunarz.info@gmail.com" className="text-blue-600 hover:underline">lunarz.info@gmail.com</a></p>
-              <p><strong>Phone:</strong> +91 12345 67890</p>
-              <p><strong>Address:</strong> 123 Fashion Street, Mumbai, Maharashtra 400001, India</p>
+              <p><strong>Phone:</strong> +91 9432436470</p>
+              <p><strong>Address:</strong> 741,
+SATYA NARAYAN PALLY,
+DAKSHIN BEHALA ROAD,
+Sarsuna, South 24 Parganas,
+Kolkata, West Bengal, 700061, India</p>
             </div>
           </CardContent>
         </Card>

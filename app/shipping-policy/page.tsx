@@ -340,8 +340,8 @@ export default function ShippingPolicyPage() {
             </p>
             <div className="space-y-2 text-gray-700">
               <p><strong>Email:</strong> <a href="mailto:lunarz.info@gmail.com" className="text-blue-600 hover:underline">lunarz.info@gmail.com</a></p>
-              <p><strong>Phone:</strong> +91 12345 67890 (Mon-Fri, 9 AM - 6 PM)</p>
-              <p><strong>WhatsApp:</strong> +91 12345 67890 (Quick support)</p>
+              <p><strong>Phone:</strong> +91 9432436470 (Mon-Fri, 9 AM - 6 PM)</p>
+              <p><strong>WhatsApp:</strong> +91 9432436470 (Quick support)</p>
             </div>
             <div className="mt-6 bg-green-50 border border-green-200 rounded-lg p-4">
               <p className="text-green-800">

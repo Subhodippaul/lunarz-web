@@ -359,7 +359,7 @@ console.log('this.config.email.',process.env.SHIPROCKET_EMAIL, process.env.SHIPR
                 <p className="text-gray-600 text-sm mb-3">
                   Speak with our customer service team
                 </p>
-                <p className="text-blue-600 font-semibold">+91 12345 67890</p>
+                <p className="text-blue-600 font-semibold">+91 9432436470</p>
               </div>
               <div className="text-center">
                 <Mail className="h-8 w-8 text-green-600 mx-auto mb-3" />
