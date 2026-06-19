@@ -45,7 +45,6 @@ export default function Footer() {
         { name: "FAQ", href: "/faq" },
         { name: "Shipping Policy", href: "/shipping-policy" },
         { name: "Refund Policy", href: "/refund-policy" },
-        { name: "Size Guide", href: "/size-guide" },
         { name: "Track Your Order", href: "/track-order" },
         { name: "Help Center", href: "/help" }
       ]
@@ -74,10 +73,8 @@ export default function Footer() {
   };
 
   const socialLinks = [
-    { name: "Facebook", icon: Facebook, href: "https://facebook.com/lunarz", color: "hover:text-blue-600" },
-    { name: "Instagram", icon: Instagram, href: "https://instagram.com/lunarz", color: "hover:text-pink-600" },
-    // { name: "Twitter", icon: Twitter, href: "https://twitter.com/lunarz", color: "hover:text-blue-400" },
-    // { name: "YouTube", icon: Youtube, href: "https://youtube.com/lunarz", color: "hover:text-red-600" }
+    { name: "Facebook", icon: Facebook, href: "https://www.facebook.com/lunarzindia", color: "hover:text-blue-600" },
+    { name: "Instagram", icon: Instagram, href: "https://www.instagram.com/lunarzindia/", color: "hover:text-pink-600" },
   ];
 
   const paymentMethods = [
@@ -120,7 +117,7 @@ export default function Footer() {
                 LUNARZ
               </Link>
               <p className="text-gray-400 mt-2 text-sm">
-                Premium streetwear and lifestyle clothing for the modern generation. 
+                Premium lifestyle clothing for the modern generation. 
                 Express yourself with our unique designs.
               </p>
             </div>

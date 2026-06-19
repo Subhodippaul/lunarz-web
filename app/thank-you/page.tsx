@@ -372,7 +372,7 @@ function ThankYouContent() {
             <h3>Thank You for Shopping with Lunarz!</h3>
             <p>For any queries or support, please contact us:</p>
             <p><strong>Email:</strong> lunarz.info@gmail.com</p>
-            <p><strong>Website:</strong> lunarz.com</p>
+            <p><strong>Website:</strong> lunarz.in</p>
             <p style="margin-top: 15px; font-size: 12px; color: #888;">
               This is a computer-generated invoice. No signature required.
             </p>

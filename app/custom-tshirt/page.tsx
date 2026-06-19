@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { useCart } from "@/lib/cart-context";
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/components/ui/toast";
-import { Upload, X, Palette, Ruler } from "lucide-react";
+import { Upload, X, Palette, Ruler, Sparkles } from "lucide-react";
 import SizeChart from "@/components/size-chart";
 import { ProductService } from "@/lib/supabase-services";
 import { Product } from "@/lib/data";
@@ -25,6 +25,41 @@ interface CustomDesign {
 }
 
 export default function CustomTshirtPage() {
+   // ------------------------- Coming Soon banner -------------------------
+  return (
+    <div className="max-w-7xl mx-auto px-6 py-8">
+      <nav className="text-sm text-gray-600 mb-4">
+        <Link href="/" className="hover:text-blue-600">Home</Link>
+        <span className="mx-2">/</span>
+        <Link href="/products" className="hover:text-blue-600">Products</Link>
+        <span className="mx-2">/</span>
+        <span>Custom T-Shirt</span>
+      </nav>
+
+      <div className="flex flex-col items-center justify-center text-center py-24 px-6 rounded-2xl border border-dashed border-gray-300 bg-gray-50">
+        <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center mb-6">
+          <Sparkles className="h-8 w-8 text-blue-600" />
+        </div>
+        <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">
+          Coming Soon
+        </h1>
+        <p className="text-lg text-gray-600 max-w-md">
+          Our custom t-shirt designer is getting a fresh new look. Check back soon to create your own one-of-a-kind tee!
+        </p>
+        <Link href="/products">
+          <Button className="mt-8 bg-blue-600 hover:bg-blue-700 text-white">
+            Browse Products Instead
+          </Button>
+        </Link>
+      </div>
+    </div>
+  );
+  // ---------------------------------------------------------------------
+  // COMING SOON: All original logic and UI below has been commented out.
+  // The component now renders a simple "Coming Soon" banner instead.
+  // ---------------------------------------------------------------------
+
+  /*
   const { dispatch } = useCart();
   const { state: authState } = useAuth();
   const { addToast } = useToast();
@@ -207,7 +242,7 @@ export default function CustomTshirtPage() {
   return (
     <div className="max-w-7xl mx-auto px-6 py-8">
       {/* Header */}
-      <div className="mb-8">
+      {/*<div className="mb-8">
         <nav className="text-sm text-gray-600 mb-4">
           <Link href="/" className="hover:text-blue-600">Home</Link>
           <span className="mx-2">/</span>
@@ -225,20 +260,20 @@ export default function CustomTshirtPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Left Side - Design Tools */}
-        <div className="space-y-6">
-          {/* Tab Navigation */}
-          <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
-            <button
-              onClick={() => setActiveTab("upload")}
-              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-                activeTab === "upload"
-                  ? "bg-white text-blue-600 shadow-sm"
-                  : "text-gray-600 hover:text-gray-900"
-              }`}
-            >
-              <Upload className="h-4 w-4 inline mr-2" />
-              Upload Image
-            </button>
+        // <div className="space-y-6">
+        //   {/* Tab Navigation */}
+        //   <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
+        //     <button
+        //       onClick={() => setActiveTab("upload")}
+        //       className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+        //         activeTab === "upload"
+        //           ? "bg-white text-blue-600 shadow-sm"
+        //           : "text-gray-600 hover:text-gray-900"
+        //       }`}
+        //     >
+        //       <Upload className="h-4 w-4 inline mr-2" />
+        //       Upload Image
+        //     </button>
             {/* <button
               onClick={() => setActiveTab("text")}
               className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
@@ -250,10 +285,10 @@ export default function CustomTshirtPage() {
               <Palette className="h-4 w-4 inline mr-2" />
               Add Text
             </button> */}
-          </div>
+          {/* </div> */}
 
           {/* Upload Tab */}
-          {activeTab === "upload" && (
+          {/* {activeTab === "upload" && (
             <Card>
               <CardHeader>
                 <CardTitle>Upload Your Design</CardTitle>
@@ -314,12 +349,12 @@ export default function CustomTshirtPage() {
             </Card>
           )}
 
-        </div>
+        </div> */}
 
         {/* Right Side - T-Shirt Images & Options */}
-        <div className="space-y-6">
+         {/* <div className="space-y-6"> */}
           {/* Custom Product Gallery */}
-          <Card>
+          {/* <Card>
             <CardHeader>
               <CardTitle>Choose Your Style</CardTitle>
             </CardHeader>
@@ -381,16 +416,16 @@ export default function CustomTshirtPage() {
                 </div>
               )}
             </CardContent>
-          </Card>
+          </Card> */}
 
           {/* Product Options */}
-          <Card>
+          {/* <Card>
             <CardHeader>
               <CardTitle>Customize Your T-Shirt</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-6"> */}
               {/* Color Selection */}
-              <div>
+              {/* <div>
                 <Label className="text-base font-medium mb-3 block">Color</Label>
                 <div className="grid grid-cols-3 gap-3">
                   {tshirtColors.map((color) => (
@@ -414,10 +449,10 @@ export default function CustomTshirtPage() {
                     </button>
                   ))}
                 </div>
-              </div>
+              </div> */}
 
               {/* Size Selection */}
-              <div>
+              {/* <div>
                 <div className="flex items-center justify-between mb-3">
                   <Label className="text-base font-medium">Size</Label>
                   <Button
@@ -445,10 +480,10 @@ export default function CustomTshirtPage() {
                     </button>
                   ))}
                 </div>
-              </div>
+              </div> */}
 
               {/* Quantity */}
-              <div>
+              {/* <div>
                 <Label className="text-base font-medium mb-3 block">Quantity</Label>
                 <div className="flex items-center space-x-3">
                   <Button
@@ -469,10 +504,10 @@ export default function CustomTshirtPage() {
                     +
                   </Button>
                 </div>
-              </div>
+              </div> */}
 
               {/* Price */}
-              <div className="border-t pt-4">
+              {/* <div className="border-t pt-4">
                 <div className="flex justify-between items-center mb-4">
                   <span className="text-lg font-medium">Total Price:</span>
                   <span className="text-2xl font-bold text-blue-600">
@@ -490,13 +525,13 @@ export default function CustomTshirtPage() {
                 </Button>
               </div>
             </CardContent>
-          </Card>
+          </Card> */}
 
-        </div>
-      </div>
+        {/* </div>
+      </div> */}
 
       {/* Size Chart Modal */}
-      <SizeChart
+      {/*<SizeChart
         isOpen={showSizeChart}
         onClose={() => setShowSizeChart(false)}
         productType={
@@ -506,5 +541,5 @@ export default function CustomTshirtPage() {
         }
       />
     </div>
-  );
-}
+  );*/}
+// }

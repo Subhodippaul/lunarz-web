@@ -183,7 +183,7 @@ export default function HelpCenterPage() {
     {
       icon: Phone,
       title: "Phone Support",
-      description: "+91 12345 67890",
+      description: "+91 9432436470",
       availability: "Mon-Fri, 9 AM - 6 PM IST",
       action: "Call Now",
       color: "bg-green-600"
@@ -208,23 +208,6 @@ export default function HelpCenterPage() {
           <p className="text-xl md:text-2xl max-w-3xl mx-auto mb-8">
             Find answers, get support, and learn how to make the most of Lunarz
           </p>
-          
-          {/* Search Bar */}
-          <div className="max-w-2xl mx-auto">
-            <div className="relative">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-              <Input
-                type="text"
-                placeholder="Search for help articles, guides, or topics..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-12 pr-4 py-4 text-lg bg-white text-gray-900"
-              />
-              <Button className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-blue-600 hover:bg-blue-700">
-                Search
-              </Button>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -279,35 +262,6 @@ export default function HelpCenterPage() {
               </Card>
             ))}
           </div>
-        </div>
-
-        {/* Popular Articles */}
-        <div className="mb-16">
-          <h2 className="text-3xl font-bold text-center mb-12">Popular Help Articles</h2>
-          <Card>
-            <CardContent className="p-0">
-              <div className="divide-y divide-gray-200">
-                {popularArticles.map((article, index) => (
-                  <div key={index} className="p-6 hover:bg-gray-50 cursor-pointer flex items-center justify-between">
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold mb-2 hover:text-blue-600">{article.title}</h3>
-                      <div className="flex items-center space-x-4 text-sm text-gray-600">
-                        <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
-                          {article.category}
-                        </span>
-                        <span className="flex items-center">
-                          <Clock className="h-4 w-4 mr-1" />
-                          {article.readTime}
-                        </span>
-                        <span>{article.views}</span>
-                      </div>
-                    </div>
-                    <ChevronRight className="h-5 w-5 text-gray-400" />
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
         </div>
 
         {/* Contact Support */}
@@ -407,7 +361,7 @@ export default function HelpCenterPage() {
                 </Link>
                 <Button variant="outline">
                   <Phone className="h-4 w-4 mr-2" />
-                  Call +91 12345 67890
+                  Call +91 9432436470
                 </Button>
               </div>
               <p className="text-sm text-gray-500 mt-4">

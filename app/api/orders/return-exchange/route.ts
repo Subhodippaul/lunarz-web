@@ -48,7 +48,7 @@ const sendEmail = async (to: string, subject: string, html: string) => {
 
     const transporter = createTransporter();
     const mailOptions = {
-      from: process.env.EMAIL_FROM || 'Lunarz <noreply@lunarz.com>',
+      from: process.env.EMAIL_FROM || 'Lunarz <lunarz.info@gmail.com>',
       to: to,
       subject: subject,
       html: html,

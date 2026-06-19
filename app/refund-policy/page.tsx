@@ -332,7 +332,7 @@ export default function RefundPolicyPage() {
             </p>
             <div className="space-y-2 text-gray-700">
               <p><strong>Email:</strong> <a href="mailto:lunarz.info@gmail.com" className="text-blue-600 hover:underline">lunarz.info@gmail.com</a></p>
-              <p><strong>Phone:</strong> +91 12345 67890 (Mon-Fri, 9 AM - 6 PM)</p>
+              <p><strong>Phone:</strong> +91 9432436470 (Mon-Fri, 9 AM - 6 PM)</p>
               <p><strong>Response Time:</strong> Within 24 hours</p>
             </div>
             <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
