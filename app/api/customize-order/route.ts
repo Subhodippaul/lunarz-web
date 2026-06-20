@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
                   <td style="padding: 8px; text-align: right;">${orderData.shippingCost === 0 ? 'FREE' : '₹' + orderData.shippingCost.toLocaleString()}</td>
                 </tr>
                 <tr>
-                  <td style="padding: 8px;">Tax (18% GST):</td>
+                  <td style="padding: 8px;">Tax:</td>
                   <td style="padding: 8px; text-align: right;">₹${orderData.tax.toLocaleString()}</td>
                 </tr>
                 <tr class="total-row">

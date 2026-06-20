@@ -302,7 +302,7 @@ export default function CustomizeCheckoutPage() {
   // Calculate totals
   const subtotal = state.total;
   const shippingCost = subtotal >= 999 ? 0 : paymentMethod === "cod" ? 50 : 40;
-  const tax = Math.round(subtotal * 0.18);
+  const tax = Math.round(subtotal * 0);
   const finalTotal = subtotal + shippingCost + tax;
 
   return (
@@ -577,7 +577,7 @@ export default function CustomizeCheckoutPage() {
                   )}
                 </div>
                 <div className="flex justify-between">
-                  <span>Tax (18% GST)</span>
+                  <span>Tax</span>
                   <span>{CURRENCY.symbol}{tax.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between font-bold text-lg border-t pt-2">
