@@ -20,6 +20,7 @@ import { AUTH, NAV_LINKS, CHECKOUT, CURRENCY } from "@/lib/constants";
 import { AddressService, Address as SupabaseAddress } from "@/lib/supabase-services";
 import { MapPin, Plus, Check } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -190,7 +191,7 @@ export default function CheckoutPage() {
   const subtotalAfterDiscount = subtotal - discountAmount;
   const shippingCost = shippingSettings
     ? calculateShippingCost(subtotalAfterDiscount, paymentMethod, shippingSettings) : 0;
-  const tax = Math.round(subtotalAfterDiscount * 0.18);
+  const tax = Math.round(subtotalAfterDiscount * 0);
   const finalTotal = subtotalAfterDiscount + shippingCost + tax;
 
   const handlePlaceOrder = async () => {
@@ -539,54 +540,59 @@ export default function CheckoutPage() {
           </Card>
 
           {/* ── Payment Method ── */}
-          <Card id="payment-method-section">
-            <CardHeader><CardTitle>{CHECKOUT.paymentMethod}</CardTitle></CardHeader>
-            <CardContent className="space-y-3">
-              {/* Online */}
-              <div className="border rounded-lg p-4">
-                <div className="flex items-center space-x-3">
-                  <input type="radio" id="online" name="paymentMethod" value="online"
-                    checked={paymentMethod === "online"} onChange={e => setPaymentMethod(e.target.value)} />
-                  <div className="flex-1">
-                    <Label htmlFor="online" className="text-base font-medium">💳 Online Payment</Label>
-                    <p className="text-sm text-gray-600 mt-1">Credit Card, Debit Card, UPI, Net Banking</p>
-                    <div className="flex gap-2 mt-2">
-                      <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Secure</span>
-                      <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">Instant</span>
-                    </div>
-                  </div>
-                </div>
+          {/* ── Payment Method ── */}
+<Card id="payment-method-section">
+  <CardHeader><CardTitle>{CHECKOUT.paymentMethod}</CardTitle></CardHeader>
+  <CardContent className="space-y-3">
+    <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod} className="space-y-3">
+
+      {/* Online */}
+      <div className="border rounded-lg p-4">
+        <div className="flex items-center space-x-3">
+          <RadioGroupItem value="online" id="online" />
+          <div className="flex-1">
+            <Label htmlFor="online" className="text-base font-medium">💳 Online Payment</Label>
+            <p className="text-sm text-gray-600 mt-1">Credit Card, Debit Card, UPI, Net Banking</p>
+            <div className="flex gap-2 mt-2">
+              <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Secure</span>
+              <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">Instant</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* COD */}
+      <div className="border rounded-lg p-4">
+        <div className="flex items-center space-x-3">
+          <RadioGroupItem value="cod" id="cod" />
+          <div className="flex-1">
+            <Label htmlFor="cod" className="text-base font-medium">💵 Cash on Delivery</Label>
+            <p className="text-sm text-gray-600 mt-1">Pay when your order is delivered</p>
+            {paymentMethod === "cod" && shippingSettings && (
+              <div className="mt-2">
+                {finalTotal < shippingSettings.freeShippingThreshold ? (
+                  <span className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded">
+                    ₹{shippingSettings.codShippingCharge} shipping applies
+                  </span>
+                ) : (
+                  <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">Free shipping</span>
+                )}
               </div>
-              {/* COD */}
-              <div className="border rounded-lg p-4">
-                <div className="flex items-center space-x-3">
-                  <input type="radio" id="cod" name="paymentMethod" value="cod"
-                    checked={paymentMethod === "cod"} onChange={e => setPaymentMethod(e.target.value)} />
-                  <div className="flex-1">
-                    <Label htmlFor="cod" className="text-base font-medium">💵 Cash on Delivery</Label>
-                    <p className="text-sm text-gray-600 mt-1">Pay when your order is delivered</p>
-                    {paymentMethod === "cod" && shippingSettings && (
-                      <div className="mt-2">
-                        {finalTotal < shippingSettings.freeShippingThreshold ? (
-                          <span className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded">
-                            ₹{shippingSettings.codShippingCharge} shipping applies
-                          </span>
-                        ) : (
-                          <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">Free shipping</span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-              {paymentMethod === "online" && (
-                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg flex gap-2">
-                  <span className="text-blue-600">🔒</span>
-                  <p className="text-xs text-blue-700">Payments encrypted via Razorpay's secure gateway.</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+            )}
+          </div>
+        </div>
+      </div>
+
+    </RadioGroup>
+
+    {paymentMethod === "online" && (
+      <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg flex gap-2">
+        <span className="text-blue-600">🔒</span>
+        <p className="text-xs text-blue-700">Payments encrypted via Razorpay's secure gateway.</p>
+      </div>
+    )}
+  </CardContent>
+</Card>
         </div>
 
         {/* ── Order Summary ── */}
@@ -626,8 +632,8 @@ export default function CheckoutPage() {
                     : <span>{CURRENCY.symbol}{shippingCost.toLocaleString()}</span>}
                 </div>
                 <div className="flex justify-between">
-                  <span>{CHECKOUT.tax} (18%)</span>
-                  <span>{CURRENCY.symbol}{tax.toLocaleString()}</span>
+                  {/* <span>{CHECKOUT.tax}</span> */}
+                  {/* <span>{CURRENCY.symbol}{tax.toLocaleString()}</span> */}
                 </div>
                 <div className="border-t pt-2">
                   <div className="flex justify-between font-semibold text-lg">

@@ -2,10 +2,6 @@
 import Link from "next/link";
 import { useState } from "react";
 import { 
-  Facebook, 
-  Instagram, 
-  Twitter, 
-  Youtube, 
   Mail, 
   Phone, 
   MapPin, 
@@ -17,6 +13,10 @@ import {
   ChevronDown
 } from "lucide-react";
 
+import { 
+  FaFacebook as Facebook, 
+  FaInstagram as Instagram
+} from "react-icons/fa";
 export default function Footer() {
   const [openSections, setOpenSections] = useState<{ [key: string]: boolean }>({});
 

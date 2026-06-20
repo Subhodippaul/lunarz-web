@@ -99,8 +99,8 @@ export async function getOrderById(orderId: string): Promise<OrderReceipt | null
       status: data.order_status || 'pending',
       items,
       subtotal,
-      discountAmount: 0,
-      couponCode: undefined,
+      discountAmount: data.discountAmount,  //need to fix later
+      couponCode: data.couponCode, //need to fix later
       shippingCost: 0,
       total: totalAmount,
       totalAmount,

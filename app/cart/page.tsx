@@ -10,6 +10,7 @@ import { Alert, AlertDescription, AlertIcon } from "@/components/ui/alert";
 import { CART, NAV_LINKS, CURRENCY } from "@/lib/constants";
 import Image from "next/image";
 import CouponSection from "@/components/coupon-section";
+import { toDriveImageUrl } from "@/lib/drive-image";
 
 export default function CartPage() {
   const { state, dispatch } = useCart();
@@ -97,9 +98,11 @@ export default function CartPage() {
                 <div className="flex gap-4">
                   {/* Product Image */}
                   <div className="w-24 h-24 bg-gray-100 rounded-lg shrink-0">
-                    <div className="w-full h-full bg-gray-200 rounded-lg flex items-center justify-center text-xs text-gray-500">
-                      IMG
-                    </div>
+                    <img
+                                                className="w-full h-full rounded-lg object-cover"
+                                                src={toDriveImageUrl(item.product.images[0]) || "/placeholder.jpg"}
+                                                alt={item.product.name}
+                                              />
                   </div>
 
                   {/* Product Details */}

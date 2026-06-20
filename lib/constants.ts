@@ -83,7 +83,7 @@ export const CART = {
   total: "Total",
   proceedToCheckout: "Proceed to Checkout",
   deliveryInfo: "Delivery Information",
-  deliveryText: "Free delivery on orders above ₹999. Estimated delivery: 3-5 business days.",
+  deliveryText: "Once your order is confirmed, it will be delivered within 3–7 business days.",
 } as const;
 
 // Login Page
