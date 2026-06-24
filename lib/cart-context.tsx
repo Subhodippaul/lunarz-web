@@ -10,6 +10,7 @@ export interface CartItem {
   selectedVariant?: string;
   // Custom product fields
   isCustom?: boolean;
+  // Legacy custom-designer flow (single design, text overlay, positioning)
   customDesign?: {
     image: string | null;
     text: string;
@@ -20,6 +21,12 @@ export interface CartItem {
     imageSize: number;
     rotation: number;
   };
+  // New multi-image upload flow (from ProductDetails "Customize" gate)
+  customDesigns?: Array<{
+    image: string;
+    fileName: string;
+    note: string;
+  }>;
 }
 
 interface CartState {
@@ -41,11 +48,21 @@ const CartContext = createContext<{
 function cartReducer(state: CartState, action: CartAction): CartState {
   switch (action.type) {
     case "ADD_ITEM": {
-      // Handle both regular products and custom products
       let newItem: CartItem;
-      
-      if (action.payload.isCustom) {
-        // Custom product - create CartItem from custom product data
+
+      if (action.payload.isCustom && action.payload.product) {
+        // Custom product coming from ProductDetails (nested `product`, `customDesigns` array)
+        newItem = {
+          id: Date.now(),
+          product: action.payload.product,
+          quantity: action.payload.quantity,
+          selectedSize: action.payload.selectedSize,
+          selectedVariant: action.payload.selectedVariant,
+          isCustom: true,
+          customDesigns: action.payload.customDesigns,
+        };
+      } else if (action.payload.isCustom) {
+        // Legacy custom-designer flow (flat shape: id, name, price, image, size, color, customDesign)
         newItem = {
           id: Date.now(),
           product: {
@@ -65,7 +82,7 @@ function cartReducer(state: CartState, action: CartAction): CartState {
           selectedSize: action.payload.size,
           selectedVariant: action.payload.color,
           isCustom: true,
-          customDesign: action.payload.customDesign
+          customDesign: action.payload.customDesign,
         };
       } else {
         // Regular product
@@ -78,15 +95,14 @@ function cartReducer(state: CartState, action: CartAction): CartState {
         );
 
         if (existingItemIndex > -1) {
-          // Update existing item quantity
           const newItems = state.items.map((item, index) =>
             index === existingItemIndex
               ? { ...item, quantity: item.quantity + action.payload.quantity }
               : item
           );
-          
+
           const total = newItems.reduce(
-            (sum, item) => sum + item.product.price * item.quantity,
+            (sum, item) => sum + (item.product.price ?? 0) * item.quantity,
             0
           );
 
@@ -101,7 +117,7 @@ function cartReducer(state: CartState, action: CartAction): CartState {
 
       const newItems = [...state.items, newItem];
       const total = newItems.reduce(
-        (sum, item) => sum + item.product.price * item.quantity,
+        (sum, item) => sum + (item.product.price ?? 0) * item.quantity,
         0
       );
 
@@ -111,7 +127,7 @@ function cartReducer(state: CartState, action: CartAction): CartState {
     case "REMOVE_ITEM": {
       const newItems = state.items.filter((item) => item.id !== action.payload);
       const total = newItems.reduce(
-        (sum, item) => sum + item.product.price * item.quantity,
+        (sum, item) => sum + (item.product.price ?? 0) * item.quantity,
         0
       );
       return { items: newItems, total };
@@ -124,7 +140,7 @@ function cartReducer(state: CartState, action: CartAction): CartState {
           : item
       );
       const total = newItems.reduce(
-        (sum, item) => sum + item.product.price * item.quantity,
+        (sum, item) => sum + (item.product.price ?? 0) * item.quantity,
         0
       );
       return { items: newItems, total };

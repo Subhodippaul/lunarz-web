@@ -2,6 +2,35 @@
 // This is a basic implementation - in production, you'd use services like:
 // - SendGrid, Mailgun, AWS SES, or Nodemailer with SMTP
 
+export interface CustomDesignAttachment {
+  productName: string;
+  image: string;   // base64 data URL, e.g. "data:image/png;base64,..."
+  fileName: string;
+  note: string;
+}
+
+interface NodemailerAttachment {
+  filename: string;
+  content: string; // base64 string, WITHOUT the "data:image/...;base64," prefix
+  encoding: 'base64';
+  cid: string;
+}
+
+// Splits a "data:image/png;base64,AAAA..." string into its raw base64 payload + a Nodemailer
+// attachment object referencing the given Content-ID. Returns null for malformed entries so a
+// single bad upload can be skipped rather than crashing the whole email send.
+function dataUrlToAttachment(dataUrl: string, cid: string, fallbackName: string): NodemailerAttachment | null {
+  const match = dataUrl.match(/^data:image\/(\w+);base64,(.+)$/);
+  if (!match) return null;
+  const [, ext, base64Content] = match;
+  return {
+    filename: fallbackName.includes('.') ? fallbackName : `${fallbackName}.${ext}`,
+    content: base64Content,
+    encoding: 'base64',
+    cid,
+  };
+}
+
 export interface OrderEmailData {
   orderId: string;
   customerEmail: string;
@@ -23,13 +52,17 @@ export interface OrderEmailData {
   };
   paymentMethod: string;
   orderDate: string;
+  // Custom design images uploaded on the product page for "Customize" products,
+  // each with its own note. Embedded inline (as base64) into the admin email only —
+  // customers already know what they uploaded, so we don't duplicate it in their email.
+  customDesignAttachments?: CustomDesignAttachment[];
 }
 
 export class EmailService {
   private static ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'lunarz.info@gmail.com';
   
   // Generic email sending method
-  static async sendEmail({ to, subject, html }: { to: string; subject: string; html: string }): Promise<boolean> {
+  static async sendEmail({ to, subject, html, attachments }: { to: string; subject: string; html: string; attachments?: NodemailerAttachment[] }): Promise<boolean> {
     try {
       console.log('📧 Sending email to:', to);
       
@@ -39,7 +72,8 @@ export class EmailService {
         body: JSON.stringify({
           to,
           subject,
-          html
+          html,
+          ...(attachments && attachments.length > 0 ? { attachments } : {}),
         })
       });
 
@@ -95,6 +129,12 @@ export class EmailService {
   // Admin order notification email
   static async sendOrderNotificationToAdmin(orderData: OrderEmailData): Promise<boolean> {
     try {
+      // Convert each base64 design image into a Nodemailer CID attachment.
+      // The cid here must match the cid: reference used inside generateAdminEmailTemplate.
+      const designAttachments: NodemailerAttachment[] = (orderData.customDesignAttachments || [])
+        .map((d, i) => dataUrlToAttachment(d.image, `design-${i}`, d.fileName))
+        .filter((a): a is NodemailerAttachment => a !== null);
+
       const adminEmailHtml = this.generateAdminEmailTemplate(orderData);
       
       console.log('📧 Sending order notification to admin:', this.ADMIN_EMAIL);
@@ -105,7 +145,8 @@ export class EmailService {
         body: JSON.stringify({
           to: this.ADMIN_EMAIL,
           subject: `🚨 New Order Received - ${orderData.orderId}`,
-          html: adminEmailHtml
+          html: adminEmailHtml,
+          ...(designAttachments.length > 0 ? { attachments: designAttachments } : {}),
         })
       });
 
@@ -207,6 +248,13 @@ export class EmailService {
               </div>
             </div>
 
+            ${orderData.customDesignAttachments && orderData.customDesignAttachments.length > 0 ? `
+              <div class="order-details">
+                <h2>Your Custom Design${orderData.customDesignAttachments.length > 1 ? 's' : ''}</h2>
+                <p style="color:#666; font-size:14px;">We've received the design${orderData.customDesignAttachments.length > 1 ? 's' : ''} you uploaded. Our team will reach out if anything needs clarifying.</p>
+              </div>
+            ` : ''}
+
             <div class="order-details">
               <h2>Shipping Address</h2>
               <p>
@@ -252,6 +300,10 @@ export class EmailService {
           .item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; }
           .total { font-weight: bold; font-size: 18px; color: #dc3545; }
           .urgent { background: #fff3cd; border: 1px solid #ffeaa7; padding: 10px; border-radius: 5px; margin: 10px 0; }
+          .design-card { display: flex; gap: 12px; padding: 12px; margin: 10px 0; background: #fafafa; border: 1px solid #eee; border-radius: 6px; }
+          .design-card img { width: 90px; height: 90px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd; flex-shrink: 0; }
+          .design-note { font-size: 14px; color: #333; }
+          .design-filename { font-size: 12px; color: #888; margin-bottom: 4px; }
         </style>
       </head>
       <body>
@@ -296,6 +348,21 @@ export class EmailService {
                 <div>₹${(orderData.totalAmount || 0).toLocaleString()}</div>
               </div>
             </div>
+
+            ${orderData.customDesignAttachments && orderData.customDesignAttachments.length > 0 ? `
+              <div class="order-details">
+                <h2>🎨 Custom Design${orderData.customDesignAttachments.length > 1 ? 's' : ''} Uploaded</h2>
+                ${orderData.customDesignAttachments.map((d, i) => `
+                  <div class="design-card">
+                    <img src="cid:design-${i}" alt="${d.fileName}" />
+                    <div>
+                      <div class="design-filename">${d.productName} — ${d.fileName}</div>
+                      <div class="design-note">${d.note ? d.note : '<em style="color:#aaa;">No note provided</em>'}</div>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            ` : ''}
 
             <div class="order-details">
               <h2>Shipping Address</h2>

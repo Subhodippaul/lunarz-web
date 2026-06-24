@@ -1,7 +1,15 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronUp, ShoppingCart, AlertCircle, X, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { ChevronDown, ChevronUp, ShoppingCart, AlertCircle, X, ChevronLeft, ChevronRight, Upload, ImageIcon, Trash2, Plus } from "lucide-react";
 import { Product } from "@/lib/data";
 import { useCart } from "@/lib/cart-context";
 import { useAuth } from "@/lib/auth-context";
@@ -19,6 +27,12 @@ interface ProductDetailsProps {
 
 // Fixed set of sizes always shown on the product page
 const ALL_SIZES = ["S", "M", "L", "XL", "XXL"];
+
+export interface CustomDesignEntry {
+  image: string; // base64 data URL
+  fileName: string;
+  note: string;
+}
 
 export default function ProductDetails({ product }: ProductDetailsProps) {
   const { dispatch, state: cartState } = useCart();
@@ -44,6 +58,94 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
   // Map of size → stock for the selected color, fetched from inventory
   const [sizeStockMap, setSizeStockMap] = useState<Record<string, number> | null>(null);
   const [sizesLoading, setSizesLoading] = useState(false);
+
+  // ── Custom design upload (for "Customize" products) ──
+  const isCustomizable = product.name.toLowerCase().includes("customize");
+  const customDesignKey = `customDesigns:${product.id}`;
+  const [customDesigns, setCustomDesigns] = useState<CustomDesignEntry[]>([]);
+  const [showDesignDialog, setShowDesignDialog] = useState(false);
+  const [pendingAction, setPendingAction] = useState<"cart" | "buy" | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Load any previously-uploaded designs for this product from sessionStorage on mount
+  useEffect(() => {
+    if (!isCustomizable) return;
+    try {
+      const stored = sessionStorage.getItem(customDesignKey);
+      if (stored) {
+        const parsed: CustomDesignEntry[] = JSON.parse(stored);
+        setCustomDesigns(parsed);
+      }
+    } catch {
+      // ignore corrupt storage
+    }
+  }, [isCustomizable, customDesignKey]);
+
+  const handleDesignFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      addToast({ title: "Invalid file", description: "Please upload an image file.", type: "error" });
+      return;
+    }
+
+    // Cap file size to keep sessionStorage usage reasonable (base64 inflates size ~33%)
+    const maxBytes = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxBytes) {
+      addToast({ title: "File too large", description: "Please upload an image under 5MB.", type: "error" });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result as string;
+      // Functional updater: always appends to the TRUE latest array, never a stale
+      // snapshot captured when the file was selected (fixes "2nd image overwrites 1st").
+      setCustomDesigns(prev => {
+        const next = [...prev, { image: dataUrl, fileName: file.name, note: "" }];
+        try {
+          sessionStorage.setItem(customDesignKey, JSON.stringify(next));
+        } catch {
+          addToast({
+            title: "Storage error",
+            description: "Couldn't save the design — try fewer or smaller images.",
+            type: "error",
+          });
+        }
+        return next;
+      });
+      addToast({ title: "Design added", description: "Add a note for this image if needed.", type: "success" });
+    };
+    reader.readAsDataURL(file);
+
+    // allow re-selecting the same file again later
+    e.target.value = "";
+  };
+
+  const updateDesignNote = (index: number, note: string) => {
+    setCustomDesigns(prev => {
+      const next = prev.map((d, i) => (i === index ? { ...d, note } : d));
+      try { sessionStorage.setItem(customDesignKey, JSON.stringify(next)); } catch {}
+      return next;
+    });
+  };
+
+  const removeDesign = (index: number) => {
+    setCustomDesigns(prev => {
+      const next = prev.filter((_, i) => i !== index);
+      try { sessionStorage.setItem(customDesignKey, JSON.stringify(next)); } catch {}
+      return next;
+    });
+  };
+
+  // After designs are uploaded inside the dialog, resume whichever action triggered it
+  const handleDesignDialogContinue = () => {
+    setShowDesignDialog(false);
+    if (pendingAction === "cart") proceedAddToCart();
+    if (pendingAction === "buy") proceedBuyNow();
+    setPendingAction(null);
+  };
 
   // When variant changes → fetch all size stocks for this color+category
   useEffect(() => {
@@ -177,6 +279,47 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
     return () => { document.body.style.overflow = ""; };
   }, [lightboxOpen]);
 
+  const proceedAddToCart = () => {
+    dispatch({
+      type: "ADD_ITEM",
+      payload: {
+        product,
+        quantity,
+        selectedSize,
+        selectedVariant: product.variants ? selectedVariant : undefined,
+        // Attach custom design data so it travels through cart → checkout → order email
+        ...(isCustomizable && customDesigns.length > 0
+          ? { isCustom: true, customDesigns }
+          : {}),
+      },
+    });
+
+    addToast({
+      title: "Added to cart!",
+      description: `${product.name} has been added to your cart.`,
+      type: "success",
+    });
+  };
+
+  const proceedBuyNow = () => {
+    if (!isInCart) {
+      dispatch({
+        type: "ADD_ITEM",
+        payload: {
+          product,
+          quantity,
+          selectedSize,
+          selectedVariant: product.variants ? selectedVariant : undefined,
+          ...(isCustomizable && customDesigns.length > 0
+            ? { isCustom: true, customDesigns }
+            : {}),
+        },
+      });
+    }
+
+    router.push(NAV_LINKS.checkout);
+  };
+
   const handleAddToCart = () => {
     if (isOutOfStock) return;
 
@@ -213,21 +356,13 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
       return;
     }
 
-    dispatch({
-      type: "ADD_ITEM",
-      payload: {
-        product,
-        quantity,
-        selectedSize,
-        selectedVariant: product.variants ? selectedVariant : undefined,
-      },
-    });
+    if (isCustomizable && customDesigns.length === 0) {
+      setPendingAction("cart");
+      setShowDesignDialog(true);
+      return;
+    }
 
-    addToast({
-      title: "Added to cart!",
-      description: `${product.name} has been added to your cart.`,
-      type: "success",
-    });
+    proceedAddToCart();
   };
 
   const handleGoToCart = () => {
@@ -270,19 +405,13 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
       return;
     }
 
-    if (!isInCart) {
-      dispatch({
-        type: "ADD_ITEM",
-        payload: {
-          product,
-          quantity,
-          selectedSize,
-          selectedVariant: product.variants ? selectedVariant : undefined,
-        },
-      });
+    if (isCustomizable && customDesigns.length === 0) {
+      setPendingAction("buy");
+      setShowDesignDialog(true);
+      return;
     }
 
-    router.push(NAV_LINKS.checkout);
+    proceedBuyNow();
   };
 
   return (
@@ -382,6 +511,48 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
               </div>
               <p className="text-sm text-gray-500">{PRODUCT_DETAILS.priceIncludesTax}</p>
             </div>
+
+            {/* Custom design status banner */}
+            {isCustomizable && (
+              <div
+                className={`rounded-lg border p-3 ${
+                  customDesigns.length > 0 ? "border-green-200 bg-green-50" : "border-amber-200 bg-amber-50"
+                }`}
+              >
+                {customDesigns.length > 0 ? (
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="flex -space-x-2 shrink-0">
+                        {customDesigns.slice(0, 3).map((d, i) => (
+                          <img
+                            key={i}
+                            src={d.image}
+                            alt={`Design ${i + 1}`}
+                            className="w-10 h-10 rounded object-cover border-2 border-white shadow-sm"
+                          />
+                        ))}
+                      </div>
+                      <p className="text-sm font-medium text-green-800">
+                        {customDesigns.length} design{customDesigns.length > 1 ? "s" : ""} uploaded
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setShowDesignDialog(true)}
+                      className="text-xs font-medium text-green-700 underline hover:text-green-800 shrink-0"
+                    >
+                      Edit
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3">
+                    <ImageIcon className="h-5 w-5 text-amber-600 shrink-0" />
+                    <p className="text-sm text-amber-800">
+                      This is a customizable product — you'll need to upload your design before checkout.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Variants/Colors */}
             {product.variants && (
@@ -630,6 +801,89 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
           'general'
         }
       />
+
+      {/* Custom Design Upload Dialog — multiple images, each with its own note */}
+      <Dialog open={showDesignDialog} onOpenChange={setShowDesignDialog}>
+        <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Upload your design{customDesigns.length > 1 ? "s" : ""}</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600">
+              This product is customizable. Upload one or more images of the design you'd like printed, with an optional note for each.
+            </p>
+
+            {customDesigns.map((design, index) => (
+              <div key={index} className="flex gap-3 p-3 border border-gray-200 rounded-lg">
+                <img
+                  src={design.image}
+                  alt={`Design ${index + 1}`}
+                  className="w-20 h-20 rounded object-cover border border-gray-300 shrink-0"
+                />
+                <div className="flex-1 min-w-0 space-y-1.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-xs font-medium text-gray-700 truncate">{design.fileName}</p>
+                    <button
+                      onClick={() => removeDesign(index)}
+                      className="p-1 hover:bg-red-50 rounded-full transition-colors shrink-0"
+                      aria-label="Remove design"
+                    >
+                      <Trash2 className="h-3.5 w-3.5 text-red-500" />
+                    </button>
+                  </div>
+                  <Textarea
+                    value={design.note}
+                    onChange={(e) => updateDesignNote(index, e.target.value)}
+                    placeholder="Add a note (placement, size, color preference...)"
+                    rows={2}
+                    className="text-sm resize-none"
+                  />
+                </div>
+              </div>
+            ))}
+
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-gray-300 rounded-lg py-4 hover:border-gray-400 hover:bg-gray-50 transition-colors"
+            >
+              <Plus className="h-4 w-4 text-gray-500" />
+              <span className="text-sm text-gray-600 font-medium">
+                {customDesigns.length === 0 ? "Upload an image" : "Add another image"}
+              </span>
+            </button>
+            <p className="text-xs text-gray-400 text-center">PNG, JPG up to 5MB each</p>
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleDesignFileChange}
+              className="hidden"
+            />
+
+            <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <AlertCircle className="h-4 w-4 text-blue-600 mt-0.5 shrink-0" />
+              <p className="text-xs text-blue-700">
+                Your design images and notes will be sent to our team along with your order confirmation email.
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setShowDesignDialog(false); setPendingAction(null); }}>
+              Cancel
+            </Button>
+            <Button
+              className="bg-red-500 hover:bg-red-600 text-white"
+              disabled={customDesigns.length === 0}
+              onClick={handleDesignDialogContinue}
+            >
+              Continue
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Lightbox */}
       {lightboxOpen && (

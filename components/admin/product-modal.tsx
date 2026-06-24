@@ -20,7 +20,7 @@ const ALL_SIZES = ["S", "M", "L", "XL", "XXL"];
 const CATEGORIES = [
   "Hoodies",
   "Oversized",
- "Regular"
+ "Regular",
 ];
 
 const DEFAULT_PRICE = 1299;

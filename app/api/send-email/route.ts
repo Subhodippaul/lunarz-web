@@ -47,9 +47,16 @@ const createTransporter = () => {
   });
 };
 
+interface EmailAttachment {
+  filename: string;
+  content: string; // base64 string, no "data:image/...;base64," prefix
+  encoding: 'base64';
+  cid?: string; // Content-ID for inline images referenced via cid: in the HTML
+}
+
 export async function POST(request: NextRequest) {
   try {
-    const { to, subject, html, from } = await request.json();
+    const { to, subject, html, from, attachments } = await request.json();
 
     // Validate required fields
     if (!to || !subject || !html) {
@@ -63,11 +70,14 @@ export async function POST(request: NextRequest) {
     const transporter = createTransporter();
 
     // Email options
-    const mailOptions = {
+    const mailOptions: nodemailer.SendMailOptions = {
       from: from || process.env.EMAIL_FROM || 'Lunarz <lunarz.info@gmail.com>',
       to: to,
       subject: subject,
       html: html,
+      ...(Array.isArray(attachments) && attachments.length > 0
+        ? { attachments: attachments as EmailAttachment[] }
+        : {}),
     };
 
     // Send email
@@ -77,6 +87,7 @@ export async function POST(request: NextRequest) {
       messageId: info.messageId,
       to: to,
       subject: subject,
+      attachmentCount: attachments?.length || 0,
     });
 
     return NextResponse.json({
