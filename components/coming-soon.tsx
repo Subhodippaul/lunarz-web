@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 
-const LAUNCH_DATE = new Date('2026-06-24T00:00:00+05:30')
+const LAUNCH_DATE = new Date('2026-07-04T00:00:00+05:30')
 const WA_NUMBER = '+919432436470'
 const CONTACT_EMAIL = 'lunarz.info@gmail.com'
 

@@ -322,8 +322,19 @@ export default function CheckoutPage() {
 
   // ─── Email / Drive / Shiprocket helpers (unchanged) ──────────────────────
 
-  const sendOrderEmails = async (orderData: any, orderId: string) => {
+const sendOrderEmails = async (orderData: any, orderId: string) => {
     try {
+      // Flatten all custom design images + notes across every customized item in the order
+      const customDesignAttachments = orderData.items.flatMap((item: any) => {
+        if (!item.isCustom || !Array.isArray(item.customDesigns)) return [];
+        return item.customDesigns.map((d: { image: string; fileName: string; note: string }) => ({
+          productName: item.product?.name || item.name || "Custom Item",
+          image: d.image,       // base64 data URL
+          fileName: d.fileName,
+          note: d.note || "",
+        }));
+      });
+
       const emailData: OrderEmailData = {
         orderId,
         customerEmail: orderData.customerEmail || "",
@@ -345,6 +356,8 @@ export default function CheckoutPage() {
         },
         paymentMethod: orderData.paymentMethod === "cod" ? "Cash on Delivery" : "Online Payment",
         orderDate: new Date().toLocaleDateString("en-IN", { year: "numeric", month: "long", day: "numeric" }),
+        // NEW: custom design images + per-image notes, attached to the admin notification email
+        customDesignAttachments,
       };
       EmailService.sendOrderConfirmationToCustomer(emailData);
       EmailService.sendOrderNotificationToAdmin(emailData);

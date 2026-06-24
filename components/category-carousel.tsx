@@ -48,7 +48,7 @@ export default function CategoryCarousel() {
       name: "Custom Tshirt",
       image: "/customize_category.png",
       productCount: 0,
-      slug: "custom-tshirt",
+      slug: "custom-products",
     },
   ];
 
