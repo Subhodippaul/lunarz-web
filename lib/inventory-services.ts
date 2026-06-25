@@ -56,6 +56,16 @@ export class ColorInventoryService {
     return stock ?? 0;
   }
 
+  static async getStockByColor(color: string, category: string): Promise<number> {
+  const res = await fetch(
+    `/api/color-inventory?color=${encodeURIComponent(color)}&category=${encodeURIComponent(category)}`,
+    { cache: 'no-store' }
+  );
+  if (!res.ok) return 0;
+  const { stock } = await res.json();
+  return stock ?? 0;
+}
+
   /**
    * Return a map  { "Black|M|Oversized": 5, "White|L|Regular": 12, … }
    * Uses the public Supabase client (color_inventory SELECT is public).
