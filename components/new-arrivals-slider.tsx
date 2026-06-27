@@ -1,7 +1,8 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Product } from "@/lib/data";
 import { getAllProducts } from "@/lib/supabase-services";
+import { ColorInventoryService } from "@/lib/inventory-services"; "@/lib/inventory-services";
 import { ChevronLeft, ChevronRight, Sparkles, ImageOff } from "lucide-react";
 import Link from "next/link";
 import { Separator } from "@/components/ui/separator";
@@ -9,6 +10,20 @@ import { toDriveImageUrl } from "@/lib/drive-image";
 import { createSlug } from "@/lib/slug";
 
 const ITEMS_PER_SLIDE = 4;
+// Returns true if EVERY variant/color for this product has 0 stock
+async function isProductOutOfStock(product: Product): Promise<boolean> {
+  const colors = product.variants && product.variants.length > 0
+    ? product.variants
+    : [null]; // no variants -> nothing to check per-color, treat as in-stock unless you want different fallback
+
+  if (colors[0] === null) return false;
+
+  const stocks = await Promise.all(
+    colors.map((color) => ColorInventoryService.getStockByColor(color as string, product.category))
+  );
+
+  return stocks.every((s) => s === 0);
+}
 
 function variantColor(variant: string): string {
   const v = variant.toLowerCase();
@@ -50,6 +65,7 @@ function ProductImage({ src, alt, className }: { src?: string; alt: string; clas
 export default function NewArrivalsSlider() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [outOfStockMap, setOutOfStockMap] = useState<Record<string, boolean>>({});
   const [mobileIndex, setMobileIndex] = useState(0);
   const [desktopIndex, setDesktopIndex] = useState(0);
 
@@ -62,10 +78,20 @@ export default function NewArrivalsSlider() {
       // getAllProducts uses mapRow to convert snake_case DB fields (e.g. original_price)
       // to camelCase (e.g. originalPrice) so the price display works correctly
       const data = await getAllProducts();
-      setProducts(data.slice(0, 12));
+      const sliced = data.slice(0, 12);
+      setProducts(sliced);
+      setLoading(false); // show products immediately, stock badges fill in after
+
+      // Fetch stock status for all products in parallel, independently of render
+      const entries = await Promise.all(
+        sliced.map(async (product) => {
+          const outOfStock = await isProductOutOfStock(product);
+          return [product.id, outOfStock] as const;
+        })
+      );
+      setOutOfStockMap(Object.fromEntries(entries));
     } catch (err) {
       console.error("Error fetching new arrivals:", err);
-    } finally {
       setLoading(false);
     }
   };
@@ -144,7 +170,7 @@ export default function NewArrivalsSlider() {
                               alt={product.name}
                               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                             />
-                            {product.stock === 0 && (
+                            {outOfStockMap[product.id] && (
                               <div className="absolute top-2 right-2 bg-red-500 text-white px-1.5 py-0.5 rounded-full text-xs font-medium">
                                 Out of stock
                               </div>
@@ -224,7 +250,7 @@ export default function NewArrivalsSlider() {
                               alt={product.name}
                               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                             />
-                            {product.stock === 0 && (
+                            {outOfStockMap[product.id] && (
                               <div className="absolute top-3 right-3 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-medium">
                                 Out of Stock
                               </div>
