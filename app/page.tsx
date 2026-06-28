@@ -19,16 +19,6 @@ export const metadata: Metadata = {
 };
 
 export default async function HomePage() {
-  const headersList = await headers();
-  const host = headersList.get("host");
-
-  const isComingSoon =
-    host === "lunarz.in" || host === "www.lunarz.in";
-
-  if (isComingSoon) {
-    return <ComingSoonPage />;
-  }
-
   return (
     <>
       <UniqueIdGenerator />
