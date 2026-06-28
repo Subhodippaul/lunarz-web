@@ -9,7 +9,7 @@ export const SITE_CONFIG = {
 export const NAV_LINKS = {
   home: "/",
   shop: "/products",
-  customTshirt: "/custom-tshirt",
+  customTshirt: "/products?category=Customize",
   cart: "/cart",
   checkout: "/checkout",
   profile: "/profile",

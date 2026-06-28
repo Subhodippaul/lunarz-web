@@ -509,8 +509,6 @@ export default function ProfilePage() {
                 </p>
                 <div className="mt-2 text-sm text-blue-700">
                   <p>• <strong>Cancel:</strong> Available for pending/processing orders</p>
-                  {/* <p>• <strong>Return:</strong> Available within 30 days of delivery</p>
-                  <p>• <strong>Exchange:</strong> Available within 15 days of delivery</p> */}
                 </div>
               </div>
               

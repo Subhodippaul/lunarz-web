@@ -41,14 +41,14 @@ export default function CategoryCarousel() {
       name: "Hoodies",
       image: "/hoodie_category.png",
       productCount: 1,
-      slug: "hoodie",
+      slug: "hoodies",
     },
     {
       id: "4",
       name: "Custom Tshirt",
       image: "/customize_category.png",
       productCount: 0,
-      slug: "custom-products",
+      slug: "Customize",
     },
   ];
 

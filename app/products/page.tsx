@@ -3,7 +3,6 @@ import { useState, useEffect, useMemo, useRef, useCallback, Suspense } from "rea
 import { useSearchParams } from "next/navigation";
 import ProductCard from "@/components/product-card";
 import ProductFilters from "@/components/product-filters";
-import ProductsBanner from "@/components/products-banner";
 import { Product } from "@/lib/data";
 import { ProductService } from "@/lib/supabase-services";
 import { CenteredLoader } from "@/components/ui/loader";
@@ -69,7 +68,7 @@ function ProductsPageContent() {
   };
 
   // All filtered+sorted products (full list, no slice yet)
-  const filteredAndSortedProducts = useMemo(() => {
+const filteredAndSortedProducts = useMemo(() => {
     let filtered = allProducts.filter((product) => {
       if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase();
@@ -96,13 +95,15 @@ function ProductsPageContent() {
         const productCategorySlug = product.category
           .toLowerCase()
           .replace(/\s+/g, "-");
+        const isCustomProduct = product.name.toLowerCase().includes("custom");
         const matchesCategory = filters.categories.some((filterCategory) => {
           const filterCategorySlug = filterCategory
             .toLowerCase()
             .replace(/\s+/g, "-");
           return (
             productCategorySlug === filterCategorySlug ||
-            product.category.toLowerCase() === filterCategory.toLowerCase()
+            product.category.toLowerCase() === filterCategory.toLowerCase() ||
+            (isCustomProduct && filterCategorySlug === "customize")
           );
         });
         if (!matchesCategory) return false;
@@ -187,8 +188,6 @@ function ProductsPageContent() {
 
   return (
     <section className="max-w-7xl mx-auto px-6 py-12">
-      <ProductsBanner />
-
       {searchQuery && (
         <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
           <h2 className="text-lg font-semibold text-blue-900">
