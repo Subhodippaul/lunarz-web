@@ -28,8 +28,6 @@ const poppins = Poppins({
 export default async function RootLayout({ children }: { children: ReactNode }) {
   const headersList = await headers();
     const host = headersList.get("host");
-  
-    const isComingSoon = host === "lunarz.in" || host === "www.lunarz.in";
 
   return (
     <html lang="en">
@@ -38,11 +36,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
           <AuthProvider>
             <CartProvider>
               <CouponProvider>
-                {isComingSoon ? (
-                  children
-                ) : (
                   <ConditionalLayout>{children}</ConditionalLayout>
-                )}
               </CouponProvider>
             </CartProvider>
           </AuthProvider>
