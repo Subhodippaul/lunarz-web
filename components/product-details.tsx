@@ -486,13 +486,13 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
                 <div className="text-2xl font-bold text-gray-900">
                   {CURRENCY.symbol} {product.price.toLocaleString()}
                 </div>
-                {product.originalPrice && product.originalPrice > product.price && (
+                {product.original_price && product.original_price > product.price && (
                   <>
                     <div className="text-lg text-gray-400 line-through">
-                      {CURRENCY.symbol} {product.originalPrice.toLocaleString()}
+                      {CURRENCY.symbol} {product.original_price.toLocaleString()}
                     </div>
                     <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-sm font-semibold">
-                      {Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% off
+                      {Math.round(((product.original_price - product.price) / product.original_price) * 100)}% off
                     </span>
                   </>
                 )}
@@ -556,30 +556,30 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
 
             {/* Variants/Colors */}
             {product.variants && (
-              <div>
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="font-medium">{PRODUCT_DETAILS.shopByVariant}</span>
-                  {selectedVariant && (
-                    <span className="text-sm text-gray-600">- {selectedVariant}</span>
-                  )}
-                </div>
-                <div className="flex gap-3">
-                  {product.variants.map((variant) => (
-                    <button
-                      key={variant}
-                      onClick={() => setSelectedVariant(variant)}
-                      className={`px-4 py-2 rounded-lg border-2 transition-all ${
-                        selectedVariant === variant
-                          ? "border-black bg-black text-white"
-                          : "border-gray-300 hover:border-gray-400 bg-white"
-                      }`}
-                    >
-                      <span className="text-sm font-medium">{variant}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
+  <div>
+    <div className="flex items-center gap-2 mb-3">
+      <span className="font-medium">{PRODUCT_DETAILS.shopByVariant}</span>
+      {selectedVariant && (
+        <span className="text-sm text-gray-600">- {selectedVariant}</span>
+      )}
+    </div>
+    <div className="grid grid-cols-3 gap-3">
+      {product.variants.map((variant) => (
+        <button
+          key={variant}
+          onClick={() => setSelectedVariant(variant)}
+          className={`px-4 py-2 rounded-lg border-2 transition-all ${
+            selectedVariant === variant
+              ? "border-black bg-black text-white"
+              : "border-gray-300 hover:border-gray-400 bg-white"
+          }`}
+        >
+          <span className="text-sm font-medium">{variant}</span>
+        </button>
+      ))}
+    </div>
+  </div>
+)}
 
             {/* Size Selection */}
             <div>

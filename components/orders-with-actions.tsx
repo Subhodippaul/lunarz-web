@@ -6,6 +6,7 @@ import OrderActions from "@/components/order-actions";
 import { CenteredLoader } from "@/components/ui/loader";
 import { Package, Calendar, MapPin, CreditCard, Eye, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toDriveImageUrl } from "@/lib/drive-image";
 
 export default function OrdersWithActions() {
   const { state: authState } = useAuth();
@@ -159,7 +160,7 @@ export default function OrdersWithActions() {
                     const quantity = item.quantity ?? 1;
                     const size = item.size || item.selectedSize || '—';
                     const color = item.color || item.selectedVariant || item.variant || '—';
-                    const image = item.image || item.product?.images?.[0] || '/placeholder.jpg';
+                    const image = item.image || toDriveImageUrl(item.product?.images?.[0]) || '/placeholder.jpg';
 
                     return (
                       <div key={index} className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">

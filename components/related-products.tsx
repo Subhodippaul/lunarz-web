@@ -175,13 +175,13 @@ export default function RelatedProducts({ currentProduct }: RelatedProductsProps
               <p className="text-gray-500 text-xs mb-1">{product.category}</p>
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="font-bold text-gray-900">₹{product.price.toLocaleString()}</span>
-                {product.originalPrice && product.originalPrice > product.price && (
+                {product.original_price && product.original_price > product.price && (
                   <>
                     <span className="text-sm text-gray-400 line-through">
-                      ₹{product.originalPrice.toLocaleString()}
+                      ₹{product.original_price.toLocaleString()}
                     </span>
                     <span className="text-xs font-semibold text-green-700 bg-green-100 px-1.5 py-0.5 rounded-full">
-                      {Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% off
+                      {Math.round(((product.original_price - product.price) / product.original_price) * 100)}% off
                     </span>
                   </>
                 )}

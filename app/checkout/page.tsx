@@ -71,7 +71,7 @@ export default function CheckoutPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [orderCompleted, setOrderCompleted] = useState(false);
   const [sameAsBilling, setSameAsBilling] = useState(true);
-  const [paymentMethod, setPaymentMethod] = useState("online");
+  const [paymentMethod, setPaymentMethod] = useState("cod");
   const [shippingSettings, setShippingSettings] = useState<ShippingSettings | null>(null);
   const [showPaymentDrawer, setShowPaymentDrawer] = useState(false);
   const [formErrors, setFormErrors] = useState<Partial<Record<keyof AddressForm, string>>>({});
@@ -560,19 +560,24 @@ const sendOrderEmails = async (orderData: any, orderId: string) => {
     <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod} className="space-y-3">
 
       {/* Online */}
-      <div className="border rounded-lg p-4">
-        <div className="flex items-center space-x-3">
-          <RadioGroupItem value="online" id="online" />
-          <div className="flex-1">
-            <Label htmlFor="online" className="text-base font-medium">💳 Online Payment</Label>
-            <p className="text-sm text-gray-600 mt-1">Credit Card, Debit Card, UPI, Net Banking</p>
-            <div className="flex gap-2 mt-2">
-              <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Secure</span>
-              <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">Instant</span>
-            </div>
-          </div>
-        </div>
+      <div className="border rounded-lg p-4 opacity-60 bg-gray-50">
+  <div className="flex items-center space-x-3">
+    <RadioGroupItem value="online" id="online" disabled />
+    <div className="flex-1">
+      <Label htmlFor="online" className="text-base font-medium text-gray-500">
+        💳 Online Payment
+      </Label>
+      <p className="text-sm text-gray-600 mt-1">Credit Card, Debit Card, UPI, Net Banking</p>
+      <div className="flex gap-2 mt-2">
+        <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Secure</span>
+        <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">Instant</span>
       </div>
+      <p className="text-xs text-red-600 mt-2 font-medium">
+        ⚠️ Temporarily unavailable due to a technical issue. Please choose Cash on Delivery — order in the next 2–3 days.
+      </p>
+    </div>
+  </div>
+</div>
 
       {/* COD */}
       <div className="border rounded-lg p-4">

@@ -55,13 +55,13 @@ export default function AdvertisementSection() {
 
           {/* ── RIGHT: Image placeholder ── */}
           <div className="w-full md:w-[520px] shrink-0 bg-gray-800 flex items-center justify-center min-h-[280px] md:min-h-0">
-            {/* Replace this div with an <Image> once the photo is ready */}
-            <div className="flex flex-col items-center gap-3 text-gray-600 select-none">
-              <ImageOff className="w-14 h-14" />
-              <span className="text-sm font-medium tracking-wide">Image coming soon</span>
-              <span className="text-xs text-gray-700">Recommended: 840 × 560 px</span>
-            </div>
-          </div>
+  {/* Recommended: 840 × 560 px */}
+  <img
+    src="/fan_banner.png"
+    alt=""
+    className="w-full h-full object-cover"
+  />
+</div>
 
         </div>
       </div>
